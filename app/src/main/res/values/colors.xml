@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Palette - Deep Professional Blues -->
+    <color name="primary">#1A237E</color>
+    <color name="primary_light">#534BAE</color>
+    <color name="primary_dark">#000051</color>
+    
+    <!-- Secondary Palette - Modern Cyan/Teal -->
+    <color name="secondary">#00B8D4</color>
+    <color name="secondary_light">#62EFFF</color>
+    <color name="secondary_dark">#0088A3</color>
+
+    <!-- Backgrounds & Surfaces -->
+    <color name="bg_start">#F8FAFD</color>
+    <color name="bg_end">#E3EEFF</color>
+    <color name="surface_white">#FFFFFF</color>
+    <color name="card_bg_light">#FDFFFF</color>
+
+    <!-- Accent & Status -->
+    <color name="accent_gold">#FFD600</color>
+    <color name="error_red">#D32F2F</color>
+    <color name="success_green">#388E3C</color>
+
+    <!-- Typography -->
+    <color name="text_main">#1C1C1E</color>
+    <color name="text_sub">#636366</color>
+    
+    <!-- Compatibility -->
+    <color name="accent">#00B8D4</color>
+    <color name="background">#F8FAFD</color>
+    <color name="main_blue">#1A237E</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

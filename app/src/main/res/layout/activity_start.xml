@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="30dp"
+    android:background="#FFFFFF">
+
+    <ImageView
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:src="@drawable/app_logo_noback"
+        android:layout_marginBottom="40dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Welcome to Geometry AI"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#0C3D6A"
+        android:layout_marginBottom="50dp"/>
+
+    <Button
+        android:id="@+id/btnGoToLogin"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Login"
+        android:backgroundTint="#0C3D6A"
+        android:layout_marginBottom="15dp"/>
+
+    <Button
+        android:id="@+id/btnGoToRegister"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Create Account"
+        android:textColor="#0C3D6A"
+        android:layout_marginBottom="15dp"/>
+
+    <Button
+        android:id="@+id/btnTestMode"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Try Test Mode (No Login)"
+        android:textColor="#757575"/>
+
+</LinearLayout>

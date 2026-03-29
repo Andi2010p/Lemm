@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    tools:context=".MainActivity">
+
+    <!-- Made this bigger (28sp) and updated the ID usage -->
+    <!-- Text will be updated in MainActivity.java -->
+    <TextView
+        android:id="@+id/tvMainWelcome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="80dp"
+        android:text="Welcome !"
+        android:textAlignment="center"
+        android:textSize="28sp"
+        android:textColor="@color/main_blue"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btnProfile"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Profile"
+            android:textColor="@color/main_blue"
+            app:strokeColor="@color/main_blue"
+            app:rippleColor="@color/main_blue"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btnNewProblem"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="16dp"
+            android:text="New Geometry Problem"
+            android:backgroundTint="@color/main_blue"
+            android:textColor="@color/white"
+            app:rippleColor="@color/white"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btnSettings"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="16dp"
+            android:text="Settings"
+            android:textColor="@color/main_blue"
+            app:strokeColor="@color/main_blue"
+            app:rippleColor="@color/main_blue"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnLogout"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:backgroundTint="@color/error_red"
+        android:text="Logout"
+        app:rippleColor="@color/white"
+        android:textColor="@color/white" />
+
+</RelativeLayout>

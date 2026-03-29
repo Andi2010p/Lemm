@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Lemma</string>
+    <string name="zoom_percent">Zoom: %d%%</string>
+</resources>
