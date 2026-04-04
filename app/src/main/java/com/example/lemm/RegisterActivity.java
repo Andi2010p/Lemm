@@ -67,6 +67,8 @@ public class RegisterActivity extends AppCompatActivity {
 
             if (user.isEmpty() || email.isEmpty() || pass.isEmpty()) {
                 Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+            } else if (user.equalsIgnoreCase("GuestUser")) {
+                Toast.makeText(this, "Cannot use 'GuestUser' as a username", Toast.LENGTH_SHORT).show();
             } else if (!pass.equals(repeatPass)) {
                 Toast.makeText(this, "Passwords do not match!", Toast.LENGTH_SHORT).show();
             } else if (pass.length() < 8) {

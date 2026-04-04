@@ -103,11 +103,17 @@ public class GeometryCanvas3D extends View {
             public boolean onScale(ScaleGestureDetector detector) {
                 scaleFactor *= detector.getScaleFactor();
                 scaleFactor = Math.max(0.2f, Math.min(scaleFactor, 5.0f));
-                if (zoomChangeListener != null) zoomChangeListener.onZoomChanged(getZoomPercentage());
+                notifyZoom();
                 invalidate();
                 return true;
             }
         });
+    }
+
+    private void notifyZoom() {
+        if (zoomChangeListener != null) {
+            zoomChangeListener.onZoomChanged(getZoomPercentage());
+        }
     }
 
     // --- API Methods ---
@@ -132,11 +138,24 @@ public class GeometryCanvas3D extends View {
         points.clear(); spheres.clear(); planes.clear();
         rotateX = -25f; rotateY = 45f; scaleFactor = 1.0f;
         offsetX = 0; offsetY = 0;
+        notifyZoom();
         invalidate();
     }
 
-    public void zoomIn() { scaleFactor *= 1.1f; invalidate(); }
-    public void zoomOut() { scaleFactor /= 1.1f; invalidate(); }
+    public void zoomIn() { 
+        scaleFactor *= 1.1f; 
+        scaleFactor = Math.min(scaleFactor, 5.0f);
+        notifyZoom();
+        invalidate(); 
+    }
+    
+    public void zoomOut() { 
+        scaleFactor /= 1.1f; 
+        scaleFactor = Math.max(scaleFactor, 0.2f);
+        notifyZoom();
+        invalidate(); 
+    }
+    
     public int getZoomPercentage() { return Math.round(scaleFactor * 100); }
 
     // --- Touch Logic ---

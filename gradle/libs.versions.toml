@@ -10,6 +10,7 @@ material = "1.12.0"
 activity = "1.12.2"
 constraintlayout = "2.2.0"
 generativeai = "0.9.0"
+googleServices = "4.4.2"
 
 [libraries]
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -20,14 +21,11 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
-# Core Gemini SDK
+# THE ONLY SDK WE NEED
 google-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
-# Java Wrapper for Gemini (Fixes the "red" code in Java)
-google-generativeai-java = { group = "com.google.ai.client.generativeai", name = "generativeai-java", version.ref = "generativeai" }
-# Guava (Required for ListenableFuture/Futures)
-
 guava = { group = "com.google.guava", name = "guava", version = "31.1-android" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

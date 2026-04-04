@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "481743722691",
+    "project_id": "app1-9b74272b",
+    "storage_bucket": "app1-9b74272b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:481743722691:android:d92bd5098b208b65886a76",
+        "android_client_info": {
+          "package_name": "com.example.lemm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1qUC2rV52FbVmroDxwHjxVgzdHI--xyY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

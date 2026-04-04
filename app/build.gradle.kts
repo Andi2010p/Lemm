@@ -1,6 +1,9 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -14,8 +17,14 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        
-        buildConfigField("String", "OPENROUTER_API_KEY", "\"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\"")
+
+        val properties = Properties()
+        val localPropertiesFile = project.rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            properties.load(localPropertiesFile.inputStream())
+        }
+        val apiKey = properties.getProperty("google.api.key") ?: "AIzaSyBnCcAMGg4TCa_01Zxvd8Mk3RC5EZtp7yo"
+        buildConfigField("String", "GEMINI_API_KEY", "\"$apiKey\"")
     }
 
     buildFeatures {
@@ -30,29 +39,41 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE*"
+            excludes += "META-INF/NOTICE*"
+            excludes += "META-INF/*.kotlin_module"
+        }
+    }
 }
 
 dependencies {
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-    implementation("com.google.android.gms:play-services-auth:21.1.1")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // Firebase Bill of Materials (BoM)
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     
-    // Testing dependencies
+    // Firebase Dependencies
+    implementation("com.google.firebase:firebase-database")
+    implementation("com.google.firebase:firebase-auth")
+    
+    // AI and other libraries
+    implementation(libs.google.generativeai)
+    implementation("com.google.android.gms:play-services-auth:21.1.1")
+    implementation(libs.guava)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.androidx.appcompat)
+    implementation(libs.com.google.android.material)
+    implementation(libs.androidx.constraintlayout)
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("io.noties.markwon:core:4.6.2")
+    implementation("io.noties.markwon:ext-latex:4.6.2")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation("androidx.test:runner:1.5.2")
-
-    // UI Dependencies
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
-    implementation("androidx.cardview:cardview:1.0.0")
-
-    // Markwon for Markdown/Math rendering
-    implementation("io.noties.markwon:core:4.6.2")
-    implementation("io.noties.markwon:ext-latex:4.6.2")
-    
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("com.google.guava:guava:31.1-android")
 }

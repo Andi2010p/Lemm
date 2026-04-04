@@ -56,6 +56,8 @@ public class LoginActivity extends AppCompatActivity {
 
             if (user.isEmpty() || pass.isEmpty()) {
                 Toast.makeText(this, "Please enter all fields", Toast.LENGTH_SHORT).show();
+            } else if (user.equalsIgnoreCase("GuestUser")) {
+                Toast.makeText(this, "Cannot login as 'GuestUser' with password", Toast.LENGTH_SHORT).show();
             } else {
                 if (dbHelper.checkUser(user, pass)) {
                     saveSessionAndGoMain(user);

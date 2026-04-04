@@ -98,13 +98,17 @@ public class GeometryCanvas extends View {
             public boolean onScale(ScaleGestureDetector detector) {
                 scaleFactor *= detector.getScaleFactor();
                 scaleFactor = Math.max(0.2f, Math.min(scaleFactor, 8.0f));
-                if (zoomChangeListener != null) {
-                    zoomChangeListener.onZoomChanged(getZoomPercentage());
-                }
+                notifyZoom();
                 invalidate();
                 return true;
             }
         });
+    }
+
+    private void notifyZoom() {
+        if (zoomChangeListener != null) {
+            zoomChangeListener.onZoomChanged(getZoomPercentage());
+        }
     }
 
     public void addPoint(String name, float x, float y) {
@@ -135,18 +139,21 @@ public class GeometryCanvas extends View {
         scaleFactor = 1.0f;
         posX = 0;
         posY = 0;
+        notifyZoom();
         invalidate();
     }
 
     public void zoomIn() {
         scaleFactor *= 1.2f;
         scaleFactor = Math.min(scaleFactor, 8.0f);
+        notifyZoom();
         invalidate();
     }
 
     public void zoomOut() {
         scaleFactor /= 1.2f;
         scaleFactor = Math.max(scaleFactor, 0.2f);
+        notifyZoom();
         invalidate();
     }
 

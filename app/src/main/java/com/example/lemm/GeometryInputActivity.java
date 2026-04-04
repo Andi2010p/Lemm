@@ -1,5 +1,6 @@
 package com.example.lemm;
 
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,45 +17,48 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.ai.client.generativeai.GenerativeModel;
+import com.google.ai.client.generativeai.java.GenerativeModelFutures;
+import com.google.ai.client.generativeai.type.BlockThreshold;
+import com.google.ai.client.generativeai.type.Content;
+import com.google.ai.client.generativeai.type.GenerateContentResponse;
+import com.google.ai.client.generativeai.type.GenerationConfig;
+import com.google.ai.client.generativeai.type.HarmCategory;
+import com.google.ai.client.generativeai.type.SafetySetting;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import io.noties.markwon.Markwon;
 import io.noties.markwon.ext.latex.JLatexMathPlugin;
 import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class GeometryInputActivity extends AppCompatActivity {
     private static final String TAG = "GeometryInput";
+
     private TextInputEditText etDescription;
-    private LinearLayout stepsContainer;
-    private ScrollView resultScrollView;
     private Button btnSolveProblem;
     private ImageButton btnZoomIn, btnZoomOut, btnResizeCanvas;
     private TextView tvZoomPercent;
     private ProgressBar progressBar;
+    private LinearLayout stepsContainer;
+    private ScrollView resultScrollView;
+    private View canvasContainer;
+
     private GeometryCanvas geometryCanvas;
     private GeometryCanvas3D geometryCanvas3D;
-    private View canvasContainer;
-    private Markwon markwon;
-    private boolean isCanvasMaximized = false;
 
-    private final OkHttpClient client = new OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .build();
+    private boolean isCanvasMaximized = false;
+    private Markwon markwon;
+
+    private GenerativeModelFutures model;
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,25 +68,27 @@ public class GeometryInputActivity extends AppCompatActivity {
         initViews();
         setupMarkwon();
         setupListeners();
+        setupAI();
 
-        if (getIntent().getBooleanExtra("isTestMode", false)) {
-            runTestMode();
+        String scannedText = getIntent().getStringExtra("SCANNED_TEXT");
+        if (scannedText != null && !scannedText.isEmpty()) {
+            etDescription.setText(scannedText);
         }
     }
 
     private void initViews() {
         etDescription = findViewById(R.id.etDescription);
-        stepsContainer = findViewById(R.id.stepsContainer);
-        resultScrollView = findViewById(R.id.resultScrollView);
         btnSolveProblem = findViewById(R.id.btnSolveProblem);
-        btnResizeCanvas = findViewById(R.id.btnResizeCanvas);
         progressBar = findViewById(R.id.progressBar);
         geometryCanvas = findViewById(R.id.geometryCanvas);
         geometryCanvas3D = findViewById(R.id.geometryCanvas3D);
-        canvasContainer = findViewById(R.id.canvasContainer);
         btnZoomIn = findViewById(R.id.btnZoomIn);
         btnZoomOut = findViewById(R.id.btnZoomOut);
         tvZoomPercent = findViewById(R.id.tvZoomPercent);
+        stepsContainer = findViewById(R.id.stepsContainer);
+        resultScrollView = findViewById(R.id.resultScrollView);
+        canvasContainer = findViewById(R.id.canvasContainer);
+        btnResizeCanvas = findViewById(R.id.btnResizeCanvas);
     }
 
     private void setupMarkwon() {
@@ -92,6 +98,42 @@ public class GeometryInputActivity extends AppCompatActivity {
                 .build();
     }
 
+    private void setupAI() {
+        try {
+            String apiKey = BuildConfig.GEMINI_API_KEY;
+            if (apiKey != null) {
+                apiKey = apiKey.replace("\"", "").replace("'", "").trim();
+            }
+
+            if (apiKey == null || apiKey.isEmpty()) {
+                apiKey = "AIzaSyBnCcAMGg4TCa_01Zxvd8Mk3RC5EZtp7yo";
+            }
+
+            GenerationConfig.Builder configBuilder = new GenerationConfig.Builder();
+            configBuilder.temperature = 0.1f;
+            configBuilder.topK = 1;
+            configBuilder.topP = 0.95f;
+
+            GenerationConfig config = configBuilder.build();
+            
+            List<SafetySetting> safetySettings = new ArrayList<>();
+            safetySettings.add(new SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.ONLY_HIGH));
+            safetySettings.add(new SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.ONLY_HIGH));
+            safetySettings.add(new SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH));
+            safetySettings.add(new SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH));
+
+            GenerativeModel gm = new GenerativeModel(
+                    "gemini-1.5-flash",
+                    apiKey,
+                    config,
+                    safetySettings
+            );
+            model = GenerativeModelFutures.from(gm);
+        } catch (Exception e) {
+            Log.e(TAG, "AI Setup Error", e);
+        }
+    }
+
     private void setupListeners() {
         geometryCanvas.setOnZoomChangeListener(pct -> tvZoomPercent.setText(getString(R.string.zoom_percent, pct)));
         geometryCanvas3D.setOnZoomChangeListener(pct -> tvZoomPercent.setText(getString(R.string.zoom_percent, pct)));
@@ -99,11 +141,13 @@ public class GeometryInputActivity extends AppCompatActivity {
         btnZoomIn.setOnClickListener(v -> {
             if (geometryCanvas3D.getVisibility() == View.VISIBLE) geometryCanvas3D.zoomIn();
             else geometryCanvas.zoomIn();
+            updateZoomText();
         });
 
         btnZoomOut.setOnClickListener(v -> {
             if (geometryCanvas3D.getVisibility() == View.VISIBLE) geometryCanvas3D.zoomOut();
             else geometryCanvas.zoomOut();
+            updateZoomText();
         });
 
         btnResizeCanvas.setOnClickListener(v -> toggleCanvasSize());
@@ -111,238 +155,181 @@ public class GeometryInputActivity extends AppCompatActivity {
         btnSolveProblem.setOnClickListener(v -> {
             String text = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
             if (!text.isEmpty()) processProblem(text);
-            else Toast.makeText(this, "Please enter a problem", Toast.LENGTH_SHORT).show();
+            else Toast.makeText(this, "Please enter a geometry problem", Toast.LENGTH_SHORT).show();
         });
     }
 
-    private void processProblem(String problem) {
-        btnSolveProblem.setEnabled(false);
-        progressBar.setVisibility(View.VISIBLE);
-        stepsContainer.removeAllViews();
-        geometryCanvas.clearPoints();
-        geometryCanvas3D.clear();
-
-        String apiKey = "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";
-        String combinedPrompt = "You are a Geometry Engine. Solve and DRAW in 3D.\n\n" +
-                "### 1. DRAWING RULES (STRICT):\n" +
-                "- Line 1 MUST be 'DRAW3D:Label,x,y,z|Label,x,y,z|...'\n" +
-                "- CONNECT DOTS: You MUST repeat the first point at the end of the DRAW3D list.\n" +
-                "- PLANES: For every flat surface, add 'PLANE3D:index1,index2,index3'.\n" +
-                "- CIRCLES: For any sphere or circle, add 'SPHERE:Label,x,y,z,radius'.\n\n" +
-                "### 2. EXPLANATION RULES:\n" +
-                "- Split text into cards using 'STEP X: Title'.\n" +
-                "- Use Unicode (√, Δ). NO LATEX ($...$).\n" +
-                "- End with 'FINAL ANSWERS: [Result]'.\n\n" +"Do not use functions to change texts look. example do not use **bold*** or sqrt()"+
-                "You are a Geometry Rendering Engine. \n\n" +
-                "### 1. MANDATORY START (LINE 1):\n" +
-                "You MUST start the response with 'DRAW3D:Label,x,y,z|Label,x,y,z|...'.\n" +
-                "STRETCH: Use coordinates between 50 and 450 to fill the 500x500 screen.\n" +
-                "CONNECT: You MUST repeat the first point at the end of the list to close the shape.\n\n" +
-                "### 2. GEOMETRY COMMANDS:\n" +
-                "- PLANES: Add 'PLANE3D:0,1,2' (using point indices) to fill surfaces.\n" +
-                "- CIRCLES: Add 'SPHERE:Label,x,y,z,radius' for any round objects.\n\n" +
-                "### 3. EXPLANATION CARDS:\n" +
-                "- DO NOT write one big block of text.\n" +
-                "- Every new card MUST start with 'STEP X: Title'.\n" +
-                "- Keep each STEP card very short (1-2 sentences).\n" +
-                "- NO LATEX. Use Unicode (√, Δ, ∠).\n" +
-                "- END with 'FINAL ANSWERS: [Result]'.\n\n" +"You are a Geometry Rendering Engine. \n\n" +
-                "### 1. MANDATORY START (LINE 1):\n" +
-                "You MUST start the response with 'DRAW3D:Label,x,y,z|Label,x,y,z|...'.\n" +
-                "STRETCH: Use coordinates between 50 and 450 to fill the 500x500 screen.\n" +
-                "CONNECT: You MUST repeat the first point at the end of the list to close the shape.\n\n" +
-                "### 2. GEOMETRY COMMANDS:\n" +
-                "- PLANES: Add 'PLANE3D:0,1,2' (using point indices) to fill surfaces.\n" +
-                "- CIRCLES: Add 'SPHERE:Label,x,y,z,radius' for any round objects.\n\n" +
-                "### 3. EXPLANATION CARDS:\n" +
-                "- DO NOT write one big block of text.\n" +
-                "- Every new card MUST start with 'STEP X: Title'.\n" +
-                "- NO LATEX. Use Unicode (√, Δ, ∠).\n" +
-                "- END with 'FINAL ANSWERS: [Result]'.\n\n" +"You are a Geometry Rendering Engine. Solve and DRAW in 3D.\n\n" +
-                "### 1. DRAWING RULES (STRICT):\n" +
-                "- Line 1 MUST be 'DRAW3D:Label,x,y,z|Label,x,y,z|...'\n" +
-                "- STRETCH: Use coordinates 50 to 450 to fill the screen.\n" +
-                "- CONNECT: Repeat the first point at the end of the DRAW3D list.\n" +
-                "- CIRCLES: If a sphere is mentioned, add 'SPHERE:Label,x,y,z,radius'.\n" +
-                "- PLANES: Add 'PLANE3D:0,1,2' (indices) to fill surfaces.\n\n" +
-                "### 2. CARD RULES:\n" +
-                "- Split explanation into short pieces.\n" +
-                "- Every new card MUST start with 'STEP X: Title'.\n" +
-                "- NO LATEX. Use Unicode symbols (√, Δ, ∠).\n" +
-                "- End with 'FINAL ANSWERS: [Result]'.\n\n" +"You are a Geometry Engine. Solve and DRAW in 3D.\n\n" +
-                "### 1. DRAWING RULES (STRICT):\n" +
-                "- Line 1 MUST be 'DRAW3D:Label,x,y,z|Label,x,y,z|...'\n" +
-                "- CONNECT: You MUST repeat the first point at the end of the DRAW3D list.\n" +
-                "- SPHERES: If a circle/ball is mentioned, add 'SPHERE:Label,x,y,z,radius'.\n" +
-                "- PLANES: Add 'PLANE3D:0,1,2' (indices) to fill surfaces.\n\n" +
-                "### 2. EXPLANATION CARDS:\n" +
-                "- Split text into cards using 'STEP X: Title'.\n" +
-                "- Use Unicode (√, Δ). NO LATEX.\n" +
-                "- End with 'FINAL ANSWERS: [Result]'.\n\n" +
-
-                "Problem: " + problem;
-        try {
-            JSONObject requestJson = new JSONObject();
-            requestJson.put("model", "google/gemini-2.0-flash-001");
-            JSONArray messages = new JSONArray();
-            messages.put(new JSONObject().put("role", "user").put("content", combinedPrompt));
-            requestJson.put("messages", messages);
-
-            RequestBody body = RequestBody.create(requestJson.toString(), MediaType.parse("application/json; charset=utf-8"));
-            Request request = new Request.Builder()
-                    .url("https://openrouter.ai/api/v1/chat/completions")
-                    .addHeader("Authorization", "Bearer " + apiKey)
-                    .post(body)
-                    .build();
-
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                    handleError("Network error: " + e.getMessage());
-                }
-
-                @Override
-                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                    final String bodyStr = response.body() != null ? response.body().string() : "";
-                    runOnUiThread(() -> {
-                        progressBar.setVisibility(View.GONE);
-                        btnSolveProblem.setEnabled(true);
-                        if (response.isSuccessful()) {
-                            try {
-                                JSONObject json = new JSONObject(bodyStr);
-                                String aiText = json.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
-                                handleAIResult(aiText);
-                            } catch (Exception e) { Log.e(TAG, "Parse fail", e); }
-                        } else { handleError("API Error: " + response.code()); }
-                    });
-                }
-            });
-        } catch (Exception e) { handleError("Setup Error"); }
+    private void updateZoomText() {
+        int pct = (geometryCanvas3D.getVisibility() == View.VISIBLE) ?
+                geometryCanvas3D.getZoomPercentage() : geometryCanvas.getZoomPercentage();
+        tvZoomPercent.setText(getString(R.string.zoom_percent, pct));
     }
 
-    private void handleAIResult(String aiContent) {
-        // 1. Strip markdown code blocks (```) and any hidden bolding (**)
-        String cleaned = aiContent.replaceAll("(?s)```.*?```", "")
-                .replace("```", "")
-                .replace("**", "");
-        String[] lines = cleaned.split("\n");
-
-        StringBuilder stepBuffer = new StringBuilder();
-        String currentTitle = "Step 1: Problem Overview";
-
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (trimmed.isEmpty()) continue;
-            String upper = trimmed.toUpperCase();
-
-            // --- 1. GEOMETRY ROUTING (FUZZY MATCH) ---
-            if (upper.contains("DRAW3D:")) {
-                geometryCanvas3D.setVisibility(View.VISIBLE);
-                geometryCanvas.setVisibility(View.GONE);
-                // Extract from "DRAW3D" to the end of the line
-                parseAndDraw3D(trimmed.substring(upper.indexOf("DRAW3D:")));
-            }
-            else if (upper.contains("PLANE3D:")) {
-                parsePlane3D(trimmed.substring(upper.indexOf("PLANE3D:")));
-            }
-            else if (upper.contains("SPHERE:")) {
-                parseSphere(trimmed.substring(upper.indexOf("SPHERE:")));
-            }
-
-            // --- 2. CARD SPLITTING (STEP TRIGGER) ---
-            else if (upper.contains("STEP")) {
-                // Save the previous card if it has content
-                if (stepBuffer.length() > 0) {
-                    addSolutionCard(currentTitle, stepBuffer.toString().trim(), false);
-                    stepBuffer.setLength(0);
-                }
-                // Start the new card title
-                currentTitle = trimmed;
-            }
-
-            // --- 3. FINAL RESULT TRIGGER ---
-            else if (upper.contains("FINAL ANSWERS:")) {
-                if (stepBuffer.length() > 0) {
-                    addSolutionCard(currentTitle, stepBuffer.toString().trim(), false);
-                    stepBuffer.setLength(0);
-                }
-                addSolutionCard("FINAL RESULT", trimmed.replace("FINAL ANSWERS:", "").trim(), true);
-            }
-
-            // --- 4. TEXT BUFFER (GENERAL EXPLANATION) ---
-            else {
-                stepBuffer.append(trimmed).append("\n");
+    private void processProblem(String problem) {
+        if (model == null) {
+            setupAI();
+            if (model == null) {
+                handleError("AI Service not available. Check your API key.");
+                return;
             }
         }
 
-        // Catch the final card
-        if (stepBuffer.length() > 0) {
-            addSolutionCard(currentTitle, stepBuffer.toString().trim(), false);
+        btnSolveProblem.setEnabled(false);
+        progressBar.setVisibility(View.VISIBLE);
+        stepsContainer.removeAllViews();
+
+        runOnUiThread(() -> {
+            geometryCanvas.clearPoints();
+            geometryCanvas3D.clear();
+        });
+
+        String combinedPrompt = "You are an elite Geometry solving engine. Solve precisely.\n\n" +
+                "### MANDATORY OUTPUT FORMAT:\n" +
+                "1. DRAW3D:Label,x,y,z|... (Scale coords 50-450. NO SPACES).\n" +
+                "2. PLANE3D:index1,index2,index3... (Indices match DRAW3D order).\n" +
+                "3. Use 'Step X: Title | Content' for explanations.\n" +
+                "4. Use Unicode symbols (√, ∠, Δ, °) for math.\n" +
+                "5. FINAL ANSWERS: [result]\n\n" +
+                "Problem: " + problem;
+
+        Content content = new Content.Builder()
+                .addText(combinedPrompt)
+                .build();
+
+        ListenableFuture<GenerateContentResponse> responseFuture = model.generateContent(content);
+
+        Futures.addCallback(responseFuture, new FutureCallback<GenerateContentResponse>() {
+            @Override
+            public void onSuccess(GenerateContentResponse result) {
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    btnSolveProblem.setEnabled(true);
+                    try {
+                        String aiText = result.getText();
+                        if (aiText != null && !aiText.isEmpty()) handleAIResult(aiText, problem);
+                        else handleError("AI Safety Block. Rephrase your question.");
+                    } catch (Exception e) {
+                        Log.e(TAG, "Parsing error", e);
+                        handleError("Error processing AI response.");
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    btnSolveProblem.setEnabled(true);
+                    Log.e(TAG, "Gemini Failure", t);
+                    if (t.getMessage() != null && t.getMessage().contains("401")) {
+                        handleError("Auth Error (401): API Key is invalid or expired.");
+                    } else {
+                        handleError("AI SDK Error: " + t.getMessage());
+                    }
+                });
+            }
+        }, executor);
+    }
+
+    private void handleAIResult(String aiText, String originalProblem) {
+        try {
+            String cleanText = aiText.replaceAll("(?i)```(json|text)?", "").replace("```", "").trim();
+            String[] lines = cleanText.split("\n");
+
+            StringBuilder stepContent = new StringBuilder();
+            String stepTitle = "Explanation";
+
+            boolean has3D = cleanText.contains("DRAW3D:") || cleanText.contains("PLANE3D:") || cleanText.contains("SPHERE:");
+            geometryCanvas.setVisibility(has3D ? View.GONE : View.VISIBLE);
+            geometryCanvas3D.setVisibility(has3D ? View.VISIBLE : View.GONE);
+
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty()) continue;
+
+                String command = trimmed.replaceAll("^[\\d\\.\\-\\)]+\\s*", "");
+
+                if (command.startsWith("DRAW3D:")) parseAndDraw3D(command);
+                else if (command.startsWith("PLANE3D:")) parsePlane3D(command);
+                else if (command.startsWith("SPHERE:")) parseSphere(command);
+                else if (command.toUpperCase().startsWith("STEP")) {
+                    if (stepContent.length() > 0) {
+                        addSolutionCard(stepTitle, stepContent.toString(), false);
+                        stepContent.setLength(0);
+                    }
+                    stepTitle = command;
+                } else if (command.startsWith("FINAL ANSWERS:")) {
+                    if (stepContent.length() > 0) {
+                        addSolutionCard(stepTitle, stepContent.toString(), false);
+                        stepContent.setLength(0);
+                    }
+                    addSolutionCard("Final Result", command.replace("FINAL ANSWERS:", "").trim(), true);
+                } else {
+                    stepContent.append(line).append("\n");
+                }
+            }
+            if (stepContent.length() > 0) addSolutionCard(stepTitle, stepContent.toString(), false);
+            
+            // SAVE TO HISTORY OPTION
+            addSaveToHistoryCard(originalProblem, aiText);
+            
+            updateZoomText();
+        } catch (Exception e) {
+            Log.e(TAG, "Result Handling Error", e);
+            handleError("AI Result parsing failed.");
         }
     }
 
     private void parseAndDraw3D(String line) {
         try {
-            String raw = line.substring(line.indexOf(":") + 1).trim();
+            int colonIdx = line.indexOf(":");
+            if (colonIdx == -1) return;
+            String raw = line.substring(colonIdx + 1).trim();
             String[] pts = raw.split("\\|");
-            List<String[]> pointsData = new ArrayList<>();
-
             for (String pt : pts) {
                 String[] d = pt.split(",");
                 if (d.length >= 4) {
-                    pointsData.add(d);
-                    geometryCanvas3D.addPoint(d[0].trim(),
-                            Float.parseFloat(d[1].trim()),
-                            Float.parseFloat(d[2].trim()),
-                            Float.parseFloat(d[3].trim()));
+                    try {
+                        geometryCanvas3D.addPoint(d[0].trim(), Float.parseFloat(d[1].trim()), Float.parseFloat(d[2].trim()), Float.parseFloat(d[3].trim()));
+                    } catch (NumberFormatException ignored) {}
                 }
             }
-
-            // FORCE CONNECTION: If last point label != first point label, close it
-            if (pointsData.size() > 2) {
-                String[] first = pointsData.get(0);
-                String[] last = pointsData.get(pointsData.size() - 1);
-                if (!first[0].trim().equalsIgnoreCase(last[0].trim())) {
-                    geometryCanvas3D.addPoint(first[0].trim(),
-                            Float.parseFloat(first[1].trim()),
-                            Float.parseFloat(first[2].trim()),
-                            Float.parseFloat(first[3].trim()));
-                }
-            }
-        } catch (Exception e) { Log.e(TAG, "3D Parse error", e); }
-    }
-
-    private void parseSphere(String line) {
-        try {
-            // AI format: SPHERE:Label,x,y,z,radius
-            String raw = line.substring(line.indexOf(":") + 1).trim();
-            String[] data = raw.split(",");
-            if (data.length >= 5) {
-                geometryCanvas3D.addSphere(
-                        data[0].trim(),
-                        Float.parseFloat(data[1].trim()),
-                        Float.parseFloat(data[2].trim()),
-                        Float.parseFloat(data[3].trim()),
-                        Float.parseFloat(data[4].trim())
-                );
-            }
-        } catch (Exception e) { Log.e(TAG, "Sphere Error", e); }
+        } catch (Exception e) { Log.e(TAG, "3D Parse Error", e); }
     }
 
     private void parsePlane3D(String line) {
         try {
-            // AI format: PLANE3D:0,1,2
-            String raw = line.substring(line.indexOf(":") + 1).trim();
+            int colonIdx = line.indexOf(":");
+            if (colonIdx == -1) return;
+            String raw = line.substring(colonIdx + 1).trim();
             String[] indicesStr = raw.split(",");
             List<Integer> indices = new ArrayList<>();
             for (String s : indicesStr) {
-                indices.add(Integer.parseInt(s.trim()));
+                String clean = s.trim();
+                if (!clean.isEmpty()) {
+                    try {
+                        indices.add(Integer.parseInt(clean));
+                    } catch (NumberFormatException ignored) {}
+                }
             }
-            if (!indices.isEmpty()) {
-                geometryCanvas3D.addPlane(indices);
-            }
+            if (!indices.isEmpty()) geometryCanvas3D.addPlane(indices);
         } catch (Exception e) { Log.e(TAG, "Plane Error", e); }
     }
+
+    private void parseSphere(String line) {
+        try {
+            int colonIdx = line.indexOf(":");
+            if (colonIdx == -1) return;
+            String raw = line.substring(colonIdx + 1).trim();
+            String[] d = raw.split(",");
+            if (d.length >= 5) {
+                try {
+                    geometryCanvas3D.addSphere(d[0].trim(), Float.parseFloat(d[1].trim()), Float.parseFloat(d[2].trim()), Float.parseFloat(d[3].trim()), Float.parseFloat(d[4].trim()));
+                } catch (NumberFormatException ignored) {}
+            }
+        } catch (Exception e) { Log.e(TAG, "Sphere Parse Error", e); }
+    }
+
     private void addSolutionCard(String title, String content, boolean isFinal) {
         com.google.android.material.card.MaterialCardView card = new com.google.android.material.card.MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -372,32 +359,66 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         card.addView(lay);
         stepsContainer.addView(card);
-
-        // Auto-scroll to bottom as new cards arrive
         resultScrollView.post(() -> resultScrollView.fullScroll(View.FOCUS_DOWN));
     }
 
+    private void addSaveToHistoryCard(String problem, String rawResponse) {
+        com.google.android.material.card.MaterialCardView card = new com.google.android.material.card.MaterialCardView(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(20, 20, 20, 40);
+        card.setLayoutParams(lp);
+        card.setRadius(16f);
+        card.setCardElevation(6f);
+        card.setCardBackgroundColor(0xFFE3F2FD);
+        card.setStrokeColor(0xFF1976D2);
+        card.setStrokeWidth(2);
+
+        LinearLayout lay = new LinearLayout(this);
+        lay.setOrientation(LinearLayout.VERTICAL);
+        lay.setPadding(30, 30, 30, 30);
+
+        TextView tvInfo = new TextView(this);
+        tvInfo.setText("Solution generated! Would you like to save it to your history?");
+        tvInfo.setTextColor(0xFF1565C0);
+        tvInfo.setPadding(0, 0, 0, 20);
+        lay.addView(tvInfo);
+
+        Button btnSave = new Button(this);
+        btnSave.setText("Save to History");
+        btnSave.setAllCaps(false);
+        btnSave.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF1976D2));
+        btnSave.setTextColor(Color.WHITE);
+        
+        btnSave.setOnClickListener(v -> {
+            DatabaseHelper db = new DatabaseHelper(this);
+            android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            String user = pref.getString("username", "User");
+            db.addHistory(user, problem, "Solved", rawResponse);
+            Toast.makeText(this, "Saved to history!", Toast.LENGTH_SHORT).show();
+            btnSave.setEnabled(false);
+            btnSave.setText("Saved ✓");
+        });
+
+        lay.addView(btnSave);
+        card.addView(lay);
+        stepsContainer.addView(card);
+    }
+
     private void toggleCanvasSize() {
-        ViewGroup.LayoutParams p = canvasContainer.getLayoutParams();
         isCanvasMaximized = !isCanvasMaximized;
-        p.height = (int) ((isCanvasMaximized ? 450 : 220) * getResources().getDisplayMetrics().density);
-        canvasContainer.setLayoutParams(p);
-        btnResizeCanvas.setImageResource(isCanvasMaximized ? android.R.drawable.ic_menu_close_clear_cancel : android.R.drawable.ic_menu_zoom);
+        ViewGroup.LayoutParams params = canvasContainer.getLayoutParams();
+        if (isCanvasMaximized) {
+            params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            btnResizeCanvas.setImageResource(android.R.drawable.ic_menu_close_clear_cancel);
+        } else {
+            params.height = (int) (300 * getResources().getDisplayMetrics().density);
+            btnResizeCanvas.setImageResource(android.R.drawable.ic_menu_add);
+        }
+        canvasContainer.setLayoutParams(params);
     }
 
     private void handleError(String msg) {
-        runOnUiThread(() -> {
-            progressBar.setVisibility(View.GONE);
-            btnSolveProblem.setEnabled(true);
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-        });
-    }
-
-    private void runTestMode() {
-        handleAIResult("DRAW3D:A,100,100,0|B,400,100,0|C,250,400,200|A,100,100,0\n" +
-                "PLANE3D:0,1,2\n" +
-                "STEP 1: Introduction | We are drawing a pyramid with base ABC.\n" +
-                "STEP 2: Vertices | Vertex A is at 100,100 while C is the peak.\n" +
-                "FINAL ANSWERS: Test pyramid rendered successfully.");
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+        Log.e(TAG, msg);
     }
 }
