@@ -40,11 +40,20 @@
         android:layout_marginBottom="15dp"/>
 
     <Button
-        android:id="@+id/btnTestMode"
+        android:id="@+id/btnQuickStart"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="Try Test Mode (No Login)"
-        android:textColor="#757575"/>
+        android:text="Try Guest Mode"
+        android:textColor="#757575"
+        android:layout_marginBottom="5dp"/>
+
+    <Button
+        android:id="@+id/btnAdminMode"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Try Admin Mode"
+        android:textColor="#B71C1C"/>
 
 </LinearLayout>

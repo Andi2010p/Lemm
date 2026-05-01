@@ -1,14 +1,17 @@
 package com.example.lemm;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import com.google.android.material.card.MaterialCardView;
 import com.google.mlkit.vision.common.InputImage;
@@ -26,21 +30,29 @@ import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final int CAMERA_PERMISSION_CODE = 100;
+    private static final String TAG = "Scanner";
     
     private TextView tvMainWelcome;
     private ImageButton btnSettings, btnProfile;
     private MaterialCardView cardNewProblem, cardScanProblem, cardDrawProblem, cardHistory;
-    private Button btnLogout;
+
+    private Uri photoUri;
+    private String currentPhotoPath;
 
     private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
-                    recognizeTextFromImage(photo);
+                if (result.getResultCode() == RESULT_OK) {
+                    processCapturedPhoto();
                 }
             }
     );
@@ -65,16 +77,15 @@ public class MainActivity extends AppCompatActivity {
         cardDrawProblem = findViewById(R.id.cardDrawProblem);
         cardHistory = findViewById(R.id.cardHistory);
         
-        btnLogout = findViewById(R.id.btnLogout);
+        // Find and hide the old logout button if it exists in the XML
+        View oldLogout = findViewById(R.id.btnLogout);
+        if (oldLogout != null) oldLogout.setVisibility(View.GONE);
     }
 
     private void setupUser() {
-        String username = getIntent().getStringExtra("LOGGED_IN_USERNAME");
-        if (username == null) {
-            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            username = pref.getString("username", "User");
-        }
-        tvMainWelcome.setText("Welcome, " + username);
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String username = pref.getString("username", "User");
+        tvMainWelcome.setText(getString(R.string.welcome, username));
     }
 
     private void setupListeners() {
@@ -85,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
         cardScanProblem.setOnClickListener(v -> {
             if (checkCameraPermission()) {
-                openCamera();
+                dispatchTakePictureIntent();
             } else {
                 requestCameraPermission();
             }
@@ -101,16 +112,14 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        btnProfile.setOnClickListener(v -> Toast.makeText(this, "Profile under development", Toast.LENGTH_SHORT).show());
-        btnSettings.setOnClickListener(v -> Toast.makeText(this, "Settings under development", Toast.LENGTH_SHORT).show());
+        btnProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
+        });
         
-        btnLogout.setOnClickListener(v -> {
-            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            pref.edit().clear().apply();
-            Intent logoutIntent = new Intent(MainActivity.this, LoginActivity.class);
-            logoutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(logoutIntent);
-            finish();
+        btnSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -122,9 +131,41 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
     }
 
-    private void openCamera() {
-        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        cameraLauncher.launch(cameraIntent);
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                Log.e(TAG, "Error creating file", ex);
+            }
+            if (photoFile != null) {
+                photoUri = FileProvider.getUriForFile(this,
+                        "com.example.lemm.fileprovider",
+                        photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+                cameraLauncher.launch(takePictureIntent);
+            }
+        }
+    }
+
+    private File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(imageFileName, ".jpg", storageDir);
+        currentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
+
+    private void processCapturedPhoto() {
+        try {
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
+            recognizeTextFromImage(bitmap);
+        } catch (IOException e) {
+            Log.e(TAG, "Error loading image", e);
+        }
     }
 
     private void recognizeTextFromImage(Bitmap bitmap) {
@@ -135,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                 .addOnSuccessListener(visionText -> {
                     String resultText = visionText.getText();
                     if (resultText.isEmpty()) {
-                        Toast.makeText(this, "No text detected in image", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.ocr_no_text), Toast.LENGTH_SHORT).show();
                     } else {
                         Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
                         intent.putExtra("SCANNED_TEXT", resultText);
@@ -150,10 +191,15 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CAMERA_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                openCamera();
+                dispatchTakePictureIntent();
             } else {
-                Toast.makeText(this, "Camera permission is required to scan", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 }

@@ -1,0 +1,63 @@
+<resources>
+    <string name="app_name">Lemma</string>
+    <string name="zoom_percent">Масштаб: %d%%</string>
+    <string name="welcome">Добро пожаловать, %s</string>
+    <string name="problem_input">Ввод задачи</string>
+    <string name="problem_description">Описание задачи</string>
+    <string name="ai_instructions">Инструкции ИИ (опционально)</string>
+    <string name="analyze_visualize">Анализировать и Визуализировать</string>
+    <string name="saved_solution">Сохраненное решение</string>
+    <string name="edit">Изменить</string>
+    <string name="logout">Выход</string>
+    <string name="logout_confirm">Вы уверены, что хотите выйти?</string>
+    <string name="cancel">Отмена</string>
+    <string name="save">Сохранить</string>
+    <string name="fix_axis">Закрепить оси</string>
+    <string name="unfix_axis">Открепить оси</string>
+    <string name="settings">Настройки</string>
+    <string name="profile">Профиль</string>
+    <string name="new_problem">Новая задача</string>
+    <string name="scan_problem">Сканировать</string>
+    <string name="draw_problem">Рисовать</string>
+    <string name="history">История</string>
+    <string name="change_language">Сменить язык</string>
+    <string name="language_en">Английский</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_hy">Армянский</string>
+
+    <string name="solution_generated">Решение сгенерировано! Варианты сохранения:</string>
+    <string name="save_as_copy">Сохранить как копию</string>
+    <string name="save_new">Сохранить как новое</string>
+    <string name="replace_previous">Заменить предыдущее</string>
+    <string name="dont_save">Не сохранять</string>
+    <string name="original_replaced">Оригинал заменен!</string>
+    <string name="save_solution">Сохранить решение</string>
+    <string name="enter_problem_toast">Пожалуйста, введите условие задачи</string>
+    <string name="ocr_no_text">Текст на изображении не обнаружен</string>
+    <string name="stage_error">Ошибка на этапе: %s</string>
+    <string name="saved_msg">Сохранено!</string>
+
+    <!-- Drawing Activity Strings -->
+    <string name="canvas_cleared">Холст очищен</string>
+    <string name="drawing_viewer">Просмотр рисунка</string>
+    <string name="circle_radius">Радиус круга</string>
+    <string name="radius_hint">Радиус (напр. 50)</string>
+    <string name="draw">Нарисовать</string>
+    <string name="edit_object">Изменить объект</string>
+    <string name="change_radius">Изменить радиус:</string>
+    <string name="change_label">Изменить метку:</string>
+    <string name="change_line_label">Изменить метку линии:</string>
+    <string name="update">Обновить</string>
+    <string name="delete">Удалить</string>
+    <string name="save_drawing">Сохранить рисунок</string>
+    <string name="save_new_drawing">Сохранить как новый</string>
+    <string name="overwrite">Перезаписать</string>
+    <string name="updated_msg">Обновлено!</string>
+
+    <!-- History Strings -->
+    <string name="delete_item_title">Удалить элемент</string>
+    <string name="delete_item_msg">Вы уверены, что хотите удалить эту запись?</string>
+    <string name="deleted_toast">Удалено</string>
+    <string name="drawing_date">Дата рисунка: %s</string>
+    <string name="camera_permission_required">Разрешение на использование камеры необходимо для сканирования</string>
+</resources>

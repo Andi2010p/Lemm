@@ -23,21 +23,22 @@ android {
         if (localPropertiesFile.exists()) {
             properties.load(localPropertiesFile.inputStream())
         }
-        val apiKey = properties.getProperty("google.api.key") ?: "AIzaSyBnCcAMGg4TCa_01Zxvd8Mk3RC5EZtp7yo"
-        buildConfigField("String", "GEMINI_API_KEY", "\"$apiKey\"")
-    }
 
+        val apiKey = properties.getProperty("openrouter.api.key") ?: "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"
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"$apiKey\"")
+    }
+    
     buildFeatures {
         buildConfig = true
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     packaging {
@@ -52,14 +53,10 @@ android {
 }
 
 dependencies {
-    // Firebase Bill of Materials (BoM)
+    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
-    
-    // Firebase Dependencies
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-auth")
-    
-    // AI and other libraries
     implementation(libs.google.generativeai)
     implementation("com.google.android.gms:play-services-auth:21.1.1")
     implementation(libs.guava)
@@ -70,10 +67,11 @@ dependencies {
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("io.noties.markwon:core:4.6.2")
     implementation("io.noties.markwon:ext-latex:4.6.2")
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
-
+    implementation(libs.play.services.mlkit.text.recognition)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation("androidx.test:runner:1.5.2")
+    implementation(libs.mlkit.text.recognition)
+
 }

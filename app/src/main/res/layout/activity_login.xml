@@ -37,7 +37,20 @@
         android:layout_height="wrap_content"
         android:hint="Password"
         android:inputType="textPassword"
-        android:layout_marginBottom="20dp"/>
+        android:layout_marginBottom="5dp"/>
+
+    <TextView
+        android:id="@+id/tvForgotPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:padding="5dp"
+        android:text="Forgot Password?"
+        android:textColor="#0C3D6A"
+        android:textSize="14sp"
+        android:layout_marginBottom="15dp"
+        android:clickable="true"
+        android:focusable="true" />
 
     <Button
         android:id="@+id/btnLogin"
@@ -77,21 +90,6 @@
                 android:textColor="#0C3D6A"
                 android:textSize="14sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=" | "
-                android:textColor="#DDDDDD" />
-
-            <Button
-                android:id="@+id/btnTestMode"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Try Test Mode"
-                android:textColor="#757575"
-                android:textSize="14sp" />
 
         </LinearLayout>
     </LinearLayout>

@@ -11,6 +11,8 @@ activity = "1.12.2"
 constraintlayout = "2.2.0"
 generativeai = "0.9.0"
 googleServices = "4.4.2"
+playServicesMlkitText = "19.0.0"
+mlkitTextRecognition = "16.0.1"
 
 [libraries]
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -21,7 +23,12 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
-# THE ONLY SDK WE NEED
+# Bundled ML Kit Text Recognition
+mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
+
+# Google Play Services ML Kit
+play-services-mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "playServicesMlkitText" }
+
 google-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
 guava = { group = "com.google.guava", name = "guava", version = "31.1-android" }
 

@@ -56,7 +56,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:columnCount="2"
-            android:rowCount="2"
             android:alignmentMode="alignMargins"
             android:columnOrderPreserved="false">
 
@@ -77,7 +76,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="12dp">
 
                     <ImageView
                         android:layout_width="48dp"
@@ -92,7 +91,8 @@
                         android:text="New Problem"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textColor="@color/primary"
+                        android:gravity="center" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -113,7 +113,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="12dp">
 
                     <ImageView
                         android:layout_width="48dp"
@@ -128,7 +128,8 @@
                         android:text="Scan (OCR)"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="@color/secondary_dark" />
+                        android:textColor="@color/secondary_dark"
+                        android:gravity="center" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -149,7 +150,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="12dp">
 
                     <ImageView
                         android:layout_width="48dp"
@@ -164,7 +165,8 @@
                         android:text="Draw Geometry"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="#2E7D32" />
+                        android:textColor="#2E7D32"
+                        android:gravity="center" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -185,7 +187,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="12dp">
 
                     <ImageView
                         android:layout_width="48dp"
@@ -200,7 +202,8 @@
                         android:text="History"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="#FF8F00" />
+                        android:textColor="#FF8F00"
+                        android:gravity="center" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

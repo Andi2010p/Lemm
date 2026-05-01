@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "UserDatabase.db";
-    private static final int DATABASE_VERSION = 3; // Incremented version for history table
+    private static final int DATABASE_VERSION = 5;
     
     private static final String TABLE_USERS = "users";
     private static final String KEY_ID = "id";
@@ -16,14 +16,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_GOOGLE_ID = "google_id";
 
-    // History Table
+    // History Table (Solutions)
     private static final String TABLE_HISTORY = "history";
     private static final String KEY_HIST_ID = "hist_id";
     private static final String KEY_HIST_USERNAME = "username";
+    private static final String KEY_HIST_NAME = "name";
     private static final String KEY_HIST_PROBLEM = "problem";
     private static final String KEY_HIST_SOLUTION = "solution";
     private static final String KEY_HIST_RAW_RESPONSE = "raw_response";
     private static final String KEY_HIST_DATE = "date";
+
+    // Drawings Table
+    private static final String TABLE_DRAWINGS = "drawings";
+    private static final String KEY_DRW_ID = "drw_id";
+    private static final String KEY_DRW_USERNAME = "username";
+    private static final String KEY_DRW_NAME = "name";
+    private static final String KEY_DRW_DATA = "data";
+    private static final String KEY_DRW_DATE = "date";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -41,80 +50,151 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String CREATE_HISTORY_TABLE = "CREATE TABLE " + TABLE_HISTORY + "("
                 + KEY_HIST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + KEY_HIST_USERNAME + " TEXT,"
+                + KEY_HIST_NAME + " TEXT,"
                 + KEY_HIST_PROBLEM + " TEXT,"
                 + KEY_HIST_SOLUTION + " TEXT,"
                 + KEY_HIST_RAW_RESPONSE + " TEXT,"
                 + KEY_HIST_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")";
         db.execSQL(CREATE_HISTORY_TABLE);
+
+        String CREATE_DRAWINGS_TABLE = "CREATE TABLE " + TABLE_DRAWINGS + "("
+                + KEY_DRW_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + KEY_DRW_USERNAME + " TEXT,"
+                + KEY_DRW_NAME + " TEXT,"
+                + KEY_DRW_DATA + " TEXT,"
+                + KEY_DRW_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")";
+        db.execSQL(CREATE_DRAWINGS_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 2) {
-            db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + KEY_GOOGLE_ID + " TEXT");
-        }
+        if (oldVersion < 2) db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + KEY_GOOGLE_ID + " TEXT");
         if (oldVersion < 3) {
-            String CREATE_HISTORY_TABLE = "CREATE TABLE " + TABLE_HISTORY + "("
+            db.execSQL("CREATE TABLE " + TABLE_HISTORY + "("
                     + KEY_HIST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                     + KEY_HIST_USERNAME + " TEXT,"
                     + KEY_HIST_PROBLEM + " TEXT,"
                     + KEY_HIST_SOLUTION + " TEXT,"
                     + KEY_HIST_RAW_RESPONSE + " TEXT,"
-                    + KEY_HIST_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")";
-            db.execSQL(CREATE_HISTORY_TABLE);
+                    + KEY_HIST_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")");
+        }
+        if (oldVersion < 4) db.execSQL("ALTER TABLE " + TABLE_HISTORY + " ADD COLUMN " + KEY_HIST_NAME + " TEXT DEFAULT 'unnamed'");
+        if (oldVersion < 5) {
+            db.execSQL("CREATE TABLE " + TABLE_DRAWINGS + "("
+                    + KEY_DRW_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    + KEY_DRW_USERNAME + " TEXT,"
+                    + KEY_DRW_NAME + " TEXT,"
+                    + KEY_DRW_DATA + " TEXT,"
+                    + KEY_DRW_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")");
         }
     }
 
-    public boolean addUser(String username, String password) {
+    public boolean addUser(String u, String p) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(KEY_USERNAME, username);
-        values.put(KEY_PASSWORD, password);
-        long result = db.insert(TABLE_USERS, null, values);
-        return result != -1;
+        ContentValues v = new ContentValues();
+        v.put(KEY_USERNAME, u); v.put(KEY_PASSWORD, p);
+        return db.insert(TABLE_USERS, null, v) != -1;
     }
 
     public boolean syncGoogleUser(String email, String googleId) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(KEY_USERNAME, email);
-        values.put(KEY_GOOGLE_ID, googleId);
-        long result = db.insertWithOnConflict(TABLE_USERS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-        return result != -1;
+        ContentValues v = new ContentValues();
+        v.put(KEY_USERNAME, email); v.put(KEY_GOOGLE_ID, googleId);
+        return db.insertWithOnConflict(TABLE_USERS, null, v, SQLiteDatabase.CONFLICT_REPLACE) != -1;
     }
 
-    public boolean isUsernameTaken(String username) {
+    public boolean checkUser(String u, String p) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM users WHERE " + KEY_USERNAME + " = ?", new String[]{username});
-        boolean taken = cursor.getCount() > 0;
-        cursor.close();
-        return taken;
-    }
-
-    public boolean checkUser(String username, String password) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " +
-                        KEY_USERNAME + " = ? AND " +
-                        KEY_PASSWORD + " = ?",
-                new String[]{username, password});
-        boolean exists = (cursor.getCount() > 0);
-        cursor.close();
+        Cursor c = db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " + KEY_USERNAME + " = ? AND " + KEY_PASSWORD + " = ?", new String[]{u, p});
+        boolean exists = c.getCount() > 0;
+        c.close();
         return exists;
     }
 
-    // History Methods
-    public void addHistory(String username, String problem, String solution, String rawResponse) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(KEY_HIST_USERNAME, username);
-        values.put(KEY_HIST_PROBLEM, problem);
-        values.put(KEY_HIST_SOLUTION, solution);
-        values.put(KEY_HIST_RAW_RESPONSE, rawResponse);
-        db.insert(TABLE_HISTORY, null, values);
+    public boolean checkUsernameExists(String u) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " + KEY_USERNAME + " = ?", new String[]{u});
+        boolean exists = c.getCount() > 0;
+        c.close();
+        return exists;
     }
 
-    public Cursor getHistory(String username) {
+    public boolean updatePassword(String u, String p) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_PASSWORD, p);
+        return db.update(TABLE_USERS, v, KEY_USERNAME + " = ?", new String[]{u}) > 0;
+    }
+
+    public void addHistory(String user, String name, String prob, String sol, String raw) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_HIST_USERNAME, user); v.put(KEY_HIST_NAME, name);
+        v.put(KEY_HIST_PROBLEM, prob); v.put(KEY_HIST_SOLUTION, sol);
+        v.put(KEY_HIST_RAW_RESPONSE, raw);
+        db.insert(TABLE_HISTORY, null, v);
+    }
+
+    public void updateHistory(int id, String name, String prob, String sol, String raw) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_HIST_NAME, name); v.put(KEY_HIST_PROBLEM, prob);
+        v.put(KEY_HIST_SOLUTION, sol); v.put(KEY_HIST_RAW_RESPONSE, raw);
+        db.update(TABLE_HISTORY, v, KEY_HIST_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    public void renameHistory(int id, String newName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_HIST_NAME, newName);
+        db.update(TABLE_HISTORY, v, KEY_HIST_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    public void deleteHistory(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_HISTORY, KEY_HIST_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    public Cursor getHistory(String user) {
         SQLiteDatabase db = this.getReadableDatabase();
-        return db.rawQuery("SELECT * FROM " + TABLE_HISTORY + " WHERE " + KEY_HIST_USERNAME + " = ? ORDER BY " + KEY_HIST_DATE + " DESC", new String[]{username});
+        return db.rawQuery("SELECT * FROM " + TABLE_HISTORY + " WHERE " + KEY_HIST_USERNAME + " = ? ORDER BY " + KEY_HIST_DATE + " DESC", new String[]{user});
+    }
+
+    public void addDrawing(String user, String name, String data) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_DRW_USERNAME, user); v.put(KEY_DRW_NAME, name); v.put(KEY_DRW_DATA, data);
+        db.insert(TABLE_DRAWINGS, null, v);
+    }
+
+    public void updateDrawing(int id, String name, String data) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_DRW_NAME, name);
+        v.put(KEY_DRW_DATA, data);
+        db.update(TABLE_DRAWINGS, v, KEY_DRW_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    public void renameDrawing(int id, String newName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_DRW_NAME, newName);
+        db.update(TABLE_DRAWINGS, v, KEY_DRW_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    public void deleteDrawing(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_DRAWINGS, KEY_DRW_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    public Cursor getDrawings(String user) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM " + TABLE_DRAWINGS + " WHERE " + KEY_DRW_USERNAME + " = ? ORDER BY " + KEY_DRW_DATE + " DESC", new String[]{user});
+    }
+
+    public void clearUserHistory(String user) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_HISTORY, KEY_HIST_USERNAME + " = ?", new String[]{user});
+        db.delete(TABLE_DRAWINGS, KEY_DRW_USERNAME + " = ?", new String[]{user});
     }
 }

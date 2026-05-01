@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Lemma</string>
+    <string name="zoom_percent">Մասշտաբ: %d%%</string>
+    <string name="welcome">Բարի գալուստ, %s</string>
+    <string name="problem_input">Խնդրի մուտքագրում</string>
+    <string name="problem_description">Խնդրի նկարագրություն</string>
+    <string name="ai_instructions">AI հրահանգներ (ըստ ցանկության)</string>
+    <string name="analyze_visualize">Վերլուծել և Պատկերել</string>
+    <string name="saved_solution">Պահպանված լուծում</string>
+    <string name="edit">Խմբագրել</string>
+    <string name="logout">Դուրս գալ</string>
+    <string name="logout_confirm">Իսկապե՞ս ցանկանում եք դուրս գալ:</string>
+    <string name="cancel">Չեղարկել</string>
+    <string name="save">Պահպանել</string>
+    <string name="fix_axis">Ֆիքսել առանցքները</string>
+    <string name="unfix_axis">Ապաֆիքսել առանցքները</string>
+    <string name="settings">Կարգավորումներ</string>
+    <string name="profile">Պրոֆիլ</string>
+    <string name="new_problem">Նոր խնդիր</string>
+    <string name="scan_problem">Սկանավորել</string>
+    <string name="draw_problem">Նկարել</string>
+    <string name="history">Պատմություն</string>
+    <string name="change_language">Փոխել լեզուն</string>
+    <string name="language_en">Անգլերեն</string>
+    <string name="language_ru">Ռուսերեն</string>
+    <string name="language_hy">Հայերեն</string>
+</resources>

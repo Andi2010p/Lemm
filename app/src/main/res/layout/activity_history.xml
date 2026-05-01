@@ -5,25 +5,40 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Solution History"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/main_blue"
-        android:layout_marginBottom="8dp"/>
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/btnShowSolutions"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Solutions"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:backgroundTint="@color/main_blue"
+            android:textColor="@android:color/white"/>
+
+        <Button
+            android:id="@+id/btnShowDrawings"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Drawings"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:textColor="@color/main_blue"/>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvTestModeWarning"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Warning: You are in test mode. Your history will not be saved after closing the app."
+        android:text="Warning: Test mode. Data will be cleared."
         android:textColor="#FF0000"
-        android:textSize="14sp"
-        android:textStyle="bold"
         android:visibility="gone"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="8dp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvHistory"

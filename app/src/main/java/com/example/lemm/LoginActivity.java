@@ -1,13 +1,17 @@
 package com.example.lemm;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.InputType;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -21,9 +25,9 @@ import com.google.android.gms.tasks.Task;
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername, etPassword;
-    private Button btnLogin, btnTestMode;
+    private Button btnLogin;
     private SignInButton btnGoogleLogin;
-    private TextView tvSignUp;
+    private TextView tvSignUp, tvForgotPassword;
     private DatabaseHelper dbHelper;
 
     private static final int RC_SIGN_IN = 100;
@@ -45,7 +49,7 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
         btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
         tvSignUp = findViewById(R.id.tvSignUp);
-        btnTestMode = findViewById(R.id.btnTestMode);
+        tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
         btnGoogleLogin.setSize(SignInButton.SIZE_WIDE);
         btnGoogleLogin.setColorScheme(SignInButton.COLOR_DARK);
@@ -55,14 +59,14 @@ public class LoginActivity extends AppCompatActivity {
             String pass = etPassword.getText().toString().trim();
 
             if (user.isEmpty() || pass.isEmpty()) {
-                Toast.makeText(this, "Please enter all fields", Toast.LENGTH_SHORT).show();
-            } else if (user.equalsIgnoreCase("GuestUser")) {
-                Toast.makeText(this, "Cannot login as 'GuestUser' with password", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.enter_all_fields), Toast.LENGTH_SHORT).show();
+            } else if (user.startsWith("GuestUser_") || user.equals("Admin_Teacher")) {
+                Toast.makeText(this, getString(R.string.restricted_prefix), Toast.LENGTH_SHORT).show();
             } else {
                 if (dbHelper.checkUser(user, pass)) {
-                    saveSessionAndGoMain(user);
+                    saveSessionAndGoMain(user, false);
                 } else {
-                    Toast.makeText(this, "Invalid Credentials", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.invalid_credentials), Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -76,12 +80,47 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
         });
 
-        if (btnTestMode != null) {
-            btnTestMode.setOnClickListener(v -> {
-                // Login as a guest/test user without credentials
-                saveSessionAndGoMain("GuestUser");
-            });
-        }
+        tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
+    }
+
+    private void showForgotPasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Reset Password");
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 0);
+
+        final EditText inputUser = new EditText(this);
+        inputUser.setHint("Enter Username/Email");
+        layout.addView(inputUser);
+
+        final EditText inputNewPass = new EditText(this);
+        inputNewPass.setHint("Enter New Password");
+        inputNewPass.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        layout.addView(inputNewPass);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Reset", (dialog, which) -> {
+            String username = inputUser.getText().toString().trim();
+            String newPass = inputNewPass.getText().toString().trim();
+
+            if (username.isEmpty() || newPass.isEmpty()) {
+                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+            } else if (dbHelper.checkUsernameExists(username)) {
+                if (dbHelper.updatePassword(username, newPass)) {
+                    Toast.makeText(this, "Password updated successfully!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Error updating password", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 
     @Override
@@ -92,28 +131,28 @@ public class LoginActivity extends AppCompatActivity {
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 if (account != null)
-                    saveSessionAndGoMain(account.getEmail());
+                    saveSessionAndGoMain(account.getEmail(), false);
             } catch (ApiException e) {
-                int statusCode = e.getStatusCode();
-                String message;
-                if (statusCode == 10)
-                    message = "Config Error (10): Ensure SHA-1 is added to Google Console.";
-                else if (statusCode == 12500)
-                    message = "Sign-In Failed (12500): Check OAuth Consent Screen support email.";
-                else
-                    message = "Google Sign-In Failed: " + statusCode;
-                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.google_sign_in_failed) + ": " + e.getStatusCode(), Toast.LENGTH_LONG).show();
                 e.printStackTrace();
             }
         }
     }
 
-    private void saveSessionAndGoMain(String username) {
+    private void saveSessionAndGoMain(String username, boolean isGuest) {
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        pref.edit().putString("username", username).apply();
+        pref.edit()
+            .putString("username", username)
+            .putBoolean("is_guest", isGuest)
+            .apply();
 
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
         startActivity(intent);
         finish();
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 }

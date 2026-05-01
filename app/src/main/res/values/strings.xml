@@ -1,4 +1,80 @@
 <resources>
     <string name="app_name">Lemma</string>
     <string name="zoom_percent">Zoom: %d%%</string>
+    <string name="welcome">Welcome, %s</string>
+    <string name="problem_input">Problem Input</string>
+    <string name="problem_description">Problem description</string>
+    <string name="ai_instructions">AI instructions (Optional)</string>
+    <string name="analyze_visualize">Analyze &amp; Visualize</string>
+    <string name="saved_solution">Saved Solution</string>
+    <string name="edit">Edit</string>
+    <string name="logout">Logout</string>
+    <string name="logout_confirm">Are you sure you want to log out?</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="fix_axis">Fix Axis</string>
+    <string name="unfix_axis">Unfix Axis</string>
+    <string name="settings">Settings</string>
+    <string name="profile">Profile</string>
+    <string name="new_problem">New Problem</string>
+    <string name="scan_problem">Scan Problem</string>
+    <string name="draw_problem">Draw Problem</string>
+    <string name="history">History</string>
+    <string name="change_language">Change Language</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Russian</string>
+    <string name="language_hy">Armenian</string>
+    
+    <string name="solution_generated">Solution generated! Save options:</string>
+    <string name="save_as_copy">Save as Copy</string>
+    <string name="save_new">Save New</string>
+    <string name="replace_previous">Replace Previous</string>
+    <string name="dont_save">Don\'t Save</string>
+    <string name="original_replaced">Original replaced!</string>
+    <string name="save_solution">Save Solution</string>
+    <string name="enter_problem_toast">Please enter a geometry problem</string>
+    <string name="ocr_no_text">No text detected in image</string>
+    <string name="stage_error">Error in Stage: %s</string>
+    <string name="saved_msg">Saved!</string>
+
+    <!-- Drawing Strings -->
+    <string name="canvas_cleared">Canvas Cleared</string>
+    <string name="drawing_viewer">Drawing Viewer</string>
+    <string name="circle_radius">Circle Radius</string>
+    <string name="radius_hint">Radius (e.g. 50)</string>
+    <string name="draw">Draw</string>
+    <string name="edit_object">Edit Object</string>
+    <string name="change_radius">Change Radius:</string>
+    <string name="change_label">Change Label:</string>
+    <string name="change_line_label">Change Line Label:</string>
+    <string name="update">Update</string>
+    <string name="delete">Delete</string>
+    <string name="save_drawing">Save Drawing</string>
+    <string name="save_new_drawing">Save New</string>
+    <string name="overwrite">Overwrite</string>
+    <string name="updated_msg">Updated!</string>
+
+    <!-- History Strings -->
+    <string name="delete_item_title">Delete Item</string>
+    <string name="delete_item_msg">Are you sure you want to delete this saving?</string>
+    <string name="deleted_toast">Deleted</string>
+    <string name="drawing_date">Drawing Date: %s</string>
+    <string name="camera_permission_required">Camera permission is required to scan</string>
+
+    <!-- Extra UI Strings -->
+    <string name="solution_overview">Solution Overview</string>
+    <string name="final_result">Final Result</string>
+    <string name="axes_fixed">Axes Fixed</string>
+    <string name="axes_unfixed">Axes Unfixed</string>
+    <string name="no_coordinates">No specific coordinates available.</string>
+    <string name="length_fact">Length of %1$s%2$s = %3$.2f units</string>
+
+    <string name="enter_all_fields">Please enter all fields</string>
+    <string name="restricted_prefix">Restricted username prefix</string>
+    <string name="invalid_credentials">Invalid Credentials</string>
+    <string name="google_sign_in_failed">Google Sign-In Failed</string>
+    <string name="passwords_mismatch">Passwords do not match!</string>
+    <string name="password_short">Password must be at least 8 characters</string>
+    <string name="registration_successful">Registration Successful</string>
+    <string name="user_exists">Username already exists</string>
 </resources>
