@@ -23,9 +23,6 @@ android {
         if (localPropertiesFile.exists()) {
             properties.load(localPropertiesFile.inputStream())
         }
-
-        val apiKey = properties.getProperty("openrouter.api.key") ?: "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"
-        buildConfigField("String", "OPENROUTER_API_KEY", "\"$apiKey\"")
     }
     
     buildFeatures {
