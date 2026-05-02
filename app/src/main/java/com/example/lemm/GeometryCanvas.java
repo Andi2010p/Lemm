@@ -1,362 +1,749 @@
+// D:/codes/Homeworks.Uwc/Lemm/app/src/main/java/com/example/lemm/GeometryCanvas.java
 package com.example.lemm;
 
 import android.content.Context;
-import android.graphics.*;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
-import androidx.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
 
 public class GeometryCanvas extends View {
-    public static final float VIRTUAL_WIDTH = 3000f;
-    public static final float VIRTUAL_HEIGHT = 3000f;
-
-    private static final float MIN_ZOOM = 0.1f;
-    private static final float MAX_ZOOM = 15.0f;
-
-    private Stack<String> history = new Stack<>();
-    private Stack<String> redoHistory = new Stack<>();
-
-    private Paint linePaint, dashedPaint, centerlinePaint, textPaint, pointPaint, valuePaint, planePaint, gridPaint, borderPaint, glowPaint, anglePaint;
-    private Matrix drawMatrix = new Matrix();
-    private Matrix inverseMatrix = new Matrix();
-
-    private List<GeoPoint> pointsList = new ArrayList<>();
-    private List<GeoCircle> circlesList = new ArrayList<>();
-    private List<GeoLine> linesList = new ArrayList<>();
-    private List<GeoPlane> planesList = new ArrayList<>();
-    private List<GeoRect> rectsList = new ArrayList<>();
-    private List<GeoArc> arcsList = new ArrayList<>();
-    private List<GeoText> textsList = new ArrayList<>();
-    private List<GeoAngle> anglesList = new ArrayList<>();
-
-    private ScaleGestureDetector scaleDetector;
-    private float scaleFactor = 1.0f;
-    private float posX = 0, posY = 0;
-    private float lastTouchX, lastTouchY;
-    private float rotationDegrees = 0f;
-
-    private float gridSpacing = 100f;
-    private int currentColor = Color.parseColor("#0C3D6A");
-
+    private List<GeometricObject> geometricObjects = new ArrayList<>();
+    private List<String> history = new ArrayList<>();
+    private Paint paint;
+    private Matrix transformMatrix = new Matrix();
+    private float currentZoom = 1.0f;
+    private float translateX = 0, translateY = 0;
+    private GeometricObject selectedObject = null;
+    private OnZoomChangeListener zoomChangeListener;
+    private List<GeoPoint> points = new ArrayList<>();
     private boolean snapToPoints = false;
     private boolean snapToGrid = false;
-    private Object selectedObject = null;
+    private float gridSize = 50f;
+    private String currentTool = "MOVE";
 
-    public interface OnZoomChangeListener {
-        void onZoomChanged(int percentage);
+    public GeometryCanvas(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init();
     }
-    private OnZoomChangeListener zoomChangeListener;
+
+    private void init() {
+        paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setStrokeWidth(5);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(Color.BLACK);
+        saveToHistory();
+    }
+
+    public GeoPoint findPoint(String name) {
+        if (name == null) return null;
+
+        // Iterate through your points list (ensure 'points' is the correct variable name)
+        for (GeoPoint p : points) {
+            if (name.equalsIgnoreCase(p.label)) { // or p.getName() depending on your GeoPoint class
+                return p;
+            }
+        }
+        return null; // Return null if the point isn't found
+    }
+    public static abstract class GeometricObject {
+        public abstract void draw(Canvas canvas, Paint paint, Matrix matrix, float zoom);
+        public abstract boolean hitTest(float x, float y, Matrix inverseMatrix, float tolerance);
+        public abstract void move(float dx, float dy);
+        public abstract String toJson();
+        public abstract String getLabel();
+    }
+
+    public static class GeoPoint extends GeometricObject {
+        public float x, y;
+        public String label;
+        public boolean isCenterlinePoint;
+
+        public GeoPoint(String label, float x, float y, boolean isCenterlinePoint) {
+            this.label = label;
+            this.x = x;
+            this.y = y;
+            this.isCenterlinePoint = isCenterlinePoint;
+        }
+
+        @Override
+        public void draw(Canvas canvas, Paint paint, Matrix matrix, float zoom) {
+            float[] point = {x, y};
+            matrix.mapPoints(point);
+            canvas.drawCircle(point[0], point[1], 8 / zoom, paint);
+            if (label != null && !label.isEmpty()) {
+                paint.setTextSize(24 / zoom);
+                canvas.drawText(label, point[0] + 10 / zoom, point[1] - 10 / zoom, paint);
+            }
+        }
+        @Override
+        public boolean hitTest(float x, float y, Matrix inverseMatrix, float tolerance) {
+            float[] mappedPoint = {x, y};
+            inverseMatrix.mapPoints(mappedPoint);
+            return Math.hypot(mappedPoint[0] - this.x, mappedPoint[1] - this.y) < tolerance;
+        }
+
+        @Override
+        public void move(float dx, float dy) {
+            this.x += dx;
+            this.y += dy;
+        }
+
+        @Override
+        public String toJson() {
+            JSONObject json = new JSONObject();
+            try {
+                json.put("type", "point");
+                json.put("label", label);
+                json.put("x", x);
+                json.put("y", y);
+                json.put("isCenterlinePoint", isCenterlinePoint);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json.toString();
+        }
+
+        @Override
+        public String getLabel() { return label; }
+    }
+
+    private float rotationDegrees = 0f; // Variable to store the current rotation
+    public void rotateCanvas(float degrees) {
+        this.rotationDegrees += degrees;
+        // Keep the value within 0-360 for cleanliness, though not strictly required
+        this.rotationDegrees %= 360;
+        invalidate(); // Redraw the view with the new rotation
+    }
+    public static class GeoLine extends GeometricObject {
+        public GeoPoint p1, p2;
+        public String label;
+        public boolean isCenterline;
+
+        public GeoLine(String label, GeoPoint p1, GeoPoint p2, boolean isCenterline) {
+            this.label = label;
+            this.p1 = p1;
+            this.p2 = p2;
+            this.isCenterline = isCenterline;
+        }
+
+        @Override
+        public void draw(Canvas canvas, Paint paint, Matrix matrix, float zoom) {
+            float[] pts = {p1.x, p1.y, p2.x, p2.y};
+            matrix.mapPoints(pts);
+
+            Paint linePaint = new Paint(paint);
+            if (isCenterline) {
+                linePaint.setColor(Color.BLUE);
+            }
+            canvas.drawLine(pts[0], pts[1], pts[2], pts[3], linePaint);
+
+            if (label != null && !label.isEmpty()) {
+                linePaint.setTextSize(24 / zoom);
+                float midX = (pts[0] + pts[2]) / 2;
+                float midY = (pts[1] + pts[3]) / 2;
+                canvas.drawText(label, midX + 10 / zoom, midY - 10 / zoom, linePaint);
+            }
+        }
+
+        @Override
+        public boolean hitTest(float x, float y, Matrix inverseMatrix, float tolerance) {
+            float[] mappedPoint = {x, y};
+            inverseMatrix.mapPoints(mappedPoint);
+            float dx = p2.x - p1.x;
+            float dy = p2.y - p1.y;
+            float lengthSq = dx * dx + dy * dy;
+            if (lengthSq == 0) return Math.hypot(mappedPoint[0] - p1.x, mappedPoint[1] - p1.y) < tolerance;
+            float t = ((mappedPoint[0] - p1.x) * dx + (mappedPoint[1] - p1.y) * dy) / lengthSq;
+            t = Math.max(0, Math.min(1, t));
+            float closestX = p1.x + t * dx;
+            float closestY = p1.y + t * dy;
+            return Math.hypot(mappedPoint[0] - closestX, mappedPoint[1] - closestY) < tolerance;
+        }
+
+        @Override
+        public void move(float dx, float dy) {
+            p1.move(dx, dy);
+            p2.move(dx, dy);
+        }
+
+        @Override
+        public String toJson() {
+            JSONObject json = new JSONObject();
+            try {
+                json.put("type", "line");
+                json.put("label", label);
+                json.put("x1", p1.x);
+                json.put("y1", p1.y);
+                json.put("x2", p2.x);
+                json.put("y2", p2.y);
+                json.put("isCenterline", isCenterline);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json.toString();
+        }
+
+        @Override
+        public String getLabel() { return label; }
+    }
+
+    public static class GeoCircle extends GeometricObject {
+        public float centerX, centerY, radius;
+        public String label;
+
+        public GeoCircle(String label, float centerX, float centerY, float radius) {
+            this.label = label;
+            this.centerX = centerX;
+            this.centerY = centerY;
+            this.radius = radius;
+        }
+
+        @Override
+        public void draw(Canvas canvas, Paint paint, Matrix matrix, float zoom) {
+            float[] center = {centerX, centerY};
+            matrix.mapPoints(center);
+            float scaledRadius = radius * zoom;
+            canvas.drawCircle(center[0], center[1], scaledRadius, paint);
+
+            if (label != null && !label.isEmpty()) {
+                paint.setTextSize(24 / zoom);
+                canvas.drawText(label, center[0] + scaledRadius + 10 / zoom, center[1], paint);
+            }
+        }
+
+        @Override
+        public boolean hitTest(float x, float y, Matrix inverseMatrix, float tolerance) {
+            float[] mappedPoint = {x, y};
+            inverseMatrix.mapPoints(mappedPoint);
+            return Math.abs(Math.hypot(mappedPoint[0] - centerX, mappedPoint[1] - centerY) - radius) < tolerance;
+        }
+
+        @Override
+        public void move(float dx, float dy) {
+            this.centerX += dx;
+            this.centerY += dy;
+        }
+
+        @Override
+        public String toJson() {
+            JSONObject json = new JSONObject();
+            try {
+                json.put("type", "circle");
+                json.put("label", label);
+                json.put("centerX", centerX);
+                json.put("centerY", centerY);
+                json.put("radius", radius);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json.toString();
+        }
+
+        @Override
+        public String getLabel() { return label; }
+    }
+
+    public static class GeoRect extends GeometricObject {
+        public float left, top, right, bottom;
+        public String label;
+
+        public GeoRect(String label, float left, float top, float right, float bottom) {
+            this.label = label;
+            this.left = left;
+            this.top = top;
+            this.right = right;
+            this.bottom = bottom;
+        }
+
+        @Override
+        public void draw(Canvas canvas, Paint paint, Matrix matrix, float zoom) {
+            float[] coords = {left, top, right, bottom};
+            matrix.mapPoints(coords);
+            canvas.drawRect(coords[0], coords[1], coords[2], coords[3], paint);
+            if (label != null && !label.isEmpty()) {
+                paint.setTextSize(24 / zoom);
+                canvas.drawText(label, coords[0], coords[1] - 10 / zoom, paint);
+            }
+        }
+
+        @Override
+        public boolean hitTest(float x, float y, Matrix inverseMatrix, float tolerance) {
+            float[] mappedPoint = {x, y};
+            inverseMatrix.mapPoints(mappedPoint);
+            return mappedPoint[0] >= (left - tolerance) && mappedPoint[0] <= (right + tolerance) &&
+                    mappedPoint[1] >= (top - tolerance) && mappedPoint[1] <= (bottom + tolerance);
+        }
+
+        @Override
+        public void move(float dx, float dy) {
+            this.left += dx;
+            this.top += dy;
+            this.right += dx;
+            this.bottom += dy;
+        }
+
+        @Override
+        public String toJson() {
+            JSONObject json = new JSONObject();
+            try {
+                json.put("type", "rect");
+                json.put("label", label);
+                json.put("left", left);
+                json.put("top", top);
+                json.put("right", right);
+                json.put("bottom", bottom);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json.toString();
+        }
+
+        @Override
+        public String getLabel() { return label; }
+    }
+
+    public static class GeoArc extends GeometricObject {
+        public float centerX, centerY, radius, startAngle, sweepAngle;
+        public String label;
+
+        public GeoArc(String label, float centerX, float centerY, float radius, float startAngle, float sweepAngle) {
+            this.label = label;
+            this.centerX = centerX;
+            this.centerY = centerY;
+            this.radius = radius;
+            this.startAngle = startAngle;
+            this.sweepAngle = sweepAngle;
+        }
+
+        @Override
+        public void draw(Canvas canvas, Paint paint, Matrix matrix, float zoom) {
+            float[] center = {centerX, centerY};
+            matrix.mapPoints(center);
+            float scaledRadius = radius * zoom;
+            canvas.drawArc(center[0] - scaledRadius, center[1] - scaledRadius,
+                    center[0] + scaledRadius, center[1] + scaledRadius,
+                    startAngle, sweepAngle, false, paint);
+            if (label != null && !label.isEmpty()) {
+                paint.setTextSize(24 / zoom);
+                canvas.drawText(label, center[0] + scaledRadius + 10 / zoom, center[1], paint);
+            }
+        }
+
+        @Override
+        public boolean hitTest(float x, float y, Matrix inverseMatrix, float tolerance) {
+            float[] mappedPoint = {x, y};
+            inverseMatrix.mapPoints(mappedPoint);
+            double distFromCenter = Math.hypot(mappedPoint[0] - centerX, mappedPoint[1] - centerY);
+            if (Math.abs(distFromCenter - radius) > tolerance) return false;
+            float angle = (float) Math.toDegrees(Math.atan2(mappedPoint[1] - centerY, mappedPoint[0] - centerX));
+            if (angle < 0) angle += 360;
+            float normalizedStart = startAngle % 360;
+            float normalizedEnd = (startAngle + sweepAngle) % 360;
+            if (normalizedEnd < normalizedStart) return (angle >= normalizedStart || angle <= normalizedEnd);
+            else return (angle >= normalizedStart && angle <= normalizedEnd);
+        }
+
+        @Override
+        public void move(float dx, float dy) {
+            this.centerX += dx;
+            this.centerY += dy;
+        }
+
+        @Override
+        public String toJson() {
+            JSONObject json = new JSONObject();
+            try {
+                json.put("type", "arc");
+                json.put("label", label);
+                json.put("centerX", centerX);
+                json.put("centerY", centerY);
+                json.put("radius", radius);
+                json.put("startAngle", startAngle);
+                json.put("sweepAngle", sweepAngle);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json.toString();
+        }
+
+        @Override
+        public String getLabel() { return label; }
+    }
+
+    public GeoPoint addPointAndReturn(String label, float x, float y) {
+        GeoPoint point = new GeoPoint(label, x, y, false);
+        geometricObjects.add(point);
+        saveToHistory();
+        invalidate();
+        return point;
+    }
+
+    public void addPoint(String label, float x, float y) {
+        geometricObjects.add(new GeoPoint(label, x, y, false));
+        saveToHistory();
+        invalidate();
+    }
+
+    public void addLine(String label, GeoPoint p1, GeoPoint p2, boolean isCenterline) {
+        geometricObjects.add(new GeoLine(label, p1, p2, isCenterline));
+        saveToHistory();
+        invalidate();
+    }
+
+    public void addCircle(String label, float x, float y, float r) {
+        geometricObjects.add(new GeoCircle(label, x, y, r));
+        saveToHistory();
+        invalidate();
+    }
+
+    public void addRect(String label, float left, float top, float right, float bottom) {
+        geometricObjects.add(new GeoRect(label, left, top, right, bottom));
+        saveToHistory();
+        invalidate();
+    }
+
+    public void addArc(String label, float centerX, float centerY, float radius, float startAngle, float sweepAngle) {
+        geometricObjects.add(new GeoArc(label, centerX, centerY, radius, startAngle, sweepAngle));
+        saveToHistory();
+        invalidate();
+    }
+
+    public void setDrawingData(String data) {
+        geometricObjects.clear();
+        if (data == null || data.isEmpty()) {
+            invalidate();
+            saveToHistory();
+            return;
+        }
+        try {
+            JSONArray jsonArray = new JSONArray(data);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject objJson = jsonArray.getJSONObject(i);
+                String type = objJson.getString("type");
+                switch (type) {
+                    case "point":
+                        geometricObjects.add(new GeoPoint(objJson.optString("label", ""), (float) objJson.getDouble("x"), (float) objJson.getDouble("y"), objJson.optBoolean("isCenterlinePoint", false)));
+                        break;
+                    case "line":
+                        GeoPoint p1 = new GeoPoint("", (float) objJson.getDouble("x1"), (float) objJson.getDouble("y1"), false);
+                        GeoPoint p2 = new GeoPoint("", (float) objJson.getDouble("x2"), (float) objJson.getDouble("y2"), false);
+                        geometricObjects.add(new GeoLine(objJson.optString("label", ""), p1, p2, objJson.optBoolean("isCenterline", false)));
+                        break;
+                    case "circle":
+                        geometricObjects.add(new GeoCircle(objJson.optString("label", ""), (float) objJson.getDouble("centerX"), (float) objJson.getDouble("centerY"), (float) objJson.getDouble("radius")));
+                        break;
+                    case "rect":
+                        geometricObjects.add(new GeoRect(objJson.optString("label", ""), (float) objJson.getDouble("left"), (float) objJson.getDouble("top"), (float) objJson.getDouble("right"), (float) objJson.getDouble("bottom")));
+                        break;
+                    case "arc":
+                        geometricObjects.add(new GeoArc(objJson.optString("label", ""), (float) objJson.getDouble("centerX"), (float) objJson.getDouble("centerY"), (float) objJson.getDouble("radius"), (float) objJson.getDouble("startAngle"), (float) objJson.getDouble("sweepAngle")));
+                        break;
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        saveToHistory();
+        invalidate();
+    }
+
+    public String getDrawingData() {
+        JSONArray jsonArray = new JSONArray();
+        for (GeometricObject obj : geometricObjects) {
+            try {
+                jsonArray.put(new JSONObject(obj.toJson()));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return jsonArray.toString();
+    }
+
+    public void clearPoints() {
+        geometricObjects.clear();
+        saveToHistory();
+        invalidate();
+    }
+
+    public void undo() {
+        if (history.size() > 1) {
+            history.remove(history.size() - 1);
+            String previousState = history.get(history.size() - 1);
+            setDrawingDataInternal(previousState);
+            invalidate();
+        } else if (history.size() == 1) {
+            history.clear();
+            geometricObjects.clear();
+            saveToHistory();
+            invalidate();
+        }
+    }
+
+    private void setDrawingDataInternal(String data) {
+        geometricObjects.clear();
+        if (data == null || data.isEmpty()) {
+            invalidate();
+            return;
+        }
+        try {
+            JSONArray jsonArray = new JSONArray(data);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject objJson = jsonArray.getJSONObject(i);
+                String type = objJson.getString("type");
+                switch (type) {
+                    case "point":
+                        geometricObjects.add(new GeoPoint(objJson.optString("label", ""), (float) objJson.getDouble("x"), (float) objJson.getDouble("y"), objJson.optBoolean("isCenterlinePoint", false)));
+                        break;
+                    case "line":
+                        GeoPoint p1 = new GeoPoint("", (float) objJson.getDouble("x1"), (float) objJson.getDouble("y1"), false);
+                        GeoPoint p2 = new GeoPoint("", (float) objJson.getDouble("x2"), (float) objJson.getDouble("y2"), false);
+                        geometricObjects.add(new GeoLine(objJson.optString("label", ""), p1, p2, objJson.optBoolean("isCenterline", false)));
+                        break;
+                    case "circle":
+                        geometricObjects.add(new GeoCircle(objJson.optString("label", ""), (float) objJson.getDouble("centerX"), (float) objJson.getDouble("centerY"), (float) objJson.getDouble("radius")));
+                        break;
+                    case "rect":
+                        geometricObjects.add(new GeoRect(objJson.optString("label", ""), (float) objJson.getDouble("left"), (float) objJson.getDouble("top"), (float) objJson.getDouble("right"), (float) objJson.getDouble("bottom")));
+                        break;
+                    case "arc":
+                        geometricObjects.add(new GeoArc(objJson.optString("label", ""), (float) objJson.getDouble("centerX"), (float) objJson.getDouble("centerY"), (float) objJson.getDouble("radius"), (float) objJson.getDouble("startAngle"), (float) objJson.getDouble("sweepAngle")));
+                        break;
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        invalidate();
+    }
+
+    public void saveToHistory() {
+        String currentData = getDrawingData();
+        if (history.isEmpty() || !history.get(history.size() - 1).equals(currentData)) {
+            history.add(currentData);
+            if (history.size() > 20) {
+                history.remove(0);
+            }
+        }
+    }
+
+    public void zoomIn() {
+        if (currentZoom < 5.0f) {
+            currentZoom *= 1.1f;
+            updateTransformMatrix();
+            invalidate();
+            if (zoomChangeListener != null) zoomChangeListener.onZoomChanged(getZoomPercentage());
+        }
+    }
+
+    public void zoomOut() {
+        if (currentZoom > 0.2f) {
+            currentZoom /= 1.1f;
+            updateTransformMatrix();
+            invalidate();
+            if (zoomChangeListener != null) zoomChangeListener.onZoomChanged(getZoomPercentage());
+        }
+    }
+
+    public int getZoomPercentage() {
+        return (int) (currentZoom * 100);
+    }
 
     public void setOnZoomChangeListener(OnZoomChangeListener listener) {
         this.zoomChangeListener = listener;
     }
 
-    public interface GeoObject {}
-
-    public static class GeoPoint implements GeoObject {
-        public String label;
-        public float x, y;
-        public boolean isVertex;
-        public int color;
-        public GeoPoint(String l, float x, float y, int color) {
-            this.label = l; this.x = x; this.y = y; this.color = color;
-            this.isVertex = l == null || l.trim().isEmpty() || !l.trim().matches("^-?\\d*(\\.\\d+)?$");
-        }
-        public GeoPoint(String l, float x, float y, boolean isVertex) {
-            this.label = l; this.x = x; this.y = y; this.isVertex = isVertex;
-            this.color = Color.parseColor("#0C3D6A");
-        }
-        public JSONObject toJson() throws JSONException {
-            JSONObject json = new JSONObject();
-            json.put("label", label); json.put("x", x); json.put("y", y);
-            json.put("isVertex", isVertex); json.put("color", color);
-            return json;
-        }
+    public interface OnZoomChangeListener {
+        void onZoomChanged(int percentage);
     }
 
-    public static class GeoCircle implements GeoObject {
-        public String label; public float cx, cy, radius; public int color;
-        GeoCircle(String l, float cx, float cy, float r, int color) { this.label = l; this.cx = cx; this.cy = cy; this.radius = r; this.color = color; }
-        public JSONObject toJson() throws JSONException {
-            JSONObject json = new JSONObject();
-            json.put("label", label); json.put("cx", cx); json.put("cy", cy); json.put("radius", radius); json.put("color", color);
-            return json;
-        }
+    private void updateTransformMatrix() {
+        transformMatrix.reset();
+        transformMatrix.postScale(currentZoom, currentZoom);
+        transformMatrix.postTranslate(translateX, translateY);
     }
 
-    public static class GeoRect implements GeoObject {
-        public String label; public float left, top, right, bottom; public int color;
-        GeoRect(String l, float left, float top, float right, float bottom, int color) { this.label = l; this.left = left; this.top = top; this.right = right; this.bottom = bottom; this.color = color; }
-        public JSONObject toJson() throws JSONException {
-            JSONObject json = new JSONObject();
-            json.put("label", label); json.put("left", left); json.put("top", top); json.put("right", right); json.put("bottom", bottom); json.put("color", color);
-            return json;
-        }
-    }
-
-    public static class GeoLine implements GeoObject {
-        public String label; public GeoPoint p1, p2; public boolean isDashed = false; public int color;
-        GeoLine(String l, GeoPoint p1, GeoPoint p2, boolean dashed, int color) { this.label = l; this.p1 = p1; this.p2 = p2; this.isDashed = dashed; this.color = color; }
-        public JSONObject toJson() throws JSONException {
-            JSONObject json = new JSONObject();
-            json.put("label", label); json.put("p1_label", p1.label); json.put("p2_label", p2.label); json.put("isDashed", isDashed); json.put("color", color);
-            return json;
-        }
-    }
-
-    public static class GeoArc implements GeoObject {
-        public String label; public float cx, cy, radius, startAngle, sweepAngle; public int color;
-        GeoArc(String l, float cx, float cy, float r, float s, float sw, int color) { this.label = l; this.cx = cx; this.cy = cy; this.radius = r; this.startAngle = s; this.sweepAngle = sw; this.color = color; }
-        public JSONObject toJson() throws JSONException {
-            JSONObject json = new JSONObject();
-            json.put("label", label); json.put("cx", cx); json.put("cy", cy); json.put("radius", radius); json.put("startAngle", startAngle); json.put("sweepAngle", sweepAngle); json.put("color", color);
-            return json;
-        }
-    }
-
-    public static class GeoPlane implements GeoObject {
-        public String label; public List<GeoPoint> points; public int fillColor;
-        GeoPlane(String l, List<GeoPoint> points, int color) {
-            this.label = l; this.points = new ArrayList<>(points);
-            this.fillColor = Color.argb(45, Color.red(color), Color.green(color), Color.blue(color));
-        }
-        public JSONObject toJson() throws JSONException {
-            JSONObject json = new JSONObject();
-            json.put("label", label); JSONArray pointLabels = new JSONArray();
-            for (GeoPoint p : points) pointLabels.put(p.label);
-            json.put("point_labels", pointLabels); json.put("fillColor", fillColor);
-            return json;
-        }
-    }
-
-    public static class GeoText implements GeoObject {
-        public String text; public float x, y; public int color; public float size = 28f;
-        GeoText(String t, float x, float y, int color) { this.text = t; this.x = x; this.y = y; this.color = color; }
-        public JSONObject toJson() throws JSONException {
-            JSONObject json = new JSONObject();
-            json.put("text", text); json.put("x", x); json.put("y", y); json.put("color", color); json.put("size", size);
-            return json;
-        }
-    }
-
-    public static class GeoAngle implements GeoObject {
-        public GeoPoint center, p1, p2; public float radius; public boolean isRightAngle; public int color;
-        GeoAngle(GeoPoint center, GeoPoint p1, GeoPoint p2, float radius, boolean right, int color) {
-            this.center = center; this.p1 = p1; this.p2 = p2; this.radius = radius; this.isRightAngle = right; this.color = color;
-        }
-        public JSONObject toJson() throws JSONException {
-            JSONObject json = new JSONObject();
-            json.put("center_label", center.label); json.put("p1_label", p1.label); json.put("p2_label", p2.label); json.put("radius", radius); json.put("isRightAngle", isRightAngle); json.put("color", color);
-            return json;
-        }
-    }
-
-    public GeometryCanvas(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs); init(context); saveToHistory();
-    }
-
-    private void init(Context context) {
-        setLayerType(LAYER_TYPE_SOFTWARE, null);
-        linePaint = new Paint(Paint.ANTI_ALIAS_FLAG); linePaint.setStrokeWidth(5f); linePaint.setStyle(Paint.Style.STROKE); linePaint.setStrokeJoin(Paint.Join.ROUND); linePaint.setStrokeCap(Paint.Cap.ROUND);
-        dashedPaint = new Paint(Paint.ANTI_ALIAS_FLAG); dashedPaint.setStrokeWidth(3.5f); dashedPaint.setStyle(Paint.Style.STROKE); dashedPaint.setPathEffect(new DashPathEffect(new float[]{15, 10}, 0));
-        centerlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG); centerlinePaint.setColor(Color.parseColor("#78909C")); centerlinePaint.setStrokeWidth(2f); centerlinePaint.setStyle(Paint.Style.STROKE); centerlinePaint.setPathEffect(new DashPathEffect(new float[]{30, 15, 5, 15}, 0));
-        pointPaint = new Paint(Paint.ANTI_ALIAS_FLAG); pointPaint.setStyle(Paint.Style.FILL);
-        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG); textPaint.setTextSize(32f); textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD)); textPaint.setShadowLayer(3f, 2f, 2f, Color.argb(120, 0, 0, 0));
-        valuePaint = new Paint(Paint.ANTI_ALIAS_FLAG); valuePaint.setColor(Color.BLACK); valuePaint.setTextSize(24f);
-        planePaint = new Paint(Paint.ANTI_ALIAS_FLAG); planePaint.setStyle(Paint.Style.FILL);
-        gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG); gridPaint.setColor(Color.parseColor("#F5F5F5")); gridPaint.setStrokeWidth(2f);
-        borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG); borderPaint.setColor(Color.parseColor("#E0E0E0")); borderPaint.setStyle(Paint.Style.STROKE); borderPaint.setStrokeWidth(8f);
-        glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG); glowPaint.setStyle(Paint.Style.STROKE); glowPaint.setStrokeWidth(12f); glowPaint.setMaskFilter(new BlurMaskFilter(8f, BlurMaskFilter.Blur.NORMAL));
-        anglePaint = new Paint(Paint.ANTI_ALIAS_FLAG); anglePaint.setStyle(Paint.Style.STROKE); anglePaint.setStrokeWidth(3f);
-
-        scaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            @Override public boolean onScale(ScaleGestureDetector detector) {
-                float factor = detector.getScaleFactor(); float oldScale = scaleFactor;
-                scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor * factor, MAX_ZOOM));
-                float f = scaleFactor / oldScale;
-                posX = detector.getFocusX() - f * (detector.getFocusX() - posX);
-                posY = detector.getFocusY() - f * (detector.getFocusY() - posY);
-                notifyZoom(); invalidate(); return true;
-            }
-        });
-        post(() -> { posX = getWidth()/2f - VIRTUAL_WIDTH/2f * scaleFactor; posY = getHeight()/2f - VIRTUAL_HEIGHT/2f * scaleFactor; invalidate(); });
-    }
-
-    public void setSnapToPoints(boolean snap) { this.snapToPoints = snap; invalidate(); }
-    public void setSnapToGrid(boolean snap) { this.snapToGrid = snap; invalidate(); }
-
-    public PointF getSnappedPoint(float x, float y) {
-        float ix = screenToInternalX(x), iy = screenToInternalY(y);
-        float ox = ix, oy = iy;
-        if (snapToGrid) { ox = Math.round(ix / gridSpacing) * gridSpacing; oy = Math.round(iy / gridSpacing) * gridSpacing; }
+    public PointF getSnappedPoint(float touchX, float touchY) {
+        float[] canvasCoords = {touchX, touchY};
+        Matrix inverseMatrix = new Matrix();
+        transformMatrix.invert(inverseMatrix);
+        inverseMatrix.mapPoints(canvasCoords);
+        float internalX = canvasCoords[0];
+        float internalY = canvasCoords[1];
         if (snapToPoints) {
-            float minDist = Float.MAX_VALUE; GeoPoint closest = null;
-            for (GeoPoint p : pointsList) {
-                float d = (float) Math.hypot(p.x - ix, p.y - iy);
-                if (d < 25f / scaleFactor && d < minDist) { minDist = d; closest = p; }
+            float minDistance = Float.MAX_VALUE;
+            float closestX = internalX;
+            float closestY = internalY;
+            float snapTolerance = 20 / currentZoom;
+            for (GeometricObject obj : geometricObjects) {
+                if (obj instanceof GeoPoint) {
+                    GeoPoint p = (GeoPoint) obj;
+                    float dist = (float) Math.hypot(internalX - p.x, internalY - p.y);
+                    if (dist < minDistance && dist < snapTolerance) {
+                        minDistance = dist;
+                        closestX = p.x;
+                        closestY = p.y;
+                    }
+                }
             }
-            if (closest != null) { ox = closest.x; oy = closest.y; }
+            internalX = closestX;
+            internalY = closestY;
         }
-        return new PointF(ox, oy);
+        if (snapToGrid) {
+            internalX = Math.round(internalX / gridSize) * gridSize;
+            internalY = Math.round(internalY / gridSize) * gridSize;
+        }
+        return new PointF(internalX, internalY);
     }
 
-    public Object findObjectAt(float x, float y) {
-        float ix = screenToInternalX(x), iy = screenToInternalY(y);
-        float tol = 30f / scaleFactor;
-        for (GeoPoint p : pointsList) if (Math.hypot(p.x - ix, p.y - iy) < tol) return p;
-        for (GeoCircle c : circlesList) if (Math.abs(Math.hypot(c.cx - ix, c.cy - iy) - c.radius) < tol) return c;
-        for (GeoLine l : linesList) if (distToLine(ix, iy, l.p1.x, l.p1.y, l.p2.x, l.p2.y) < tol) return l;
-        for (GeoRect r : rectsList) if (distToRect(ix, iy, r) < tol) return r;
-        for (GeoArc a : arcsList) if (Math.abs(Math.hypot(a.cx - ix, a.cy - iy) - a.radius) < tol) return a;
-        return null;
-    }
-
-    private float distToLine(float px, float py, float x1, float y1, float x2, float y2) {
-        float dx = x2 - x1, dy = y2 - y1; if (dx == 0 && dy == 0) return (float) Math.hypot(px - x1, py - y1);
-        float t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
-        t = Math.max(0, Math.min(1, t));
-        return (float) Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
-    }
-
-    private float distToRect(float px, float py, GeoRect r) {
-        float d1 = Math.abs(px - r.left), d2 = Math.abs(px - r.right), d3 = Math.abs(py - r.top), d4 = Math.abs(py - r.bottom);
-        boolean inX = px >= r.left && px <= r.right, inY = py >= r.top && py <= r.bottom;
-        if (inX && inY) return Math.min(Math.min(d1, d2), Math.min(d3, d4));
-        if (inX) return Math.min(d3, d4); if (inY) return Math.min(d1, d2);
-        return Math.min(Math.min((float)Math.hypot(px-r.left, py-r.top), (float)Math.hypot(px-r.right, py-r.top)), Math.min((float)Math.hypot(px-r.left, py-r.bottom), (float)Math.hypot(px-r.right, py-r.bottom)));
-    }
-
-    public void setSelectedObject(Object obj) { this.selectedObject = obj; invalidate(); }
-
-    public void updateSelected(float dx, float dy) {
-        if (selectedObject == null) return;
-        if (selectedObject instanceof GeoPoint) { GeoPoint p = (GeoPoint) selectedObject; p.x += dx; p.y += dy; }
-        else if (selectedObject instanceof GeoCircle) { GeoCircle c = (GeoCircle) selectedObject; c.cx += dx; c.cy += dy; }
-        else if (selectedObject instanceof GeoRect) { GeoRect r = (GeoRect) selectedObject; r.left += dx; r.top += dy; r.right += dx; r.bottom += dy; }
-        else if (selectedObject instanceof GeoLine) { GeoLine l = (GeoLine) selectedObject; l.p1.x += dx; l.p1.y += dy; l.p2.x += dx; l.p2.y += dy; }
-        else if (selectedObject instanceof GeoArc) { GeoArc a = (GeoArc) selectedObject; a.cx += dx; a.cy += dy; }
-        else if (selectedObject instanceof GeoText) { GeoText t = (GeoText) selectedObject; t.x += dx; t.y += dy; }
+    public void setSnapToPoints(boolean snapToPoints) {
+        this.snapToPoints = snapToPoints;
         invalidate();
     }
 
+    public void setSnapToGrid(boolean snapToGrid) {
+        this.snapToGrid = snapToGrid;
+        invalidate();
+    }
+
+    public Object findObjectAt(float x, float y) {
+        Matrix inverseMatrix = new Matrix();
+        transformMatrix.invert(inverseMatrix);
+        float tolerance = 15 / currentZoom;
+        for (int i = geometricObjects.size() - 1; i >= 0; i--) {
+            GeometricObject obj = geometricObjects.get(i);
+            if (obj.hitTest(x, y, inverseMatrix, tolerance)) {
+                return obj;
+            }
+        }
+        return null;
+    }
+
+    public void setSelectedObject(Object obj) {
+        this.selectedObject = (GeometricObject) obj;
+        invalidate();
+    }
+
+    public void updateSelected(float dx, float dy) {
+        if (selectedObject != null) {
+            selectedObject.move(dx, dy);
+            invalidate();
+        }
+    }
+
     public void deleteSelected() {
-        if (selectedObject == null) return;
-        if (selectedObject instanceof GeoPoint) pointsList.remove(selectedObject);
-        else if (selectedObject instanceof GeoCircle) circlesList.remove(selectedObject);
-        else if (selectedObject instanceof GeoLine) linesList.remove(selectedObject);
-        else if (selectedObject instanceof GeoPlane) planesList.remove(selectedObject);
-        else if (selectedObject instanceof GeoRect) rectsList.remove(selectedObject);
-        else if (selectedObject instanceof GeoArc) arcsList.remove(selectedObject);
-        else if (selectedObject instanceof GeoText) textsList.remove(selectedObject);
-        else if (selectedObject instanceof GeoAngle) anglesList.remove(selectedObject);
-        selectedObject = null; invalidate();
+        if (selectedObject != null) {
+            geometricObjects.remove(selectedObject);
+            selectedObject = null;
+            invalidate();
+        }
     }
 
-    public void saveToHistory() {
-        redoHistory.clear(); history.push(getDrawingData()); if (history.size() > 50) history.remove(0);
+    public Bitmap getBitmap() {
+        if (getWidth() <= 0 || getHeight() <= 0) {
+            return null;
+        }
+        Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawColor(Color.WHITE);
+        draw(canvas);
+        return bitmap;
     }
 
-    public void undo() {
-        if (history.size() > 1) { redoHistory.push(history.pop()); setDrawingData(history.peek()); invalidate(); }
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        canvas.save();
+        canvas.concat(transformMatrix);
+        if (snapToGrid) {
+            drawGrid(canvas);
+        }
+        canvas.rotate(rotationDegrees, getWidth() / 2f, getHeight() / 2f);
+        for (GeometricObject obj : geometricObjects) {
+            Paint objectPaint = new Paint(paint);
+            objectPaint.setColor(Color.BLACK);
+            if (obj == selectedObject) {
+                objectPaint.setColor(Color.RED);
+                objectPaint.setStrokeWidth(paint.getStrokeWidth() * 1.5f);
+            }
+            obj.draw(canvas, objectPaint, transformMatrix, currentZoom);
+        }
+        canvas.restore();
     }
 
-    public String getDrawingData() {
-        try {
-            JSONObject root = new JSONObject();
-            JSONArray pts = new JSONArray(); for (GeoPoint p : pointsList) pts.put(p.toJson()); root.put("points", pts);
-            JSONArray circs = new JSONArray(); for (GeoCircle c : circlesList) circs.put(c.toJson()); root.put("circles", circs);
-            JSONArray lns = new JSONArray(); for (GeoLine l : linesList) lns.put(l.toJson()); root.put("lines", lns);
-            JSONArray plns = new JSONArray(); for (GeoPlane p : planesList) plns.put(p.toJson()); root.put("planes", plns);
-            JSONArray rcts = new JSONArray(); for (GeoRect r : rectsList) rcts.put(r.toJson()); root.put("rects", rcts);
-            JSONArray arcs = new JSONArray(); for (GeoArc a : arcsList) arcs.put(a.toJson()); root.put("arcs", arcs);
-            JSONArray txts = new JSONArray(); for (GeoText t : textsList) txts.put(t.toJson()); root.put("texts", txts);
-            JSONArray angs = new JSONArray(); for (GeoAngle a : anglesList) angs.put(a.toJson()); root.put("angles", angs);
-            JSONObject cs = new JSONObject(); cs.put("scaleFactor", scaleFactor); cs.put("posX", posX); cs.put("posY", posY); cs.put("rotationDegrees", rotationDegrees); cs.put("currentColor", currentColor);
-            root.put("canvasState", cs); return root.toString();
-        } catch (JSONException e) { return ""; }
+    private void drawGrid(Canvas canvas) {
+        Paint gridPaint = new Paint();
+        gridPaint.setColor(Color.LTGRAY);
+        gridPaint.setStrokeWidth(1);
+        for (float x = 0; x < getWidth() / currentZoom; x += gridSize) {
+            canvas.drawLine(x, 0, x, getHeight() / currentZoom, gridPaint);
+        }
+        for (float y = 0; y < getHeight() / currentZoom; y += gridSize) {
+            canvas.drawLine(0, y, getWidth() / currentZoom, y, gridPaint);
+        }
     }
 
-    public void setDrawingData(String data) {
-        if (data == null || data.isEmpty()) return;
-        try {
-            pointsList.clear(); circlesList.clear(); linesList.clear(); planesList.clear(); rectsList.clear(); arcsList.clear(); textsList.clear(); anglesList.clear();
-            JSONObject root = new JSONObject(data);
-            JSONArray pts = root.optJSONArray("points");
-            if (pts != null) for (int i=0; i<pts.length(); i++) { JSONObject j = pts.getJSONObject(i); pointsList.add(new GeoPoint(j.getString("label"), (float)j.getDouble("x"), (float)j.getDouble("y"), j.getInt("color"))); }
-            JSONArray circs = root.optJSONArray("circles");
-            if (circs != null) for (int i=0; i<circs.length(); i++) { JSONObject j = circs.getJSONObject(i); circlesList.add(new GeoCircle(j.getString("label"), (float)j.getDouble("cx"), (float)j.getDouble("cy"), (float)j.getDouble("radius"), j.getInt("color"))); }
-            JSONArray lns = root.optJSONArray("lines");
-            if (lns != null) for (int i=0; i<lns.length(); i++) { JSONObject j = lns.getJSONObject(i); GeoPoint p1 = findPoint(j.getString("p1_label")), p2 = findPoint(j.getString("p2_label")); if (p1!=null && p2!=null) linesList.add(new GeoLine(j.getString("label"), p1, p2, j.getBoolean("isDashed"), j.getInt("color"))); }
-            JSONArray plns = root.optJSONArray("planes");
-            if (plns != null) for (int i=0; i<plns.length(); i++) { JSONObject j = plns.getJSONObject(i); JSONArray pl = j.getJSONArray("point_labels"); List<GeoPoint> l = new ArrayList<>(); for (int k=0; k<pl.length(); k++) { GeoPoint p = findPoint(pl.getString(k)); if (p!=null) l.add(p); } if (!l.isEmpty()) planesList.add(new GeoPlane(j.getString("label"), l, j.getInt("fillColor"))); }
-            JSONArray rcts = root.optJSONArray("rects");
-            if (rcts != null) for (int i=0; i<rcts.length(); i++) { JSONObject j = rcts.getJSONObject(i); rectsList.add(new GeoRect(j.getString("label"), (float)j.getDouble("left"), (float)j.getDouble("top"), (float)j.getDouble("right"), (float)j.getDouble("bottom"), j.getInt("color"))); }
-            JSONArray arcs = root.optJSONArray("arcs");
-            if (arcs != null) for (int i=0; i<arcs.length(); i++) { JSONObject j = arcs.getJSONObject(i); arcsList.add(new GeoArc(j.getString("label"), (float)j.getDouble("cx"), (float)j.getDouble("cy"), (float)j.getDouble("radius"), (float)j.getDouble("startAngle"), (float)j.getDouble("sweepAngle"), j.getInt("color"))); }
-            JSONArray txts = root.optJSONArray("texts");
-            if (txts != null) for (int i=0; i<txts.length(); i++) { JSONObject j = txts.getJSONObject(i); textsList.add(new GeoText(j.getString("text"), (float)j.getDouble("x"), (float)j.getDouble("y"), j.getInt("color"))); }
-            JSONArray angs = root.optJSONArray("angles");
-            if (angs != null) for (int i=0; i<angs.length(); i++) { JSONObject j = angs.getJSONObject(i); GeoPoint c = findPoint(j.getString("center_label")), p1 = findPoint(j.getString("p1_label")), p2 = findPoint(j.getString("p2_label")); if (c!=null && p1!=null && p2!=null) anglesList.add(new GeoAngle(c, p1, p2, (float)j.getDouble("radius"), j.getBoolean("isRightAngle"), j.getInt("color"))); }
-            JSONObject cs = root.optJSONObject("canvasState");
-            if (cs != null) { scaleFactor = (float)cs.getDouble("scaleFactor"); posX = (float)cs.getDouble("posX"); posY = (float)cs.getDouble("posY"); rotationDegrees = (float)cs.getDouble("rotationDegrees"); currentColor = cs.getInt("currentColor"); }
-            notifyZoom(); invalidate();
-        } catch (JSONException e) {}
-    }
+    private PointF lastTouch = new PointF();
+    private static final int INVALID_POINTER_ID = -1;
+    private int activePointerId = INVALID_POINTER_ID;
 
-    public void setCurrentColor(String hex) { try { currentColor = Color.parseColor(hex); } catch (Exception e) { currentColor = Color.parseColor("#0C3D6A"); } saveToHistory(); invalidate(); }
-    public void rotateCanvas(float degrees) { this.rotationDegrees += degrees; saveToHistory(); invalidate(); }
-    public void addPoint(String name, float x, float y) { pointsList.add(new GeoPoint(name, x, y, currentColor)); saveToHistory(); invalidate(); }
-    public GeoPoint addPointAndReturn(String name, float x, float y) { GeoPoint p = new GeoPoint(name, x, y, currentColor); pointsList.add(p); saveToHistory(); invalidate(); return p; }
-    public GeoPoint findPoint(String label) { for (GeoPoint p : pointsList) if (p.label != null && p.label.equalsIgnoreCase(label)) return p; return null; }
-    public void addCircle(String l, float cx, float cy, float r) { circlesList.add(new GeoCircle(l, cx, cy, r, currentColor)); saveToHistory(); invalidate(); }
-    public void addRect(String l, float left, float top, float right, float bottom) { rectsList.add(new GeoRect(l, left, top, right, bottom, currentColor)); saveToHistory(); invalidate(); }
-    public void addLine(String l, GeoPoint p1, GeoPoint p2, boolean d) { linesList.add(new GeoLine(l, p1, p2, d, currentColor)); saveToHistory(); invalidate(); }
-    public void addPolygon(String l, List<GeoPoint> points) { planesList.add(new GeoPlane(l, points, currentColor)); saveToHistory(); invalidate(); }
-    public void addArc(String l, float cx, float cy, float r, float s, float sw) { arcsList.add(new GeoArc(l, cx, cy, r, s, sw, currentColor)); saveToHistory(); invalidate(); }
-    public void addAngle(GeoPoint c, GeoPoint p1, GeoPoint p2, float r, boolean right) { anglesList.add(new GeoAngle(c, p1, p2, r, right, currentColor)); saveToHistory(); invalidate(); }
-    public void clearPoints() { pointsList.clear(); circlesList.clear(); linesList.clear(); planesList.clear(); rectsList.clear(); arcsList.clear(); textsList.clear(); anglesList.clear(); history.clear(); redoHistory.clear(); scaleFactor = 1.0f; rotationDegrees = 0f; posX = getWidth()/2f - VIRTUAL_WIDTH/2f; posY = getHeight()/2f - VIRTUAL_HEIGHT/2f; currentColor = Color.parseColor("#0C3D6A"); notifyZoom(); saveToHistory(); invalidate(); }
-    public void zoomIn() { float old = scaleFactor; scaleFactor = Math.min(scaleFactor * 1.25f, MAX_ZOOM); float f = scaleFactor/old; posX = getWidth()/2f - f*(getWidth()/2f-posX); posY = getHeight()/2f - f*(getHeight()/2f-posY); notifyZoom(); saveToHistory(); invalidate(); }
-    public void zoomOut() { float old = scaleFactor; scaleFactor = Math.max(MIN_ZOOM, scaleFactor / 1.25f); float f = scaleFactor/old; posX = getWidth()/2f - f*(getWidth()/2f-posX); posY = getHeight()/2f - f*(getHeight()/2f-posY); notifyZoom(); saveToHistory(); invalidate(); }
-    public int getZoomPercentage() { return Math.round(scaleFactor * 100); }
-    private void notifyZoom() { if (zoomChangeListener != null) zoomChangeListener.onZoomChanged(getZoomPercentage()); }
-    public Bitmap getBitmap() { if (getWidth() <= 0 || getHeight() <= 0) return null; Bitmap b = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888); Canvas c = new Canvas(b); draw(c); return b; }
-    public float screenToInternalX(float sx) { float[] pts = {sx, 0}; updateMatrices(); inverseMatrix.mapPoints(pts); return pts[0]; }
-    public float screenToInternalY(float sy) { float[] pts = {0, sy}; updateMatrices(); inverseMatrix.mapPoints(pts); return pts[1]; }
-    private void updateMatrices() { drawMatrix.reset(); drawMatrix.postTranslate(-VIRTUAL_WIDTH/2f, -VIRTUAL_HEIGHT/2f); drawMatrix.postRotate(rotationDegrees); drawMatrix.postTranslate(VIRTUAL_WIDTH/2f, VIRTUAL_HEIGHT/2f); drawMatrix.postScale(scaleFactor, scaleFactor); drawMatrix.postTranslate(posX, posY); drawMatrix.invert(inverseMatrix); }
-
-    @Override public boolean onTouchEvent(MotionEvent e) {
-        scaleDetector.onTouchEvent(e); float x = e.getX(), y = e.getY();
-        switch (e.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN: lastTouchX = x; lastTouchY = y; getParent().requestDisallowInterceptTouchEvent(true); break;
-            case MotionEvent.ACTION_MOVE: if (!scaleDetector.isInProgress()) { posX += (x - lastTouchX); posY += (y - lastTouchY); invalidate(); } lastTouchX = x; lastTouchY = y; break;
-            case MotionEvent.ACTION_UP: case MotionEvent.ACTION_CANCEL: getParent().requestDisallowInterceptTouchEvent(false); performClick(); saveToHistory(); break;
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        final int action = event.getActionMasked();
+        switch (action) {
+            case MotionEvent.ACTION_DOWN: {
+                final float x = event.getX();
+                final float y = event.getY();
+                lastTouch.set(x, y);
+                activePointerId = event.getPointerId(0);
+                break;
+            }
+            case MotionEvent.ACTION_POINTER_DOWN:
+                break;
+            case MotionEvent.ACTION_MOVE: {
+                if (event.getPointerCount() == 1 && currentTool.equals("MOVE")) {
+                    final int pointerIndex = event.findPointerIndex(activePointerId);
+                    if (pointerIndex != -1) {
+                        final float x = event.getX(pointerIndex);
+                        final float y = event.getY(pointerIndex);
+                        final float dx = x - lastTouch.x;
+                        final float dy = y - lastTouch.y;
+                        translateX += dx;
+                        translateY += dy;
+                        lastTouch.set(x, y);
+                        updateTransformMatrix();
+                        invalidate();
+                    }
+                }
+                break;
+            }
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL: {
+                activePointerId = INVALID_POINTER_ID;
+                break;
+            }
+            case MotionEvent.ACTION_POINTER_UP: {
+                final int pointerIndex = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+                final int pointerId = event.getPointerId(pointerIndex);
+                if (pointerId == activePointerId) {
+                    final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
+                    lastTouch.set(event.getX(newPointerIndex), event.getY(newPointerIndex));
+                    activePointerId = event.getPointerId(newPointerIndex);
+                }
+                break;
+            }
         }
         return true;
-    }
-    @Override public boolean performClick() { return super.performClick(); }
-
-    @Override protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas); updateMatrices(); canvas.save(); canvas.drawColor(Color.WHITE); canvas.setMatrix(drawMatrix);
-        float l = screenToInternalX(0), r = screenToInternalX(getWidth()), t = screenToInternalY(0), b = screenToInternalY(getHeight());
-        if (gridSpacing * scaleFactor > 20) { for (float x = (float)Math.floor(l/gridSpacing)*gridSpacing; x <= r; x += gridSpacing) canvas.drawLine(x, t, x, b, gridPaint); for (float y = (float)Math.floor(t/gridSpacing)*gridSpacing; y <= b; y += gridSpacing) canvas.drawLine(l, y, r, y, gridPaint); }
-        for (GeoPlane p : planesList) { Path path = new Path(); boolean first = true; for (GeoPoint pt : p.points) { if (first) { path.moveTo(pt.x, pt.y); first = false; } else path.lineTo(pt.x, pt.y); } path.close(); planePaint.setColor(p.fillColor); canvas.drawPath(path, planePaint); }
-        for (GeoLine li : linesList) { linePaint.setColor(li.color); dashedPaint.setColor(li.color); canvas.drawLine(li.p1.x, li.p1.y, li.p2.x, li.p2.y, li.isDashed ? dashedPaint : linePaint); }
-        for (GeoCircle c : circlesList) { linePaint.setColor(c.color); canvas.drawCircle(c.cx, c.cy, c.radius, linePaint); }
-        for (GeoRect re : rectsList) { linePaint.setColor(re.color); canvas.drawRect(re.left, re.top, re.right, re.bottom, linePaint); }
-        for (GeoArc a : arcsList) { linePaint.setColor(a.color); canvas.drawArc(new RectF(a.cx-a.radius, a.cy-a.radius, a.cx+a.radius, a.cy+a.radius), a.startAngle, a.sweepAngle, false, linePaint); }
-        for (GeoPoint p : pointsList) {
-            if (p.isVertex) { glowPaint.setColor(p.color); canvas.drawCircle(p.x, p.y, 10f / scaleFactor, glowPaint); pointPaint.setColor(p.color); canvas.drawCircle(p.x, p.y, 7f / scaleFactor, pointPaint);
-                if (p.label != null && !p.label.isEmpty()) { textPaint.setColor(Color.parseColor("#D32F2F")); textPaint.setTextSize(32f / scaleFactor); canvas.drawText(p.label, p.x + 12f/scaleFactor, p.y - 12f/scaleFactor, textPaint); }
-            } else if (p.label != null && !p.label.isEmpty()) { valuePaint.setColor(p.color); valuePaint.setTextSize(24f / scaleFactor); canvas.drawText(p.label, p.x, p.y, valuePaint); }
-        }
-        canvas.drawRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, borderPaint); canvas.restore();
     }
 }

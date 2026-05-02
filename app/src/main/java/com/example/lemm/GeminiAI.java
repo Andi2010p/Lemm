@@ -10,7 +10,7 @@ public class GeminiAI {
     private GenerativeModelFutures model;
 
     public GeminiAI(String apiKey) {
-        GenerativeModel gm = new GenerativeModel("gemini-1.5-flash", apiKey);
+        GenerativeModel gm = new GenerativeModel("gemini-3-flash-preview", apiKey);
         this.model = GenerativeModelFutures.from(gm);
     }
 

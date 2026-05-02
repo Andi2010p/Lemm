@@ -1,3 +1,4 @@
+// D:/codes/Homeworks.Uwc/Lemm/app/build.gradle.kts
 import java.util.Properties
 
 plugins {
@@ -6,6 +7,11 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+val localProperties = Properties()
+val localPropertiesFile = project.rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
 android {
     namespace = "com.example.lemm"
     compileSdk = 36
@@ -16,15 +22,13 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val properties = Properties()
-        val localPropertiesFile = project.rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            properties.load(localPropertiesFile.inputStream())
-        }
+        // Read the key from the properties object we loaded above
+        val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
-    
     buildFeatures {
         buildConfig = true
     }
@@ -63,6 +67,12 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("io.noties.markwon:core:4.6.2")
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+
+    implementation("com.google.firebase:firebase-database")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore-ktx") // <--- ADD THIS LINE FOR FIRESTORE
+
     implementation("io.noties.markwon:ext-latex:4.6.2")
     implementation(libs.play.services.mlkit.text.recognition)
     testImplementation(libs.junit)
