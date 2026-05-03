@@ -15,6 +15,8 @@ public class GeoCone {
 
     // Apex point will be (centerX, centerY, centerZ + height) if base is on XY plane
 
+    // Apex point will be (centerX, centerY, centerZ + height) if base is on XY plane
+
     public GeoCone(String label, float centerX, float centerY, float centerZ, float radius, float height) {
         this.label = label;
         this.centerX = centerX;
@@ -26,5 +28,6 @@ public class GeoCone {
     public GeoCone deepCopy() {
         return new GeoCone(label, centerX, centerY, centerZ, radius, height);
     }
+
 
 }
