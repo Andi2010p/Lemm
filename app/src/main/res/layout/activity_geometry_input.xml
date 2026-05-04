@@ -66,7 +66,39 @@
                     android:src="@android:drawable/ic_menu_edit"
                     app:tint="@color/primary" />
             </LinearLayout>
+            <!-- ... Keep Header Card at the top ... -->
 
+            <!-- ADD THIS LINEAR LAYOUT WRAPPER -->
+            <LinearLayout
+                android:id="@+id/mainContentWrapper"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:orientation="vertical"
+                app:layout_constraintTop_toBottomOf="@id/headerCard"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- Move Canvas Card inside this LinearLayout -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/canvasCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="0.6"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="24dp">
+                    <!-- ... existing frame layout content ... -->
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Move Results Section inside this LinearLayout -->
+                <LinearLayout
+                    android:id="@+id/resultSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="0.4"
+                    android:orientation="vertical">
+                    <!-- ... existing scrollview content ... -->
+                </LinearLayout>
+
+            </LinearLayout>
             <LinearLayout
                 android:id="@+id/inputExpandableArea"
                 android:layout_width="match_parent"

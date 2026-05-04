@@ -54,30 +54,25 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         // Initialize AI
         geminiAI = new GeminiAI(BuildConfig.GEMINI_API_KEY);
-
-        // --- RESIZE BUTTONS LOGIC ---
         findViewById(R.id.btnMaximizeCanvas).setOnClickListener(v -> {
-            View canvasCard = findViewById(R.id.canvasCard);
-            View resultSection = findViewById(R.id.resultSection);
-
-            // Canvas takes 85% of screen
-            ((LinearLayout.LayoutParams) canvasCard.getLayoutParams()).weight = 0.85f;
-            ((LinearLayout.LayoutParams) resultSection.getLayoutParams()).weight = 0.15f;
-
-            canvasCard.requestLayout();
-            resultSection.requestLayout();
+            // This allows resizing inside a ConstraintLayout without crashing
+            androidx.constraintlayout.widget.ConstraintLayout root = (androidx.constraintlayout.widget.ConstraintLayout) findViewById(R.id.canvasCard).getParent();
+            androidx.constraintlayout.widget.ConstraintSet set = new androidx.constraintlayout.widget.ConstraintSet();
+            set.clone(root);
+            // Canvas 85%, Result 15%
+            set.setVerticalWeight(R.id.canvasCard, 0.85f);
+            set.setVerticalWeight(R.id.resultSection, 0.15f);
+            set.applyTo(root);
         });
 
         findViewById(R.id.btnMinimizeCanvas).setOnClickListener(v -> {
-            View canvasCard = findViewById(R.id.canvasCard);
-            View resultSection = findViewById(R.id.resultSection);
-
-            // Original 60/40 split
-            ((LinearLayout.LayoutParams) canvasCard.getLayoutParams()).weight = 0.6f;
-            ((LinearLayout.LayoutParams) resultSection.getLayoutParams()).weight = 0.4f;
-
-            canvasCard.requestLayout();
-            resultSection.requestLayout();
+            androidx.constraintlayout.widget.ConstraintLayout root = (androidx.constraintlayout.widget.ConstraintLayout) findViewById(R.id.canvasCard).getParent();
+            androidx.constraintlayout.widget.ConstraintSet set = new androidx.constraintlayout.widget.ConstraintSet();
+            set.clone(root);
+            // Restore original split: Canvas 70%, Result 30%
+            set.setVerticalWeight(R.id.canvasCard, 0.7f);
+            set.setVerticalWeight(R.id.resultSection, 0.3f);
+            set.applyTo(root);
         });
 
         // --- NEW PROBLEM BUTTON ---
@@ -139,30 +134,43 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         String extra = etExtra.getText().toString().trim();
         String prompt =
-                "SYSTEM: You are a CAD Geometry Engine. You MUST output DRAWING COMMANDS for any shape mentioned in the problem.\n\n" +
-                        "You are an expert Geometry Solver and CAD Modeling AI.\n" +
-                        "Your task is to analyze geometry problems and generate BOTH:\n" +
-                        "1) 3D Drawing commands for visualization\n" +
-                        "2) Step-by-step mathematical solution in cards\n\n" +
+                "SYSTEM:TASK: Analyze the problem and output DRAWING COMMANDS followed by the step-by-step solution.\n\n" +
+                          "RULE 1: Use ONLY these exact commands. Do NOT use 'point3d' or 'cad' or any other words.\n" +
+                          "RULE 2: To draw a Cone, you MUST use CONE3D. Do NOT use Circle and Lines.\n\n" +
+                        "COMMAND: CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
+                        "MATH LOGIC:\n" +
+                        "1. (cx, cy, cz) is the center of the bottom circle.\n" +
+                        "2. height is how far the tip is above the base.\n" +
+                        "3. curvature should be 1.0 for a standard cone.\n" +
+                        "4. Y is UP. For a cone on the ground, cy=0 and height=200.\n\n" +
+                        "EXAMPLE: CONE3D:MyCone,0,0,0,50,150,1.0\n\n" +
+                          "COMMAND LIST:\n" +
+                          "DRAW3D:Label,x,y,z\n" +
+                          "LINE3D:Label1,Label2\n" +
 
-                        "================ 3D COMMANDS =================\n" +
-                        "DRAW3D:Label,x,y,z (Vertex point)\n" +
-                        "LINE3D:Label1,Label2 (Draws an edge between points)\n" +
-                        "PLANE3D:L1,L2,L3... (SHADED FACE: Use point labels to fill a flat polygon)\n" +
-                        "CIRCLE3D:Label,cx,cy,cz,radius (SHADED CIRCLE)\n" +
-                        "CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
-                        "- curvature 2.5: Side faces curve INWARD (Concave/Spire look).\n" +
-                        "- curvature 0.6: Side faces curve OUTWARD (Convex/Dome look).\n" +
-                        "- height: The vertical size of the building.\n\n" +
+                          "CONE RULES:\n" +
+                          "- curvature 1.0 is a sharp cone.\n" +
+                          "- Center is (0,0,0). Y is UP. Height should be 100-300.\n\n" +
+
+                          "EXAMPLE RESPONSE:\n" +
+                          "DRAW3D:A,0,0,0\n" +
+                          "CONE3D:Cone1,0,0,0,50,200,1.0\n" +
+                          "Solution: Volume = 1/3 * PI * r^2 * h...\n\n" +
 
                         "CRITICAL RULES:\n" +
-                        "1. Never use CIRCLE3D + LINE3D to describe a cone. Use CONE3D only.\n" +
-                        "2. For buildings with 'non-straight' sides, always set curvature > 1.5.\n" +
-                        "3. Use coordinates like (0,0,0) and heights around 200.\n\n" +
-                        "CRITICAL: Do NOT draw a cone using LINE3D or CIRCLE3D. Use CONE3D ONLY.\n" +
+                        "1. For any CONE or pyramid-like shape, use CONE3D. Do NOT use CIRCLE3D + LINE3D.\n" +
+                        "2. Coordinates: Y is UP. Center is (0,0,0). Use sizes between 50 and 200.\n" +
+                        "3. To make a cone look solid, the AI only needs to output one CONE3D command.\n\n" +
+                        "1. For any CONE or pyramid-like shape, use CONE3D. Do NOT use CIRCLE3D + LINE3D.\n" +
+                        "2. Coordinates: Y is UP. Center is (0,0,0). Use sizes between 50 and 200.\n" +
+                        "3. To make a cone look solid, the AI only needs to output one CONE3D command.\n\n" +
+                        "4. Never use CIRCLE3D + LINE3D to describe a cone. Use CONE3D only.\n" +
+                        "5. For buildings with 'non-straight' sides, always set curvature > 1.5.\n" +
+                        "6. Use coordinates like (0,0,0) and heights around 200.\n\n" +
                         "Example for a curved skyscraper: CONE3D:SkyTower,0,0,0,50,300,2.2\n\n" +
                         "- CURVATURE: 1.0 is a normal cone. 2.5 is a thin 'Shard' building (concave). 0.5 is a rounded 'Bullet' dome (convex).\n" +
                         "- Use CONE3D with curvature > 1.5 to create modern aesthetic skyscrapers.\n" +
+
                         "CYLINDER3D:Label,cx,cy,cz,radius,height (SOLID CYLINDER)\n" +
                         "SPHERE3D:Label,x,y,z,radius (Wireframe sphere)\n\n" +
 
@@ -181,14 +189,14 @@ public class GeometryInputActivity extends AppCompatActivity {
             @Override
             public void onSuccess(GenerateContentResponse result) {
                 runOnUiThread(() -> {
-                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    progressBar.setVisibility(View.GONE);
                     findViewById(R.id.btnSolveProblem).setEnabled(true);
 
                     String aiResponse = result.getText();
-                    if (aiResponse != null) {
+                    if (aiResponse != null && !aiResponse.isEmpty()) {
                         processAIResult(aiResponse);
-                        inputArea.setVisibility(View.GONE);
-                        findViewById(R.id.solutionControls).setVisibility(View.VISIBLE);
+                    } else {
+                        Toast.makeText(GeometryInputActivity.this, "AI returned empty response", Toast.LENGTH_LONG).show();
                     }
                 });
             }
@@ -196,77 +204,67 @@ public class GeometryInputActivity extends AppCompatActivity {
             @Override
             public void onFailure(Throwable t) {
                 runOnUiThread(() -> {
-                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    progressBar.setVisibility(View.GONE);
                     findViewById(R.id.btnSolveProblem).setEnabled(true);
-                    Log.e(TAG, "AI ERROR: ", t);
+                    Toast.makeText(GeometryInputActivity.this, "AI Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
                 });
             }
         }, ContextCompat.getMainExecutor(this));
     }
-
     private void processAIResult(String text) {
-        // 1. Force 3D Canvas visibility
         canvas3D.setVisibility(View.VISIBLE);
-        View g2d = findViewById(R.id.geometryCanvas);
-        if (g2d != null) g2d.setVisibility(View.GONE);
-
-        // 2. Clear previous drawings to avoid overlap
         canvas3D.clear();
 
-        String cleanText = text.replaceAll("(?s)```.*?```", "").replace("`", "");
-        Pattern commandPattern = Pattern.compile("(?i)(DRAW3D|LINE3D|PLANE3D|SPHERE3D|CONE3D|CIRCLE3D|CYLINDER3D)\\s*:\\s*([^\\n\\r]+)");
-        Matcher matcher = commandPattern.matcher(cleanText);
+        // 1. Remove all formatting that breaks parsing
+        String cleanText = text.replace("`", "").replace("*", "");
 
-        while (matcher.find()) {
-            String command = matcher.group(1).toUpperCase();
-            String data = matcher.group(2).trim();
-            String[] segments = data.split("\\|"); // Support multiple commands per line
+        // 2. Loop through every line of the AI response
+        String[] lines = cleanText.split("\n");
+        boolean foundAny = false;
 
-            for (String segment : segments) {
-                String[] d = segment.split(",");
-                if (d.length < 2) continue;
-                for (int i = 0; i < d.length; i++) d[i] = d[i].trim();
+        for (String line : lines) {
+            line = line.trim();
+            if (!line.contains(":")) continue;
 
-                try {
-                    switch (command) {
-                        case "CONE3D":
-                            if (d.length >= 6) {
-                                float curv = (d.length >= 7) ? f(d[6]) : 1.8f;
-                                canvas3D.addCone(d[0], f(d[1]), f(d[2]), f(d[3]), f(d[4]), f(d[5]), curv);
-                            }
-                            break;
-                        case "DRAW3D":
-                            if (d.length >= 4) canvas3D.addPoint(d[0], f(d[1]), f(d[2]), f(d[3]));
-                            break;
-                        case "LINE3D":
-                            if (d.length >= 2) canvas3D.addLine(d[0], d[1]);
-                            break;
-                        case "CIRCLE3D":
-                            if (d.length >= 5) canvas3D.addCircle(d[0], f(d[1]), f(d[2]), f(d[3]), f(d[4]));
-                            break;
-                        case "CYLINDER3D":
-                            if (d.length >= 6) canvas3D.addCylinder(d[0], f(d[1]), f(d[2]), f(d[3]), f(d[4]), f(d[5]));
-                            break;
-                        case "PLANE3D":
-                            if (d.length >= 3) canvas3D.addPlane(new ArrayList<>(Arrays.asList(d)));
-                            break;
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Error parsing: " + segment);
+            String[] parts = line.split(":", 2);
+            String command = parts[0].trim().toUpperCase();
+            String data = parts[1].trim();
+            String[] d = data.split(",");
+
+            // Clean each data point
+            for(int i=0; i<d.length; i++) d[i] = d[i].trim();
+
+            try {
+                if (command.contains("CONE3D") && d.length >= 6) {
+                    float curv = (d.length >= 7) ? f(d[6]) : 1.0f;
+                    canvas3D.addCone(d[0], f(d[1]), f(d[2]), f(d[3]), f(d[4]), f(d[5]), curv);
+                    foundAny = true;
+                } else if (command.contains("DRAW3D") && d.length >= 4) {
+                    canvas3D.addPoint(d[0], f(d[1]), f(d[2]), f(d[3]));
+                    foundAny = true;
+                } else if (command.contains("LINE3D") && d.length >= 2) {
+                    canvas3D.addLine(d[0], d[1]);
+                    foundAny = true;
+                } else if (command.contains("CIRCLE3D") && d.length >= 5) {
+                    canvas3D.addCircle(d[0], f(d[1]), f(d[2]), f(d[3]), f(d[4]));
+                    foundAny = true;
                 }
+            } catch (Exception e) {
+                Log.e("GEO", "Line skip: " + line);
             }
         }
-        canvas3D.invalidate(); // Request redraw
 
-        // Logic for solution cards
+        canvas3D.invalidate();
+
+        // 3. Always show the text solution in cards
         stepsContainer.removeAllViews();
         String solutionOnly = cleanText.replaceAll("(?i)(DRAW3D|LINE3D|PLANE3D|SPHERE3D|CONE3D|CIRCLE3D|CYLINDER3D)\\s*:[^\\n\\r]+", "").trim();
-        String[] sections = solutionOnly.split("(?i)(?=Step\\s*\\d+\\s*:|Overview\\s*:)");
-        for (String section : sections) {
-            if (!section.trim().isEmpty()) addSolutionCard(section.trim());
+        addSolutionCard(solutionOnly);
+
+        if (!foundAny) {
+            Toast.makeText(this, "AI spoke but didn't draw. Check logs.", Toast.LENGTH_SHORT).show();
         }
     }
-
     private void addSolutionCard(String text) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
