@@ -42,7 +42,6 @@
                     android:orientation="horizontal"
                     android:padding="4dp"
                     android:gravity="center">
-
                     <ImageButton
                         android:id="@+id/btnToolMove"
                         android:layout_width="44dp"
@@ -51,6 +50,7 @@
                         android:background="?attr/selectableItemBackground"
                         app:tint="#0C3D6A"/>
 
+                    <!-- ADD THIS BUTTON HERE -->
                     <ImageButton
                         android:id="@+id/btnToolSelect"
                         android:layout_width="44dp"
@@ -58,86 +58,13 @@
                         android:src="@drawable/ic_selection"
                         android:background="?attr/selectableItemBackground"
                         app:tint="#0C3D6A"/>
-
-                    <ImageButton
-                        android:id="@+id/btnUndo"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_undo"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
-
+                    <ImageButton android:id="@+id/btnToolMove" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_move" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+                    <ImageButton android:id="@+id/btnToolLine" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_line" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+                    <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+                    <ImageButton android:id="@+id/btnToolCircle" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_circle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+                    <ImageButton android:id="@+id/btnUndo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_undo" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
                     <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
-
-                    <ImageButton
-                        android:id="@+id/btnToolPoint"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_point"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
-
-                    <ImageButton
-                        android:id="@+id/btnToolLine"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_line"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
-
-                    <ImageButton
-                        android:id="@+id/btnToolCenterline"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_line"
-                        android:padding="8dp"
-                        android:alpha="0.6"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
-
-                    <ImageButton
-                        android:id="@+id/btnToolRect"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_rectangle"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
-
-                    <ImageButton
-                        android:id="@+id/btnToolCircle"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_circle"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
-
-                    <ImageButton
-                        android:id="@+id/btnToolArc"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_circle"
-                        android:padding="8dp"
-                        android:alpha="0.7"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
-
-                    <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
-
-                    <ImageButton
-                        android:id="@+id/btnDownloadDrawing"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@android:drawable/stat_sys_download"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#2E7D32"/>
-
-                    <ImageButton
-                        android:id="@+id/btnToolClear"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@android:drawable/ic_menu_delete"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#C62828"/>
+                    <ImageButton android:id="@+id/btnToolClear" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_delete" android:background="?attr/selectableItemBackground" app:tint="#C62828"/>
                 </LinearLayout>
             </HorizontalScrollView>
         </LinearLayout>
@@ -151,8 +78,6 @@
         android:layout_margin="8dp"
         app:cardCornerRadius="4dp"
         app:cardElevation="2dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="#CCCCCC"
         app:layout_constraintTop_toBottomOf="@id/toolbarCard"
         app:layout_constraintBottom_toTopOf="@id/bottomActions"
         app:layout_constraintStart_toStartOf="parent"
@@ -162,13 +87,21 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <com.example.lemm.GeometryCanvas
+            <!-- THE 2D CAD CANVAS -->
+            <com.example.lemm.CadGeometryCanvas
                 android:id="@+id/drawingCanvas"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="#FFFFFF" />
 
-            <!-- Floating CAD Controls -->
+            <!-- THE 3D VIEW (Hidden by default) -->
+            <io.github.sceneview.SceneView
+                android:id="@+id/sceneView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <!-- Floating Controls -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -177,74 +110,48 @@
                 android:orientation="vertical"
                 android:gravity="end">
 
-                <!-- Zoom Controls -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/floating_controls_bg"
-                    android:orientation="horizontal"
                     android:padding="4dp"
                     android:layout_marginBottom="8dp">
-
-                    <ImageButton
-                        android:id="@+id/btnZoomOut"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_zoom_out_custom"
-                        app:tint="#0C3D6A" />
-
-                    <TextView
-                        android:id="@+id/tvZoomPercent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:paddingHorizontal="4dp"
-                        android:text="100%"
-                        android:textSize="11sp"
-                        android:textColor="#0C3D6A"
-                        android:textStyle="bold" />
-
-                    <ImageButton
-                        android:id="@+id/btnZoomIn"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@android:drawable/ic_menu_zoom"
-                        app:tint="#0C3D6A" />
+                    <ImageButton android:id="@+id/btnZoomOut" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackground" android:src="@android:drawable/ic_menu_zoom" android:rotation="180"/>
+                    <TextView android:id="@+id/tvZoomPercent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="100%" android:paddingHorizontal="4dp" android:textStyle="bold"/>
+                    <ImageButton android:id="@+id/btnZoomIn" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackground" android:src="@android:drawable/ic_menu_zoom"/>
                 </LinearLayout>
-
-                <!-- Snap Toggles -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                <!-- Inside the vertical snap controls LinearLayout -->
+                <ToggleButton
+                    android:id="@+id/toggleSnapPoints"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:textOn="" android:textOff=""
+                    android:checked="true"
                     android:background="@drawable/floating_controls_bg"
-                    android:orientation="vertical"
-                    android:padding="4dp">
-                    
-                    <ToggleButton
-                        android:id="@+id/toggleSnapPoints"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:textOn=""
-                        android:textOff=""
-                        android:checked="true"
-                        android:background="@drawable/ic_point"
-                        android:padding="10dp"
-                        android:backgroundTint="#0C3D6A"/>
+                    android:drawableTop="@drawable/ic_point"
+                    android:padding="8dp"/>
 
-                    <ToggleButton
-                        android:id="@+id/toggleSnapGrid"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:textOn=""
-                        android:textOff=""
-                        android:layout_marginTop="4dp"
-                        android:background="@android:drawable/ic_menu_agenda"
-                        android:backgroundTint="#0C3D6A"/>
-                </LinearLayout>
+                <!-- ADD THIS TOGGLE HERE -->
+                <ToggleButton
+                    android:id="@+id/toggleSnapGrid"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="4dp"
+                    android:textOn="" android:textOff=""
+                    android:checked="true"
+                    android:background="@drawable/floating_controls_bg"
+                    android:drawableTop="@android:drawable/ic_menu_agenda"
+                    android:padding="8dp"/>
+                <ToggleButton
+                    android:id="@+id/toggleSnapPoints"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:textOn="" android:textOff=""
+                    android:checked="true"
+                    android:background="@drawable/floating_controls_bg"
+                    android:drawableTop="@drawable/ic_point"
+                    android:padding="8dp"/>
             </LinearLayout>
-
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -253,10 +160,7 @@
         android:id="@+id/bottomActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:padding="8dp"
-        android:background="#FFFFFF"
-        android:elevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <com.google.android.material.button.MaterialButton
@@ -265,20 +169,16 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp"
-            android:text="Discard"
-            android:textSize="12sp"
-            app:cornerRadius="4dp"/>
+            android:text="Back"/>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSave"
+            android:id="@+id/btnExtrude"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:text="Finish Drawing"
-            android:textSize="12sp"
-            app:cornerRadius="4dp"
-            app:backgroundTint="#0C3D6A" />
+            android:layout_marginStart="8dp"
+            android:text="3D Extrude"
+            app:backgroundTint="#FF5722" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -210,17 +210,6 @@
         </GridLayout>
     </ScrollView>
 
-    <!-- Logout -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnLogout"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="Logout"
-        android:textColor="@color/white"
-        app:backgroundTint="@color/error_red"
-        app:cornerRadius="16dp"
-        android:layout_marginTop="16dp"
-        app:icon="@android:drawable/ic_lock_power_off"
-        app:iconGravity="textStart" />
+
 
 </LinearLayout>

@@ -17,6 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+
 public class GeometryCanvas extends View {
     private List<GeometricObject> geometricObjects = new ArrayList<>();
     private List<String> history = new ArrayList<>();
@@ -313,6 +314,7 @@ public class GeometryCanvas extends View {
         @Override
         public String getLabel() { return label; }
     }
+
 
     public static class GeoArc extends GeometricObject {
         public float centerX, centerY, radius, startAngle, sweepAngle;

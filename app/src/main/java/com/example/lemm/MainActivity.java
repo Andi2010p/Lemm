@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int CAMERA_PERMISSION_CODE = 100;
     private static final String TAG = "Scanner";
-    
+
     private TextView tvMainWelcome;
     private ImageButton btnSettings, btnProfile;
     private MaterialCardView cardNewProblem, cardScanProblem, cardDrawProblem, cardHistory;
@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // ONLY load the main layout
         setContentView(R.layout.activity_main);
 
         initViews();
@@ -71,29 +72,27 @@ public class MainActivity extends AppCompatActivity {
         tvMainWelcome = findViewById(R.id.tvMainWelcome);
         btnSettings = findViewById(R.id.btnSettings);
         btnProfile = findViewById(R.id.btnProfile);
-        
+
         cardNewProblem = findViewById(R.id.cardNewProblem);
         cardScanProblem = findViewById(R.id.cardScanProblem);
         cardDrawProblem = findViewById(R.id.cardDrawProblem);
         cardHistory = findViewById(R.id.cardHistory);
-        
-        // Find and hide the old logout button if it exists in the XML
-        View oldLogout = findViewById(R.id.btnLogout);
-        if (oldLogout != null) oldLogout.setVisibility(View.GONE);
+
     }
 
     private void setupUser() {
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String username = pref.getString("username", "User");
-        tvMainWelcome.setText(getString(R.string.welcome, username));
+        tvMainWelcome.setText("Welcome Back, " + username);
     }
 
     private void setupListeners() {
+        // Open Manual Input
         cardNewProblem.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(MainActivity.this, GeometryInputActivity.class));
         });
 
+        // Open Scanner
         cardScanProblem.setOnClickListener(v -> {
             if (checkCameraPermission()) {
                 dispatchTakePictureIntent();
@@ -102,27 +101,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // OPEN THE CAD PAGE (This solves your errors)
         cardDrawProblem.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, DrawingActivity.class);
             startActivity(intent);
         });
 
+        // Open History
         cardHistory.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(MainActivity.this, HistoryActivity.class));
         });
 
-        btnProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-            startActivity(intent);
-        });
-        
-        btnSettings.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-            startActivity(intent);
-        });
+        btnProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
+        btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
     }
 
+    // --- CAMERA & OCR LOGIC ---
     private boolean checkCameraPermission() {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
@@ -133,28 +127,23 @@ public class MainActivity extends AppCompatActivity {
 
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            File photoFile = null;
-            try {
-                photoFile = createImageFile();
-            } catch (IOException ex) {
-                Log.e(TAG, "Error creating file", ex);
-            }
-            if (photoFile != null) {
-                photoUri = FileProvider.getUriForFile(this,
-                        "com.example.lemm.fileprovider",
-                        photoFile);
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-                cameraLauncher.launch(takePictureIntent);
-            }
+        File photoFile = null;
+        try {
+            photoFile = createImageFile();
+        } catch (IOException ex) {
+            Log.e(TAG, "Error creating file", ex);
+        }
+        if (photoFile != null) {
+            photoUri = FileProvider.getUriForFile(this, "com.example.lemm.fileprovider", photoFile);
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            cameraLauncher.launch(takePictureIntent);
         }
     }
 
     private File createImageFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        File image = File.createTempFile(imageFileName, ".jpg", storageDir);
+        File image = File.createTempFile("JPEG_" + timeStamp + "_", ".jpg", storageDir);
         currentPhotoPath = image.getAbsolutePath();
         return image;
     }
@@ -171,35 +160,20 @@ public class MainActivity extends AppCompatActivity {
     private void recognizeTextFromImage(Bitmap bitmap) {
         InputImage image = InputImage.fromBitmap(bitmap, 0);
         TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-
         recognizer.process(image)
                 .addOnSuccessListener(visionText -> {
-                    String resultText = visionText.getText();
-                    if (resultText.isEmpty()) {
-                        Toast.makeText(this, getString(R.string.ocr_no_text), Toast.LENGTH_SHORT).show();
-                    } else {
-                        Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
-                        intent.putExtra("SCANNED_TEXT", resultText);
-                        startActivity(intent);
-                    }
+                    Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
+                    intent.putExtra("SCANNED_TEXT", visionText.getText());
+                    startActivity(intent);
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "OCR Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(this, "OCR Error", Toast.LENGTH_SHORT).show());
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == CAMERA_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                dispatchTakePictureIntent();
-            } else {
-                Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show();
-            }
+        if (requestCode == CAMERA_PERMISSION_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            dispatchTakePictureIntent();
         }
-    }
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 }

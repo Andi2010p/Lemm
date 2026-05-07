@@ -68,7 +68,8 @@ dependencies {
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("io.noties.markwon:core:4.6.2")
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
-
+    implementation("org.locationtech.jts:jts-core:1.19.0")
+    implementation("io.github.sceneview:arsceneview:0.10.0")
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore-ktx") // <--- ADD THIS LINE FOR FIRESTORE

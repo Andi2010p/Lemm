@@ -35,9 +35,19 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Problem Input"
+                    android:text="Geometry Problem Solver"
                     android:textStyle="bold"
-                    android:textColor="@color/primary_dark" />
+                    android:textColor="@color/primary_dark"
+                    android:textSize="16sp" />
+
+                <ImageButton
+                    android:id="@+id/btnHistory"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_recent_history"
+                    app:tint="@color/secondary" />
 
                 <ImageButton
                     android:id="@+id/btnStopAI"
@@ -46,17 +56,7 @@
                     android:layout_marginEnd="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_delete"
-                    android:visibility="gone"
                     app:tint="@color/error_red" />
-
-                <ImageButton
-                    android:id="@+id/btnResizeText"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@android:drawable/ic_menu_zoom"
-                    app:tint="@color/secondary" />
 
                 <ImageButton
                     android:id="@+id/btnToggleInput"
@@ -66,53 +66,23 @@
                     android:src="@android:drawable/ic_menu_edit"
                     app:tint="@color/primary" />
             </LinearLayout>
-            <!-- ... Keep Header Card at the top ... -->
 
-            <!-- ADD THIS LINEAR LAYOUT WRAPPER -->
-            <LinearLayout
-                android:id="@+id/mainContentWrapper"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:orientation="vertical"
-                app:layout_constraintTop_toBottomOf="@id/headerCard"
-                app:layout_constraintBottom_toBottomOf="parent">
-
-                <!-- Move Canvas Card inside this LinearLayout -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/canvasCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="0.6"
-                    android:layout_margin="8dp"
-                    app:cardCornerRadius="24dp">
-                    <!-- ... existing frame layout content ... -->
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Move Results Section inside this LinearLayout -->
-                <LinearLayout
-                    android:id="@+id/resultSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="0.4"
-                    android:orientation="vertical">
-                    <!-- ... existing scrollview content ... -->
-                </LinearLayout>
-
-            </LinearLayout>
             <LinearLayout
                 android:id="@+id/inputExpandableArea"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="visible">
+                android:visibility="visible"
+                android:paddingTop="8dp">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tlDescription"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
                     android:hint="Problem description"
+                    app:startIconDrawable="@android:drawable/ic_menu_edit"
+                    app:startIconTint="@color/primary"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -125,7 +95,7 @@
                         android:layout_height="wrap_content"
                         android:inputType="textMultiLine"
                         android:minLines="1"
-                        android:maxLines="2"
+                        android:maxLines="3"
                         android:textColor="@color/text_main"
                         android:textSize="14sp" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -135,13 +105,19 @@
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:hint="AI instructions (Optional)"
+                    android:layout_marginTop="8dp"
+                    android:hint="Custom AI Instructions (Optional)"
+                    app:startIconDrawable="@android:drawable/ic_menu_info_details"
+                    app:startIconTint="@color/secondary"
+                    app:endIconMode="clear_text"
+                    app:endIconTint="@color/secondary"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
                     app:boxCornerRadiusTopStart="12dp"
-                    app:boxStrokeColor="@color/secondary">
+                    app:boxStrokeColor="@color/secondary"
+                    app:helperText="e.g. 'Use blue color', 'Draw a tall base'"
+                    app:helperTextEnabled="true">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etExtraCommands"
@@ -149,23 +125,25 @@
                         android:layout_height="wrap_content"
                         android:inputType="textMultiLine"
                         android:minLines="1"
-                        android:maxLines="1"
+                        android:maxLines="2"
                         android:textColor="@color/text_main"
-                        android:textSize="12sp" />
+                        android:textSize="13sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
                     android:id="@+id/btnSolveProblem"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp"
                     android:backgroundTint="@color/primary"
                     android:text="Analyze &amp; Visualize"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:cornerRadius="10dp" />
+                    app:cornerRadius="12dp"
+                    app:icon="@android:drawable/ic_menu_view"
+                    app:iconGravity="textStart" />
             </LinearLayout>
 
             <ProgressBar
@@ -179,41 +157,6 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Vision Bar (Shown when viewing history) -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/visionBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:visibility="gone"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp"
-        app:layout_constraintTop_toTopOf="parent">
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="8dp"
-            android:gravity="center_vertical">
-            <TextView
-                android:id="@+id/tvVisionTitle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:text="Saved Solution"
-                android:textColor="@color/primary_dark"
-                android:textStyle="bold"/>
-            <Button
-                android:id="@+id/btnEnterEditMode"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Edit"
-                app:icon="@android:drawable/ic_menu_edit"/>
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
     <!-- Canvas Area -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/canvasCard"
@@ -221,13 +164,12 @@
         android:layout_height="0dp"
         android:layout_margin="8dp"
         app:cardCornerRadius="24dp"
-        app:cardElevation="0dp"
-        app:strokeWidth="0dp"
+        app:cardElevation="2dp"
         app:layout_constraintBottom_toTopOf="@+id/resultSection"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/headerCard"
-        app:layout_constraintVertical_weight="0.7">
+        app:layout_constraintVertical_weight="0.6">
 
         <FrameLayout
             android:id="@+id/canvasContainer"
@@ -235,17 +177,11 @@
             android:layout_height="match_parent"
             android:background="#FFFFFF">
 
-            <com.example.lemm.GeometryCanvas
-                android:id="@+id/geometryCanvas"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:visibility="visible" />
-
             <com.example.lemm.GeometryCanvas3D
                 android:id="@+id/geometryCanvas3D"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:visibility="gone" />
+                android:visibility="visible" />
 
             <!-- Zoom Controls -->
             <LinearLayout
@@ -285,7 +221,7 @@
                     app:tint="@color/primary" />
             </LinearLayout>
 
-            <!-- Rotation Controls (3D ONLY) -->
+            <!-- Rotation Controls -->
             <LinearLayout
                 android:id="@+id/rotationControls"
                 android:layout_width="wrap_content"
@@ -294,83 +230,29 @@
                 android:layout_margin="10dp"
                 android:background="@drawable/floating_controls_bg"
                 android:orientation="vertical"
-                android:padding="2dp"
-                android:visibility="gone">
-
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
-                    <Button android:id="@+id/btnRotXMinus" android:layout_width="36dp" android:layout_height="36dp" android:text="-X" android:padding="0dp" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
-                    <Button android:id="@+id/btnRotXPlus" android:layout_width="36dp" android:layout_height="36dp" android:text="+X" android:padding="0dp" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                android:padding="2dp">
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotXMinus" android:layout_width="36dp" android:layout_height="36dp" android:text="-X" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                    <Button android:id="@+id/btnRotXPlus" android:layout_width="36dp" android:layout_height="36dp" android:text="+X" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
                 </LinearLayout>
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
-                    <Button android:id="@+id/btnRotYMinus" android:layout_width="36dp" android:layout_height="36dp" android:text="-Y" android:padding="0dp" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
-                    <Button android:id="@+id/btnRotYPlus" android:layout_width="36dp" android:layout_height="36dp" android:text="+Y" android:padding="0dp" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotYMinus" android:layout_width="36dp" android:layout_height="36dp" android:text="-Y" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                    <Button android:id="@+id/btnRotYPlus" android:layout_width="36dp" android:layout_height="36dp" android:text="+Y" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
                 </LinearLayout>
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
-                    <Button android:id="@+id/btnRotZMinus" android:layout_width="36dp" android:layout_height="36dp" android:text="-Z" android:padding="0dp" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
-                    <Button android:id="@+id/btnRotZPlus" android:layout_width="36dp" android:layout_height="36dp" android:text="+Z" android:padding="0dp" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotZMinus" android:layout_width="36dp" android:layout_height="36dp" android:text="-Z" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                    <Button android:id="@+id/btnRotZPlus" android:layout_width="36dp" android:layout_height="36dp" android:text="+Z" android:textSize="10sp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
                 </LinearLayout>
-
             </LinearLayout>
 
-            <!-- 2D Rotation Controls -->
-            <LinearLayout
-                android:id="@+id/rotationControls2D"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|start"
-                android:layout_margin="10dp"
-                android:background="@drawable/floating_controls_bg"
-                android:orientation="horizontal"
-                android:padding="2dp"
-                android:visibility="gone">
-
-                <Button
-                    android:id="@+id/btnRotLeft2D"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:text="↺"
-                    android:textSize="18sp"
-                    style="@style/Widget.MaterialComponents.Button.TextButton" />
-
-                <Button
-                    android:id="@+id/btnRotRight2D"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:text="↻"
-                    android:textSize="18sp"
-                    style="@style/Widget.MaterialComponents.Button.TextButton" />
-
-            </LinearLayout>
-
-            <!-- Resize Controls (Maximize/Minimize) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
-                android:layout_margin="12dp"
-                android:orientation="horizontal">
-                
-                <ImageButton
-                    android:id="@+id/btnMinimizeCanvas"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/floating_controls_bg"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_zoom_out_custom"
-                    app:tint="@color/secondary_dark" />
-
-                <ImageButton
-                    android:id="@+id/btnMaximizeCanvas"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/floating_controls_bg"
-                    android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_add"
-                    app:tint="@color/secondary_dark" />
-
+                android:layout_margin="12dp">
+                <ImageButton android:id="@+id/btnMinimizeCanvas" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_zoom_out_custom" android:background="@drawable/floating_controls_bg" android:layout_marginEnd="8dp"/>
+                <ImageButton android:id="@+id/btnMaximizeCanvas" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_menu_add" android:background="@drawable/floating_controls_bg"/>
             </LinearLayout>
-
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -384,50 +266,34 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/canvasCard"
-        app:layout_constraintVertical_weight="0.3">
+        app:layout_constraintVertical_weight="0.4">
 
         <LinearLayout
             android:id="@+id/solutionControls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="12dp"
-            android:layout_marginTop="4dp"
-            android:gravity="end"
+            android:layout_margin="8dp"
+            android:gravity="center"
             android:orientation="horizontal"
-            android:visibility="gone"
-            tools:visibility="visible">
+            android:visibility="gone">
 
-            <ImageButton
-                android:id="@+id/btnCopySolution"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+            <Button
+                android:id="@+id/btnDiscard"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="8dp"
-                android:scaleType="centerInside"
-                android:src="@android:drawable/ic_menu_edit"
-                app:tint="@color/primary" />
+                android:text="Don't Save"
+                android:textColor="#C62828" />
 
-            <ImageButton
-                android:id="@+id/btnDownloadImage"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="8dp"
-                android:scaleType="centerInside"
-                android:src="@android:drawable/ic_menu_gallery"
-                app:tint="@color/secondary" />
-
-            <ImageButton
-                android:id="@+id/btnDownloadPdf"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="8dp"
-                android:scaleType="centerInside"
-                android:src="@android:drawable/ic_menu_save"
-                app:tint="@color/primary_dark" />
+            <Button
+                android:id="@+id/btnSaveSolution"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Save"
+                android:backgroundTint="@color/primary" />
 
         </LinearLayout>
 
@@ -435,14 +301,12 @@
             android:id="@+id/resultScrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-
             <LinearLayout
                 android:id="@+id/stepsContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="8dp"
-                android:paddingBottom="30dp" />
+                android:padding="8dp" />
         </ScrollView>
     </LinearLayout>
 

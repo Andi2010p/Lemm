@@ -1,88 +1,60 @@
 package com.example.lemm;
 
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PointF;
-import android.graphics.pdf.PdfDocument;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
-import android.text.InputType;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
-import java.io.OutputStream;
+import org.locationtech.jts.geom.Coordinate;
+import android.view.View;
+import android.widget.Button;
 
 public class DrawingActivity extends AppCompatActivity {
-    private GeometryCanvas drawingCanvas;
-    private ImageButton btnToolMove, btnToolSelect, btnToolPoint, btnToolLine, btnToolCenterline, btnToolCircle, btnToolRect, btnToolArc, btnToolClear, btnUndo, btnDownloadDrawing;
+    private CadGeometryCanvas drawingCanvas;
+    private CadEngine2d engine;
+
+    private ImageButton btnToolMove, btnToolSelect, btnToolLine, btnToolRect, btnToolCircle, btnToolClear, btnUndo;
     private ImageButton btnZoomIn, btnZoomOut;
     private ToggleButton toggleSnapPoints, toggleSnapGrid;
     private TextView tvZoomPercent;
-    private Button btnSave, btnBack;
-    private DatabaseHelper dbHelper;
 
     private String currentTool = "MOVE";
-    private int editId = -1;
-    private String originalName = "";
 
-    // For multi-step drawing
-    private GeometryCanvas.GeoPoint firstPoint = null;
-    private PointF arcCenter = null;
-    private float firstX, firstY;
-
-    // For Select/Move logic
+    // CAD State variables
+    private PointF firstPoint = null;
     private float lastMoveX, lastMoveY;
-    private boolean isDragging = false;
-
+    private io.github.sceneview.SceneView scene3d;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_drawing);
-
-        dbHelper = new DatabaseHelper(this);
+        drawingCanvas = findViewById(R.id.drawingCanvas);
+        scene3d = findViewById(R.id.sceneView); // This works here!
+        drawingCanvas.setEngine(engine);
+        engine = new CadEngine2d();
         initViews();
         setupListeners();
 
-        editId = getIntent().getIntExtra("EDIT_ID", -1);
-        originalName = getIntent().getStringExtra("SAVED_NAME");
-        String savedData = getIntent().getStringExtra("LOAD_DRAWING_DATA");
-        
-        if (savedData != null && !savedData.isEmpty()) {
-            drawingCanvas.setDrawingData(savedData);
-        }
-
+        // Initialize tool
         selectTool("MOVE", btnToolMove);
-        updateZoomText();
     }
 
     private void initViews() {
         drawingCanvas = findViewById(R.id.drawingCanvas);
+        scene3d = findViewById(R.id.sceneView); // Fixed ID
+
         btnToolMove = findViewById(R.id.btnToolMove);
-        btnToolSelect = findViewById(R.id.btnToolSelect);
-        btnToolPoint = findViewById(R.id.btnToolPoint);
+        btnToolSelect = findViewById(R.id.btnToolSelect); // No longer red
         btnToolLine = findViewById(R.id.btnToolLine);
-        btnToolCenterline = findViewById(R.id.btnToolCenterline);
-        btnToolCircle = findViewById(R.id.btnToolCircle);
         btnToolRect = findViewById(R.id.btnToolRect);
-        btnToolArc = findViewById(R.id.btnToolArc);
+        btnToolCircle = findViewById(R.id.btnToolCircle);
         btnToolClear = findViewById(R.id.btnToolClear);
-        btnDownloadDrawing = findViewById(R.id.btnDownloadDrawing);
         btnUndo = findViewById(R.id.btnUndo);
 
         btnZoomIn = findViewById(R.id.btnZoomIn);
@@ -90,339 +62,158 @@ public class DrawingActivity extends AppCompatActivity {
         tvZoomPercent = findViewById(R.id.tvZoomPercent);
 
         toggleSnapPoints = findViewById(R.id.toggleSnapPoints);
-        toggleSnapGrid = findViewById(R.id.toggleSnapGrid);
+        toggleSnapGrid = findViewById(R.id.toggleSnapGrid); // No longer red
 
-        btnSave = findViewById(R.id.btnSave);
-        btnBack = findViewById(R.id.btnBack);
+        // Extrude Button
+        findViewById(R.id.btnExtrude).setOnClickListener(v -> toggle3D());
     }
 
     private void setupListeners() {
-        drawingCanvas.setOnZoomChangeListener(pct -> tvZoomPercent.setText(pct + "%"));
+        // Tool Selection
+        btnToolMove.setOnClickListener(v -> selectTool("MOVE", btnToolMove));
+        btnToolLine.setOnClickListener(v -> selectTool("LINE", btnToolLine));
+        btnToolRect.setOnClickListener(v -> selectTool("RECT", btnToolRect));
+        btnToolCircle.setOnClickListener(v -> selectTool("CIRCLE", btnToolCircle));
 
+        // Canvas Actions
+        btnUndo.setOnClickListener(v -> {
+            engine.undo();
+            drawingCanvas.invalidate();
+        });
+
+        btnToolClear.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Clear Drawing")
+                    .setMessage("Delete all geometry?")
+                    .setPositiveButton("Clear", (d, w) -> {
+                        engine.clear();
+                        drawingCanvas.invalidate();
+                    })
+                    .setNegativeButton("Cancel", null).show();
+        });
+
+        // Zoom Logic
         btnZoomIn.setOnClickListener(v -> {
             drawingCanvas.zoomIn();
             updateZoomText();
         });
-
         btnZoomOut.setOnClickListener(v -> {
             drawingCanvas.zoomOut();
             updateZoomText();
         });
 
-        btnToolMove.setOnClickListener(v -> selectTool("MOVE", btnToolMove));
-        btnToolSelect.setOnClickListener(v -> selectTool("SELECT", btnToolSelect));
-        btnToolPoint.setOnClickListener(v -> selectTool("POINT", btnToolPoint));
-        btnToolLine.setOnClickListener(v -> selectTool("LINE", btnToolLine));
-        btnToolCenterline.setOnClickListener(v -> selectTool("CENTERLINE", btnToolCenterline));
-        btnToolCircle.setOnClickListener(v -> selectTool("CIRCLE", btnToolCircle));
-        btnToolRect.setOnClickListener(v -> selectTool("RECT", btnToolRect));
-        btnToolArc.setOnClickListener(v -> selectTool("ARC", btnToolArc));
+        // Snap Toggles
+        toggleSnapPoints.setOnCheckedChangeListener((bv, isChecked) -> drawingCanvas.setSnapToPoints(isChecked));
 
-        toggleSnapPoints.setOnCheckedChangeListener((buttonView, isChecked) -> drawingCanvas.setSnapToPoints(isChecked));
-        toggleSnapGrid.setOnCheckedChangeListener((buttonView, isChecked) -> drawingCanvas.setSnapToGrid(isChecked));
-
-        if (btnUndo != null) {
-            btnUndo.setOnClickListener(v -> drawingCanvas.undo());
-        }
-
-        btnDownloadDrawing.setOnClickListener(v -> showExportDialog());
-
-        btnToolClear.setOnClickListener(v -> {
-            new AlertDialog.Builder(this)
-                    .setTitle("Clear Sketch")
-                    .setMessage("Are you sure you want to delete everything?")
-                    .setPositiveButton("Clear", (dialog, which) -> {
-                        drawingCanvas.clearPoints();
-                        Toast.makeText(this, "Canvas Cleared", Toast.LENGTH_SHORT).show();
-                        updateZoomText();
-                        selectTool("MOVE", btnToolMove);
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
-        });
-
+        // --- THE MAIN CAD TOUCH LOGIC ---
         drawingCanvas.setOnTouchListener((v, event) -> {
-            if (event.getPointerCount() > 1) {
-                drawingCanvas.onTouchEvent(event);
-                return true;
-            }
+            // 1. Convert Screen pixels to World CAD Math coordinates
+            PointF worldPt = drawingCanvas.getRawWorldCoords(event.getX(), event.getY());
 
-            float x = event.getX();
-            float y = event.getY();
-
-            // Get snapped internal coordinates
-            PointF snapped = drawingCanvas.getSnappedPoint(x, y);
-            float internalX = snapped.x;
-            float internalY = snapped.y;
+            // 2. Apply Snapping (Check if near a vertex)
+            Coordinate snapped = engine.getSnapPoint(worldPt.x, worldPt.y, 40); // 40 pixel tolerance
+            float finalX = (snapped != null) ? (float) snapped.x : worldPt.x;
+            float finalY = (snapped != null) ? (float) snapped.y : worldPt.y;
 
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     if (currentTool.equals("MOVE")) {
-                        drawingCanvas.onTouchEvent(event);
-                    } else if (currentTool.equals("SELECT")) {
-                        Object hit = drawingCanvas.findObjectAt(x, y);
-                        drawingCanvas.setSelectedObject(hit);
-                        if (hit != null) {
-                            drawingCanvas.saveToHistory();
-                            isDragging = true;
-                            lastMoveX = internalX;
-                            lastMoveY = internalY;
-                        }
-                    } else if (currentTool.equals("POINT")) {
-                        drawingCanvas.addPoint("P", internalX, internalY);
-                        selectTool("MOVE", btnToolMove);
-                    } else if (currentTool.equals("LINE") || currentTool.equals("CENTERLINE")) {
-                        if (firstPoint == null) {
-                            firstPoint = drawingCanvas.addPointAndReturn("", internalX, internalY);
-                            Toast.makeText(this, "Select End Point", Toast.LENGTH_SHORT).show();
-                        } else {
-                            boolean isCenterline = currentTool.equals("CENTERLINE");
-                            GeometryCanvas.GeoPoint secondPoint = drawingCanvas.addPointAndReturn("", internalX, internalY);
-                            drawingCanvas.addLine("", firstPoint, secondPoint, isCenterline);
-                            firstPoint = null;
-                            selectTool("MOVE", btnToolMove);
-                        }
-                    } else if (currentTool.equals("CIRCLE")) {
-                        if (arcCenter == null) {
-                            arcCenter = new PointF(internalX, internalY);
-                            Toast.makeText(this, "Select Radius", Toast.LENGTH_SHORT).show();
-                        } else {
-                            float r = (float) Math.hypot(internalX - arcCenter.x, internalY - arcCenter.y);
-                            drawingCanvas.addCircle("", arcCenter.x, arcCenter.y, r);
-                            arcCenter = null;
-                            selectTool("MOVE", btnToolMove);
-                        }
-                    } else if (currentTool.equals("RECT")) {
-                        if (firstPoint == null) {
-                            firstX = internalX; firstY = internalY;
-                            firstPoint = new GeometryCanvas.GeoPoint("", internalX, internalY, false);
-                            Toast.makeText(this, "Select Opposite Corner", Toast.LENGTH_SHORT).show();
-                        } else {
-                            drawingCanvas.addRect("", Math.min(firstX, internalX), Math.min(firstY, internalY),
-                                    Math.max(firstX, internalX), Math.max(firstY, internalY));
-                            firstPoint = null;
-                            selectTool("MOVE", btnToolMove);
-                        }
-                    } else if (currentTool.equals("ARC")) {
-                        if (arcCenter == null) {
-                            arcCenter = new PointF(internalX, internalY);
-                            Toast.makeText(this, "Select Start Point", Toast.LENGTH_SHORT).show();
-                        } else if (firstPoint == null) {
-                            firstX = internalX; firstY = internalY;
-                            firstPoint = new GeometryCanvas.GeoPoint("", internalX, internalY, false);
-                            Toast.makeText(this, "Select End Point", Toast.LENGTH_SHORT).show();
-                        } else {
-                            float r = (float) Math.hypot(firstX - arcCenter.x, firstY - arcCenter.y);
-                            float startAngle = (float) Math.toDegrees(Math.atan2(firstY - arcCenter.y, firstX - arcCenter.x));
-                            float endAngle = (float) Math.toDegrees(Math.atan2(internalY - arcCenter.y, internalX - arcCenter.x));
-                            float sweep = endAngle - startAngle;
-                            if (sweep < 0) sweep += 360;
-                            drawingCanvas.addArc("", arcCenter.x, arcCenter.y, r, startAngle, sweep);
-                            arcCenter = null;
-                            firstPoint = null;
-                            selectTool("MOVE", btnToolMove);
-                        }
+                        lastMoveX = event.getX();
+                        lastMoveY = event.getY();
+                    } else {
+                        handleCadDrawing(finalX, finalY);
                     }
-                    return true;
+                    break;
 
                 case MotionEvent.ACTION_MOVE:
                     if (currentTool.equals("MOVE")) {
-                        drawingCanvas.onTouchEvent(event);
-                    } else if (currentTool.equals("SELECT") && isDragging) {
-                        float dx = internalX - lastMoveX;
-                        float dy = internalY - lastMoveY;
-                        drawingCanvas.updateSelected(dx, dy);
-                        lastMoveX = internalX;
-                        lastMoveY = internalY;
+                        float dx = event.getX() - lastMoveX;
+                        float dy = event.getY() - lastMoveY;
+                        drawingCanvas.pan(dx, dy);
+                        lastMoveX = event.getX();
+                        lastMoveY = event.getY();
+                    } else if (firstPoint != null) {
+                        // Show "Ghost Line" while dragging
+                        drawingCanvas.setPreviewPoints(firstPoint, new PointF(finalX, finalY));
                     }
-                    return true;
+                    break;
 
                 case MotionEvent.ACTION_UP:
-                    if (currentTool.equals("SELECT") && isDragging) {
-                        isDragging = false;
-                        if (Math.abs(internalX - lastMoveX) < 0.1 && Math.abs(internalY - lastMoveY) < 0.1) {
-                            showEditDialog(drawingCanvas.findObjectAt(x, y));
-                        }
-                    }
-                    drawingCanvas.onTouchEvent(event);
                     v.performClick();
-                    return true;
+                    break;
             }
-            return false;
+            return true;
         });
-
-        btnSave.setOnClickListener(v -> showSaveDialog());
-        btnBack.setOnClickListener(v -> finish());
     }
 
-    private void showExportDialog() {
-        String[] options = {"PNG Image", "JPEG Image", "PDF Document"};
-        new AlertDialog.Builder(this)
-                .setTitle("Export Drawing")
-                .setItems(options, (dialog, which) -> {
-                    Bitmap bitmap = drawingCanvas.getBitmap();
-                    String baseName = (originalName != null && !originalName.isEmpty() ? originalName : "Drawing_" + System.currentTimeMillis());
-                    if (which == 0) saveAsImage(bitmap, baseName + ".png", Bitmap.CompressFormat.PNG, "image/png");
-                    else if (which == 1) saveAsImage(bitmap, baseName + ".jpg", Bitmap.CompressFormat.JPEG, "image/jpeg");
-                    else saveAsPdf(bitmap, baseName + ".pdf");
-                })
-                .show();
-    }
-
-    private void saveAsImage(Bitmap bitmap, String fileName, Bitmap.CompressFormat format, String mimeType) {
-        if (bitmap == null) return;
-        try {
-            OutputStream fos;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ContentValues contentValues = new ContentValues();
-                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
-                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/LemmCAD");
-                Uri imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
-                fos = getContentResolver().openOutputStream(imageUri);
-            } else {
-                String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
-                java.io.File image = new java.io.File(imagesDir, fileName);
-                fos = new java.io.FileOutputStream(image);
+    private void handleCadDrawing(float x, float y) {
+        if (firstPoint == null) {
+            // First Click: Set Start Point
+            firstPoint = new PointF(x, y);
+            Toast.makeText(this, "Start point set", Toast.LENGTH_SHORT).show();
+        } else {
+            // Second Click: Commit to Engine
+            switch (currentTool) {
+                case "LINE":
+                    engine.addLine(firstPoint.x, firstPoint.y, x, y);
+                    break;
+                case "RECT":
+                    engine.addRect(firstPoint.x, firstPoint.y, x, y);
+                    break;
+                case "CIRCLE":
+                    float radius = (float) Math.hypot(x - firstPoint.x, y - firstPoint.y);
+                    engine.addCircle(firstPoint.x, firstPoint.y, radius);
+                    break;
             }
-
-            bitmap.compress(format, 100, fos);
-            fos.flush();
-            fos.close();
-            Toast.makeText(this, "Saved to Gallery", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Export Failed", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
+            // Reset for next shape
+            firstPoint = null;
+            drawingCanvas.setPreviewPoints(null, null); // Remove ghost line
+            drawingCanvas.invalidate();
         }
-    }
-
-    private void saveAsPdf(Bitmap bitmap, String fileName) {
-        if (bitmap == null) return;
-        PdfDocument document = new PdfDocument();
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(bitmap.getWidth(), bitmap.getHeight(), 1).create();
-        PdfDocument.Page page = document.startPage(pageInfo);
-
-        android.graphics.Canvas canvas = page.getCanvas();
-        canvas.drawBitmap(bitmap, 0, 0, null);
-        document.finishPage(page);
-
-        try {
-            OutputStream fos;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ContentValues contentValues = new ContentValues();
-                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
-                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/LemmCAD");
-                Uri uri = getContentResolver().insert(MediaStore.Files.getContentUri("external"), contentValues);
-                fos = getContentResolver().openOutputStream(uri);
-            } else {
-                java.io.File file = new java.io.File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), fileName);
-                fos = new java.io.FileOutputStream(file);
-            }
-            document.writeTo(fos);
-            document.close();
-            fos.close();
-            Toast.makeText(this, "PDF Saved to Documents", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "PDF Export Failed", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
-        }
-    }
-
-    private void updateZoomText() {
-        tvZoomPercent.setText(drawingCanvas.getZoomPercentage() + "%");
     }
 
     private void selectTool(String tool, ImageButton button) {
         currentTool = tool;
         firstPoint = null;
-        arcCenter = null;
-        isDragging = false;
-        ImageButton[] buttons = {btnToolMove, btnToolSelect, btnToolPoint, btnToolLine, btnToolCenterline, btnToolCircle, btnToolRect, btnToolArc};
-        for (ImageButton b : buttons) {
-            if (b != null) b.setBackgroundColor(Color.TRANSPARENT);
-        }
+        drawingCanvas.setPreviewPoints(null, null);
+
+        // Reset button colors
+        ImageButton[] buttons = {btnToolMove, btnToolSelect, btnToolLine, btnToolRect, btnToolCircle};
+        for (ImageButton b : buttons) if (b != null) b.setBackgroundColor(Color.TRANSPARENT);
+
+        // Highlight active tool
         if (button != null) button.setBackgroundColor(Color.parseColor("#BBDEFB"));
-        drawingCanvas.setSelectedObject(null);
     }
+    // DELETE THESE LINES from DrawingActivity.java
 
-    private void showEditDialog(Object obj) {
-        if (obj == null) return;
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Edit Geometry");
-        final EditText input = new EditText(this);
-        LinearLayout container = new LinearLayout(this);
-        container.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.setMargins(50, 20, 50, 10);
-        input.setLayoutParams(params);
-        container.addView(input);
-        builder.setView(container);
-
-        if (obj instanceof GeometryCanvas.GeoCircle) {
-            builder.setMessage("Radius:");
-            input.setText(String.valueOf(((GeometryCanvas.GeoCircle)obj).radius));
-            input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        } else if (obj instanceof GeometryCanvas.GeoPoint) {
-            builder.setMessage("Label:");
-            input.setText(((GeometryCanvas.GeoPoint)obj).label);
-        } else if (obj instanceof GeometryCanvas.GeoLine) {
-            builder.setMessage("Name/Dimension:");
-            input.setText(((GeometryCanvas.GeoLine)obj).label);
-        }
-
-        builder.setPositiveButton("Update", (dialog, which) -> {
-            drawingCanvas.saveToHistory();
-            String val = input.getText().toString().trim();
-            if (obj instanceof GeometryCanvas.GeoCircle) {
-                try { ((GeometryCanvas.GeoCircle)obj).radius = Float.parseFloat(val); } catch(Exception ignored){}
-            } else if (obj instanceof GeometryCanvas.GeoPoint) {
-                ((GeometryCanvas.GeoPoint)obj).label = val;
-            } else if (obj instanceof GeometryCanvas.GeoLine) {
-                ((GeometryCanvas.GeoLine)obj).label = val;
-            }
-            drawingCanvas.invalidate();
-        });
-        builder.setNeutralButton("Delete", (dialog, which) -> {
-            drawingCanvas.saveToHistory();
-            drawingCanvas.deleteSelected();
-        });
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+    private void updateZoomText() {
+        tvZoomPercent.setText(drawingCanvas.getZoomPercentage() + "%");
     }
+    private void toggle3D() {
+        if (drawingCanvas.getVisibility() == View.VISIBLE) {
+            // Switch to 3D
+            drawingCanvas.setVisibility(View.GONE);
+            scene3d.setVisibility(View.VISIBLE);
 
-    private void showSaveDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Finish Sketch");
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 20);
-        final EditText input = new EditText(this);
-        input.setText(originalName != null && !originalName.isEmpty() ? originalName : "Sketch_" + (System.currentTimeMillis() % 10000));
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
-        input.setSelectAllOnFocus(true);
-        layout.addView(input);
-        builder.setView(layout);
-        builder.setPositiveButton("Save", (dialog, which) -> saveToDb(input.getText().toString().trim(), false));
-        if (editId != -1) {
-            builder.setNeutralButton("Overwrite", (dialog, which) -> saveToDb(input.getText().toString().trim(), true));
-        }
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
-    }
+            // Change button text to indicate we are in 3D
+            Button btnExtrude = findViewById(R.id.btnExtrude);
+            btnExtrude.setText("Back to Sketch");
 
-    private void saveToDb(String name, boolean overwrite) {
-        String data = drawingCanvas.getDrawingData();
-        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        String username = pref.getString("username", "GuestUser");
-        String finalName = name.isEmpty() ? "Sketch_" + (System.currentTimeMillis() % 10000) : name;
-        if (overwrite && editId != -1) {
-            dbHelper.updateDrawing(editId, finalName, data);
-            Toast.makeText(this, "Updated!", Toast.LENGTH_SHORT).show();
+            generate3DModel();
         } else {
-            dbHelper.addDrawing(username, finalName, data);
-            Toast.makeText(this, "Saved to History", Toast.LENGTH_SHORT).show();
+            // Switch back to 2D
+            drawingCanvas.setVisibility(View.VISIBLE);
+            scene3d.setVisibility(View.GONE);
+
+            Button btnExtrude = findViewById(R.id.btnExtrude);
+            btnExtrude.setText("3D Extrude");
         }
-        finish();
+    }
+
+    private void generate3DModel() {
+        // This is where the CAD magic happens.
+        // For now, we show a toast. Later, you will use SceneView
+        // to build a 3D mesh from the 'engine.getGeometries()' list.
+        Toast.makeText(this, "Generating 3D Model from Sketch...", Toast.LENGTH_SHORT).show();
     }
 }
