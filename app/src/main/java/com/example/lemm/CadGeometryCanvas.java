@@ -3,35 +3,23 @@ package com.example.lemm;
 import android.content.Context;
 import android.graphics.*;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Polygon;
-
 import java.util.List;
 
 public class CadGeometryCanvas extends View {
-    private float scale = 1.0f; // Ensure this is here
-    private boolean snapToGrid = true; // Add this if missing
-    private boolean snapToPoints = true; // Add this if missing
+    private float scale = 1.0f;
+    private boolean snapToGrid = true;
+    private boolean snapToPoints = true;
 
     private CadEngine2d engine;
-
-    // Transformation Matrix (The secret to Infinite Pan and Zoom)
     private Matrix matrix = new Matrix();
-
     private Matrix inverseMatrix = new Matrix();
     private float[] tempPts = new float[2];
 
-    // Rendering Paints
     private Paint linePaint, gridPaint, vertexPaint, previewPaint;
-
-    // Interaction Variables
-    private float lastTouchX, lastTouchY;
-    private boolean isPanning = false;
     private PointF previewEndPoint = null;
     private PointF previewStartPoint = null;
 
@@ -67,15 +55,17 @@ public class CadGeometryCanvas extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
-        // 1. Draw UI elements (Non-zoomed)
         canvas.drawColor(Color.WHITE);
 
-        // 2. Apply CAD Transformation (Zoom/Pan)
         canvas.save();
         canvas.concat(matrix);
 
         drawGrid(canvas);
+
+        // Make lines stay thin regardless of zoom level
+        float adjustedStroke = 3f / scale;
+        linePaint.setStrokeWidth(adjustedStroke);
+        previewPaint.setStrokeWidth(adjustedStroke);
 
         if (engine != null) {
             List<Geometry> geometries = engine.getGeometries();
@@ -84,7 +74,6 @@ public class CadGeometryCanvas extends View {
             }
         }
 
-        // Draw the "Ghost Line" while drawing
         if (previewStartPoint != null && previewEndPoint != null) {
             canvas.drawLine(previewStartPoint.x, previewStartPoint.y,
                     previewEndPoint.x, previewEndPoint.y, previewPaint);
@@ -94,11 +83,22 @@ public class CadGeometryCanvas extends View {
     }
 
     private void drawGrid(Canvas canvas) {
+        if (!snapToGrid) return;
         float gridSize = 100f;
-        float worldLimit = 5000f; // Large work area
-        for (float i = -worldLimit; i <= worldLimit; i += gridSize) {
-            canvas.drawLine(i, -worldLimit, i, worldLimit, gridPaint);
-            canvas.drawLine(-worldLimit, i, worldLimit, i, gridPaint);
+
+        // Only draw grid lines in the visible area to prevent lag
+        matrix.invert(inverseMatrix);
+        RectF visibleRect = new RectF(0, 0, getWidth(), getHeight());
+        inverseMatrix.mapRect(visibleRect);
+
+        float startX = (float) Math.floor(visibleRect.left / gridSize) * gridSize;
+        float startY = (float) Math.floor(visibleRect.top / gridSize) * gridSize;
+
+        for (float x = startX; x <= visibleRect.right; x += gridSize) {
+            canvas.drawLine(x, visibleRect.top, x, visibleRect.bottom, gridPaint);
+        }
+        for (float y = startY; y <= visibleRect.bottom; y += gridSize) {
+            canvas.drawLine(visibleRect.left, y, visibleRect.right, y, gridPaint);
         }
     }
 
@@ -115,14 +115,13 @@ public class CadGeometryCanvas extends View {
         if (geo instanceof Polygon) path.close();
         canvas.drawPath(path, paint);
 
-        // Draw vertices (points) for snapping feedback
+        // Draw small points at corners
+        float pointRadius = 5f / scale;
         for (Coordinate c : coords) {
-            canvas.drawCircle((float) c.x, (float) c.y, 5f, vertexPaint);
+            canvas.drawCircle((float) c.x, (float) c.y, pointRadius, vertexPaint);
         }
     }
 
-    // --- COORDINATE SYSTEM CONVERSION ---
-    // Converts screen pixels (where you touch) to World Coordinates (Math)
     public PointF getRawWorldCoords(float screenX, float screenY) {
         matrix.invert(inverseMatrix);
         tempPts[0] = screenX;
@@ -131,13 +130,14 @@ public class CadGeometryCanvas extends View {
         return new PointF(tempPts[0], tempPts[1]);
     }
 
-    // --- EXTERNAL CONTROLS ---
     public void zoomIn() {
+        scale *= 1.2f;
         matrix.postScale(1.2f, 1.2f, getWidth() / 2f, getHeight() / 2f);
         invalidate();
     }
 
     public void zoomOut() {
+        scale *= 0.8f;
         matrix.postScale(0.8f, 0.8f, getWidth() / 2f, getHeight() / 2f);
         invalidate();
     }
@@ -152,17 +152,8 @@ public class CadGeometryCanvas extends View {
         this.previewEndPoint = end;
         invalidate();
     }
-    public void setSnapToPoints(boolean snap) {
-        this.snapToPoints = snap;
-        invalidate();
-    }
 
-    public void setSnapToGrid(boolean snap) {
-        this.snapToGrid = snap;
-        invalidate();
-    }
-
-    public int getZoomPercentage() {
-        return (int) (scale * 100);
-    }
+    public void setSnapToPoints(boolean snap) { this.snapToPoints = snap; invalidate(); }
+    public void setSnapToGrid(boolean snap) { this.snapToGrid = snap; invalidate(); }
+    public int getZoomPercentage() { return (int) (scale * 100); }
 }

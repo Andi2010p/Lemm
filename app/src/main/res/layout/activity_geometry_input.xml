@@ -364,9 +364,10 @@
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
             android:gravity="center"
-            android:orientation="horizontal"
-            android:visibility="gone">
+            android:orientation="horizontal">
 
+            <!-- Removed the "Don't Save" button based on user request -->
+            <!--
             <Button
                 android:id="@+id/btnDiscard"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -376,12 +377,12 @@
                 android:layout_weight="1"
                 android:text="Don't Save"
                 android:textColor="#C62828" />
+            -->
 
             <Button
                 android:id="@+id/btnSaveSolution"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:backgroundTint="@color/primary"
                 android:text="Save" />
 

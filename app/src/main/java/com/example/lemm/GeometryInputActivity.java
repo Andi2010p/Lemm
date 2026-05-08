@@ -12,7 +12,7 @@ import android.widget.*;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-
+import com.example.lemm.R;
 import com.google.ai.client.generativeai.type.GenerateContentResponse;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -103,9 +103,8 @@ public class GeometryInputActivity extends AppCompatActivity {
             Toast.makeText(this, isMove ? "Move Mode" : "Rotate Mode", Toast.LENGTH_SHORT).show();
         });
 
-        // Save / Discard
+        // Save
         findViewById(R.id.btnSaveSolution).setOnClickListener(v -> showSaveDialog());
-        findViewById(R.id.btnDiscard).setOnClickListener(v -> resetAll());
 
         // Handle data from History Activity
         handleIntent(getIntent());
@@ -146,9 +145,19 @@ public class GeometryInputActivity extends AppCompatActivity {
         String prompt =
                 "SYSTEM: You are a CAD Geometry Engine. You MUST output DRAWING COMMANDS for any shape mentioned.\n" +
                         "TASK: Analyze the problem and output DRAWING COMMANDS followed by the step-by-step solution.\n\n" +
-                        "RULE: To draw a building that is cone-shaped (pyramid with circular base), use CONE3D.\n" +
+                        "RULE 1: Use ONLY these exact commands. Do NOT use 'point3d' or 'cad' or any other words.\n" +
+                        "RULE 2: To draw a Cone, you MUST use CONE3D. Do NOT use Circle and Lines.\n\n" +
                         "COMMAND: CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
-                        "- cx,cy,cz: Center of the circular base.\n" +
+                        "COMMAND: CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
+                        "MATH LOGIC:\n" +
+                        "1. (cx, cy, cz) is the center of the bottom circle.\n" +
+                        "2. height is how far the tip is above the base.\n" +
+                        "3. curvature should be 1.0 for a standard cone.\n" +
+                        "4. Y is UP. For a cone on the ground, cy=0 and height=200.\n\n" +
+                        "EXAMPLE: CONE3D:MyCone,0,0,0,50,150,1.0\n\n" +
+                        "COMMAND LIST:\n" +
+                        "DRAW3D:Label,x,y,z\n" +
+                        "LINE3D:Label1,Label2\n" +
                         "- radius: Radius of the base.\n" +
                         "- height: Vertical height from base to apex.\n" +
                         "- curvature: 1.0 (standard cone), 2.5 (concave shard), 0.5 (convex dome).\n\n" +
@@ -159,6 +168,35 @@ public class GeometryInputActivity extends AppCompatActivity {
                         "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
                         "SPHERE3D:Label,x,y,z,radius\n" +
                         "PLANE3D:Label,v1,v2,v3,v4 (Four labels for a face)\n\n" +
+                        "CONE RULES:\n" +
+                        "- curvature 1.0 is a sharp cone.\n" +
+                        "- Center is (0,0,0). Y is UP. Height should be 100-300.\n\n" +
+
+                        "EXAMPLE RESPONSE:\n" +
+                        "DRAW3D:A,0,0,0\n" +
+                        "CONE3D:Cone1,0,0,0,50,200,1.0\n" +
+                        "Solution: Volume = 1/3 * PI * r^2 * h...\n\n" +
+
+                        "CRITICAL RULES:\n" +
+                        "1. For any CONE use CONE3D. Do NOT use CIRCLE3D + LINE3D.\n" +
+                        "2. Coordinates: Y is UP. Center is (0,0,0). Use sizes between 50 and 200.\n" +
+                        "3. To make a cone look solid, the AI only needs to output one CONE3D command.\n\n" +
+                        "4. Never use CIRCLE3D + LINE3D to describe a cone. Use CONE3D only.\n" +
+                        "5. For buildings with 'non-straight' sides, always set curvature > 1.5.\n" +
+                        "6. Use coordinates like (0,0,0) and heights around 200.\n\n" +
+                        "Example for a curved skyscraper: CONE3D:SkyTower,0,0,0,50,300,2.2\n\n" +
+                        "- CURVATURE: 1.0 is a normal cone. 2.5 is a thin 'Shard' building (concave). 0.5 is a rounded 'Bullet' dome (convex).\n" +
+                        "- Use CONE3D with curvature > 1.5 to create modern aesthetic skyscrapers.\n" +
+                        "Make plane3d for each face."+
+                        "CYLINDER3D:Label,cx,cy,cz,radius,height (SOLID CYLINDER)\n" +
+                        "SPHERE3D:Label,x,y,z,radius (Wireframe sphere)\n\n" +
+
+                        "================ MODELING TIPS =================\n" +
+                        "- REALIZABLE FACES: To make an object look solid, use PLANE3D or CIRCLE3D.\n" +
+                        "- CONES: For any cone, use CONE3D. It handles shaded sides and base automatically.\n" +
+                        "- COORDINATES: Center view is (0,0,0). Use sizes like 50-200 units. Y-axis is UP.\n" +
+                        "- Output Drawing Commands first, one per line.\n\n" +
+
                         "CRITICAL RULES:\n" +
                         "1. For any pointed shape with a circular base, use CONE3D. Do NOT use lines/circles.\n" +
                         "2. Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
@@ -322,7 +360,6 @@ public class GeometryInputActivity extends AppCompatActivity {
             startActivity(intent);
             resetAll();
         });
-        builder.setNegativeButton("Cancel", null);
         builder.show();
     }
 

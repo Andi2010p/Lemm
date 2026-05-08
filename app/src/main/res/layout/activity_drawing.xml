@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:background="#F5F5F5">
 
-    <!-- CAD Toolbar -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/toolbarCard"
         android:layout_width="match_parent"
@@ -40,25 +39,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="4dp"
-                    android:gravity="center">
-                    <ImageButton
-                        android:id="@+id/btnToolMove"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_move"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
+                    android:padding="4dp">
 
-                    <!-- ADD THIS BUTTON HERE -->
-                    <ImageButton
-                        android:id="@+id/btnToolSelect"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@drawable/ic_selection"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#0C3D6A"/>
                     <ImageButton android:id="@+id/btnToolMove" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_move" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+                    <ImageButton android:id="@+id/btnToolSelect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_selection" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
                     <ImageButton android:id="@+id/btnToolLine" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_line" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
                     <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
                     <ImageButton android:id="@+id/btnToolCircle" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_circle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
@@ -70,7 +54,6 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Canvas Area -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/canvasCard"
         android:layout_width="0dp"
@@ -83,32 +66,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
 
-            <!-- THE 2D CAD CANVAS -->
             <com.example.lemm.CadGeometryCanvas
                 android:id="@+id/drawingCanvas"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="#FFFFFF" />
 
-            <!-- THE 3D VIEW (Hidden by default) -->
             <io.github.sceneview.SceneView
                 android:id="@+id/sceneView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:visibility="gone" />
 
-            <!-- Floating Controls -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|end"
                 android:layout_margin="12dp"
-                android:orientation="vertical"
-                android:gravity="end">
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -120,7 +97,7 @@
                     <TextView android:id="@+id/tvZoomPercent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="100%" android:paddingHorizontal="4dp" android:textStyle="bold"/>
                     <ImageButton android:id="@+id/btnZoomIn" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackground" android:src="@android:drawable/ic_menu_zoom"/>
                 </LinearLayout>
-                <!-- Inside the vertical snap controls LinearLayout -->
+
                 <ToggleButton
                     android:id="@+id/toggleSnapPoints"
                     android:layout_width="40dp"
@@ -131,7 +108,6 @@
                     android:drawableTop="@drawable/ic_point"
                     android:padding="8dp"/>
 
-                <!-- ADD THIS TOGGLE HERE -->
                 <ToggleButton
                     android:id="@+id/toggleSnapGrid"
                     android:layout_width="40dp"
@@ -142,20 +118,10 @@
                     android:background="@drawable/floating_controls_bg"
                     android:drawableTop="@android:drawable/ic_menu_agenda"
                     android:padding="8dp"/>
-                <ToggleButton
-                    android:id="@+id/toggleSnapPoints"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:textOn="" android:textOff=""
-                    android:checked="true"
-                    android:background="@drawable/floating_controls_bg"
-                    android:drawableTop="@drawable/ic_point"
-                    android:padding="8dp"/>
             </LinearLayout>
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Bottom Actions -->
     <LinearLayout
         android:id="@+id/bottomActions"
         android:layout_width="match_parent"
@@ -180,5 +146,4 @@
             android:text="3D Extrude"
             app:backgroundTint="#FF5722" />
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>
