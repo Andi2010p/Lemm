@@ -15,6 +15,8 @@ import java.util.List;
 
 public class GeometryCanvas3D extends View {
     private Paint linePaint, pointPaint, planePaint, textPaint;
+    private Paint xAxisPaint, yAxisPaint, zAxisPaint;
+    private Paint axesTextPaint; // New paint for axes labels
 
     private List<Point3D> points = new ArrayList<>();
     private List<Line3D> lines = new ArrayList<>();
@@ -28,6 +30,8 @@ public class GeometryCanvas3D extends View {
 
     private float rotateX = -25f, rotateY = 45f, rotateZ = 0f;
     private float scaleFactor = 1.0f;
+    private float translateX = 0f, translateY = 0f;
+    private boolean isMoveMode = false;
     private float prevX, prevY;
     private ScaleGestureDetector scaleDetector;
 
@@ -78,6 +82,15 @@ public class GeometryCanvas3D extends View {
         planePaint = new Paint(Paint.ANTI_ALIAS_FLAG); planePaint.setStyle(Paint.Style.FILL);
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG); textPaint.setTextSize(26f); textPaint.setColor(Color.parseColor("#0C3D6A")); textPaint.setTypeface(Typeface.DEFAULT_BOLD);
 
+        xAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); xAxisPaint.setColor(Color.RED); xAxisPaint.setStrokeWidth(5f); // Increased stroke width
+        yAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); yAxisPaint.setColor(Color.GREEN); yAxisPaint.setStrokeWidth(5f); // Increased stroke width
+        zAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); zAxisPaint.setColor(Color.BLUE); zAxisPaint.setStrokeWidth(5f); // Increased stroke width
+
+        axesTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); // New paint for axes labels
+        axesTextPaint.setTextSize(30f); // Increased text size
+        axesTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
+        // Colors will be set per axis in drawAxesCube
+
         scaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override public boolean onScale(ScaleGestureDetector d) {
                 scaleFactor *= d.getScaleFactor();
@@ -87,6 +100,9 @@ public class GeometryCanvas3D extends View {
             }
         });
     }
+
+    public void setMoveMode(boolean move) { this.isMoveMode = move; }
+    public boolean isMoveMode() { return isMoveMode; }
 
     public void addPoint(String l, float x, float y, float z) { saveToHistory(); points.add(new Point3D(l, x, y, z)); invalidate(); }
     public void addLine(String a, String b) { saveToHistory(); lines.add(new Line3D(a, b)); invalidate(); }
@@ -103,7 +119,7 @@ public class GeometryCanvas3D extends View {
 
     public void clear() {
         points.clear(); lines.clear(); planes.clear(); cones.clear(); pyramids.clear(); cylinders.clear(); circles.clear(); spheres.clear();
-        scaleFactor = 1.0f; rotateX = -25f; rotateY = 45f; rotateZ = 0f;
+        scaleFactor = 1.0f; rotateX = -25f; rotateY = 45f; rotateZ = 0f; translateX = 0f; translateY = 0f;
         historyStack.clear(); invalidate();
     }
 
@@ -139,9 +155,11 @@ public class GeometryCanvas3D extends View {
         super.onDraw(canvas);
         canvas.drawColor(Color.WHITE);
 
-        float drawCX = getWidth()/2f, drawCY = getHeight()/2f;
+        float drawCX = getWidth()/2f + translateX, drawCY = getHeight()/2f + translateY;
         float baseScale = (Math.min(getWidth(), getHeight()) / 600f) * scaleFactor;
         double rx = Math.toRadians(rotateX), ry = Math.toRadians(rotateY), rz = Math.toRadians(rotateZ);
+
+        drawAxesCube(canvas, rx, ry, rz);
 
         for (Point3D p : points) project(p, rx, ry, rz, drawCX, drawCY, baseScale);
 
@@ -161,7 +179,7 @@ public class GeometryCanvas3D extends View {
             planePaint.setColor(Color.argb(120, 135, 206, 250)); canvas.drawPath(p, planePaint); canvas.drawPath(p, linePaint);
         }
 
-        // 3. Cones (Real building style - Circular base, curved skyscraper)
+        // 3. Cones
         for (Cone3D c : cones) {
             int slices = 48, stacks = 12;
             for (int i = 0; i < slices; i++) {
@@ -236,6 +254,27 @@ public class GeometryCanvas3D extends View {
         }
     }
 
+    private void drawAxesCube(Canvas canvas, double rx, double ry, double rz) {
+        float cubeCX = 100f, cubeCY = 100f, cubeScale = 60f; // Moved to top-left and slightly larger
+        Point3D origin = new Point3D(null, 0, 0, 0);
+        Point3D xAxis = new Point3D(null, 1, 0, 0);
+        Point3D yAxis = new Point3D(null, 0, 1, 0);
+        Point3D zAxis = new Point3D(null, 0, 0, 1);
+
+        project(origin, rx, ry, rz, cubeCX, cubeCY, cubeScale);
+        project(xAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale);
+        project(yAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale);
+        project(zAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale);
+
+        canvas.drawLine(origin.sx, origin.sy, xAxis.sx, xAxis.sy, xAxisPaint);
+        canvas.drawLine(origin.sx, origin.sy, yAxis.sx, yAxis.sy, yAxisPaint);
+        canvas.drawLine(origin.sx, origin.sy, zAxis.sx, zAxis.sy, zAxisPaint);
+
+        axesTextPaint.setColor(Color.RED); canvas.drawText("X", xAxis.sx + 10, xAxis.sy + 10, axesTextPaint);
+        axesTextPaint.setColor(Color.GREEN); canvas.drawText("Y", yAxis.sx + 10, yAxis.sy + 10, axesTextPaint);
+        axesTextPaint.setColor(Color.BLUE); canvas.drawText("Z", zAxis.sx + 10, zAxis.sy + 10, axesTextPaint);
+    }
+
     private Path drawCirclePath(float cx, float cy, float cz, float r, double rx, double ry, double rz, float dcx, float dcy, float scale) {
         Path path = new Path(); int segs = 48;
         for (int i = 0; i <= segs; i++) {
@@ -264,7 +303,11 @@ public class GeometryCanvas3D extends View {
         if (e.getPointerCount() == 1) {
             if (e.getAction() == MotionEvent.ACTION_DOWN) { prevX = e.getX(); prevY = e.getY(); }
             if (e.getAction() == MotionEvent.ACTION_MOVE) {
-                rotateY += (e.getX() - prevX) * 0.5f; rotateX -= (e.getY() - prevY) * 0.5f;
+                if (isMoveMode) {
+                    translateX += (e.getX() - prevX); translateY += (e.getY() - prevY);
+                } else {
+                    rotateY += (e.getX() - prevX) * 0.5f; rotateX -= (e.getY() - prevY) * 0.5f;
+                }
                 prevX = e.getX(); prevY = e.getY(); invalidate();
             }
         }
