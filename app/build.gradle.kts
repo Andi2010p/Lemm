@@ -54,32 +54,43 @@ android {
 }
 
 dependencies {
-    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
-    implementation("com.google.firebase:firebase-database")
-    implementation("com.google.firebase:firebase-auth")
-    implementation(libs.google.generativeai)
-    implementation("com.google.android.gms:play-services-auth:21.1.1")
-    implementation(libs.guava)
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation(libs.androidx.appcompat)
-    implementation(libs.com.google.android.material)
-    implementation(libs.androidx.constraintlayout)
+    // Android Core & UI
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.cardview:cardview:1.0.0")
-    implementation("io.noties.markwon:core:4.6.2")
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
-    implementation("org.locationtech.jts:jts-core:1.19.0")
+
+    // SceneView (3D Engine)
+    implementation("io.github.sceneview:sceneview:2.2.1")
     implementation("io.github.sceneview:arsceneview:0.10.0")
+    implementation("dev.romainguy:kotlin-math:1.5.3")
+
+    // Geometry/CAD Engine
+    implementation("org.locationtech.jts:jts-core:1.19.0")
+
+    // Firebase (Using BOM for version management)
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore-ktx") // <--- ADD THIS LINE FOR FIRESTORE
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.android.gms:play-services-auth:21.1.1")
+    // Google Generative AI
+    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
+    // ML Kit & Text Recognition
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
 
+    // Utilities
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("io.noties.markwon:core:4.6.2")
     implementation("io.noties.markwon:ext-latex:4.6.2")
-    implementation(libs.play.services.mlkit.text.recognition)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    implementation("com.google.guava:guava:33.0.0-android")
+    implementation("dev.romainguy:kotlin-math:1.5.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation(libs.kotlin.math)
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.test:runner:1.5.2")
-    implementation(libs.mlkit.text.recognition)
 
 }

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="#E1E5E8">
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/toolbarCard"
@@ -23,7 +23,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sketch Manager"
+                android:text="Sketch Tools"
                 android:textSize="10sp"
                 android:paddingLeft="8dp"
                 android:paddingTop="2dp"
@@ -39,14 +39,28 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="4dp">
+                    android:padding="4dp"
+                    android:gravity="center_vertical">
+
+                    <ImageButton
+                        android:id="@+id/btnBack"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:src="@android:drawable/ic_menu_revert"
+                        android:background="?attr/selectableItemBackground"
+                        app:tint="#444444"
+                        android:tooltipText="Back"/>
+
+                    <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
 
                     <ImageButton android:id="@+id/btnToolMove" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_move" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
-                    <ImageButton android:id="@+id/btnToolSelect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_selection" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+                    <ImageButton android:id="@+id/btnToolSelect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_selection" android:background="?attr/selectableItemBackground" app:tint="#E67E22" android:tooltipText="Select / Dimension"/>
                     <ImageButton android:id="@+id/btnToolLine" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_line" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+                    <ImageButton android:id="@+id/btnToolPoly" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_edit" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Continuous Sketch"/>
                     <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
                     <ImageButton android:id="@+id/btnToolCircle" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_circle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
                     <ImageButton android:id="@+id/btnUndo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_undo" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+
                     <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
                     <ImageButton android:id="@+id/btnToolClear" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_delete" android:background="?attr/selectableItemBackground" app:tint="#C62828"/>
                 </LinearLayout>
@@ -61,8 +75,8 @@
         android:layout_margin="8dp"
         app:cardCornerRadius="4dp"
         app:cardElevation="2dp"
-        app:layout_constraintTop_toBottomOf="@id/toolbarCard"
-        app:layout_constraintBottom_toTopOf="@id/bottomActions"
+        app:layout_constraintTop_toBottomOf="@+id/toolbarCard"
+        app:layout_constraintBottom_toTopOf="@+id/bottomActions"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -74,76 +88,36 @@
                 android:layout_height="match_parent"
                 android:background="#FFFFFF" />
 
-            <io.github.sceneview.SceneView
-                android:id="@+id/sceneView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:visibility="gone" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top|end"
-                android:layout_margin="12dp"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/floating_controls_bg"
-                    android:padding="4dp"
-                    android:layout_marginBottom="8dp">
-                    <ImageButton android:id="@+id/btnZoomOut" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackground" android:src="@android:drawable/ic_menu_zoom" android:rotation="180"/>
-                    <TextView android:id="@+id/tvZoomPercent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="100%" android:paddingHorizontal="4dp" android:textStyle="bold"/>
-                    <ImageButton android:id="@+id/btnZoomIn" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackground" android:src="@android:drawable/ic_menu_zoom"/>
-                </LinearLayout>
-
-                <ToggleButton
-                    android:id="@+id/toggleSnapPoints"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:textOn="" android:textOff=""
-                    android:checked="true"
-                    android:background="@drawable/floating_controls_bg"
-                    android:drawableTop="@drawable/ic_point"
-                    android:padding="8dp"/>
-
-                <ToggleButton
-                    android:id="@+id/toggleSnapGrid"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="4dp"
-                    android:textOn="" android:textOff=""
-                    android:checked="true"
-                    android:background="@drawable/floating_controls_bg"
-                    android:drawableTop="@android:drawable/ic_menu_agenda"
-                    android:padding="8dp"/>
-            </LinearLayout>
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- SAVE / DON'T SAVE BUTTONS -->
     <LinearLayout
         android:id="@+id/bottomActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="8dp"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnBack"
+            android:id="@+id/btnDontSave"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Back"/>
+            android:text="Don't Save"
+            app:strokeColor="#C62828"
+            android:textColor="#C62828"/>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnExtrude"
+            android:id="@+id/btnSave"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="2"
+            android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="3D Extrude"
-            app:backgroundTint="#FF5722" />
+            android:text="Save Drawing"
+            app:backgroundTint="#27AE60" />
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

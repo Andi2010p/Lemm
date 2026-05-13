@@ -31,6 +31,7 @@ play-services-mlkit-text-recognition = { group = "com.google.android.gms", name 
 
 google-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
 guava = { group = "com.google.guava", name = "guava", version = "31.1-android" }
+kotlin-math = { group = "dev.romainguy", name = "kotlin-math", version = "1.5.3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

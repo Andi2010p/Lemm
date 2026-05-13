@@ -131,6 +131,8 @@ public class MainActivity extends AppCompatActivity {
         try {
             photoFile = createImageFile();
         } catch (IOException ex) {
+            // Around line 133 in MainActivity.java
+            photoUri = FileProvider.getUriForFile(this, "com.example.lemm.fileprovider", photoFile);
             Log.e(TAG, "Error creating file", ex);
         }
         if (photoFile != null) {

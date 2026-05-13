@@ -160,6 +160,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.rawQuery("SELECT * FROM " + TABLE_HISTORY + " WHERE " + KEY_HIST_USERNAME + " = ? ORDER BY " + KEY_HIST_DATE + " DESC", new String[]{user});
     }
 
+    public int countSolutionsStartingWith(String username, String prefix) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        int count = 0;
+        try {
+            cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_HISTORY + 
+                               " WHERE " + KEY_HIST_USERNAME + " = ? AND " + KEY_HIST_NAME + " LIKE ?",
+                               new String[]{username, prefix + "%"});
+            if (cursor.moveToFirst()) {
+                count = cursor.getInt(0);
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return count;
+    }
+
     public void addDrawing(String user, String name, String data) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();

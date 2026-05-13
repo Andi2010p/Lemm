@@ -20,7 +20,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,8 +37,8 @@ public class GeometryInputActivity extends AppCompatActivity {
 
     private MaterialCardView canvasCard;
     private LinearLayout resultSection;
-    private String lastSolutionText = ""; // Stores only the textual solution, not commands
-    private String lastAIResponse = ""; // Stores the raw AI response (commands + solution)
+    private String lastSolutionText = "";
+    private String lastAIResponse = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,10 +60,9 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         geminiAI = new GeminiAI(BuildConfig.GEMINI_API_KEY);
 
-        // Resize Logic
+        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnMaximizeCanvas).setOnClickListener(v -> setCanvasWeight(0.85f, 0.15f));
         findViewById(R.id.btnMinimizeCanvas).setOnClickListener(v -> setCanvasWeight(0.6f, 0.4f));
-
         findViewById(R.id.btnStopAI).setOnClickListener(v -> resetAll());
         findViewById(R.id.btnSolveProblem).setOnClickListener(v -> {
             String problem = etDescription.getText().toString().trim();
@@ -72,16 +70,13 @@ public class GeometryInputActivity extends AppCompatActivity {
             else Toast.makeText(this, "Enter a problem", Toast.LENGTH_SHORT).show();
         });
 
-        findViewById(R.id.btnToggleInput).setOnClickListener(v -> 
-            inputArea.setVisibility(inputArea.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE));
+        findViewById(R.id.btnToggleInput).setOnClickListener(v ->
+                inputArea.setVisibility(inputArea.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE));
 
-        // History Button - Go to HistoryActivity
         findViewById(R.id.btnHistory).setOnClickListener(v -> {
-            Intent intent = new Intent(this, HistoryActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, HistoryActivity.class));
         });
 
-        // Rotation
         findViewById(R.id.btnRotXPlus).setOnClickListener(v -> canvas3D.rotateX(10f));
         findViewById(R.id.btnRotXMinus).setOnClickListener(v -> canvas3D.rotateX(-10f));
         findViewById(R.id.btnRotYPlus).setOnClickListener(v -> canvas3D.rotateY(10f));
@@ -89,12 +84,10 @@ public class GeometryInputActivity extends AppCompatActivity {
         findViewById(R.id.btnRotZPlus).setOnClickListener(v -> canvas3D.rotateZ(10f));
         findViewById(R.id.btnRotZMinus).setOnClickListener(v -> canvas3D.rotateZ(-10f));
 
-        // Zoom
         findViewById(R.id.btnZoomIn).setOnClickListener(v -> canvas3D.zoomIn());
         findViewById(R.id.btnZoomOut).setOnClickListener(v -> canvas3D.zoomOut());
         canvas3D.setOnZoomChangeListener(pct -> tvZoom.setText(pct + "%"));
 
-        // Move/Rotate Toggle
         ImageButton btnToggleMode = findViewById(R.id.btnToggleMoveRotate);
         btnToggleMode.setOnClickListener(v -> {
             boolean isMove = !canvas3D.isMoveMode();
@@ -103,10 +96,10 @@ public class GeometryInputActivity extends AppCompatActivity {
             Toast.makeText(this, isMove ? "Move Mode" : "Rotate Mode", Toast.LENGTH_SHORT).show();
         });
 
-        // Save
+        // New Save/Don't Save actions
+        findViewById(R.id.btnDontSave).setOnClickListener(v -> resetAll());
         findViewById(R.id.btnSaveSolution).setOnClickListener(v -> showSaveDialog());
 
-        // Handle data from History Activity
         handleIntent(getIntent());
     }
 
@@ -203,6 +196,15 @@ public class GeometryInputActivity extends AppCompatActivity {
                         "3. Use Unicode math symbols (√, ×, ÷, ^). No LaTeX(dont use dolar sign, /sqrt or other things {}etc).\n" +
                         "4. Make it look like a solid building using CONE3D/PYRAMID3D.(Cone3D if its cone or its base is circle.\n\n" +
                         "SOLUTION FORMAT: Start each step with 'Step X: ' (e.g., 'Step 1: Calculate...'). End the solution with 'FINAL ANSWER: ' followed by the result.\n\n" +
+                        "1. For any pointed shape with a circular base, use CONE3D. Do NOT use lines/circles.\n" +
+                        "2. Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
+                        "If there is no circle in that part of stucture use line3d and plane 3d"+
+                        "If there is a face for structure make plane for every face.Example:If you have pyramid you should draw pyramid with planes"+
+                        "3. Use Unicode math symbols (√, ×, ÷, ^). No LaTeX(dont use  /sqrt or other things {}etc).\n" +
+                        "4. Make it look like a solid building using CONE3D/PYRAMID3D.(Cone3D if its cone or its base is circle.\n\n" +
+                        "Explain everything carefully every step in a new card,at first say user what letter is what point or line in solution"+
+                        "If solution needs construction in or out of structure you can also do it with plane3d line3d circle3d and other function."+
+                        "EVERY FACE SHOULD HAVE PLANE"+
                         "PROBLEM:\n" + problem + "\n" +
                         (extra.isEmpty() ? "" : "\nADDITIONAL INSTRUCTIONS:\n" + extra);
 
@@ -234,7 +236,6 @@ public class GeometryInputActivity extends AppCompatActivity {
         String[] lines = cleanText.split("\n");
         StringBuilder solutionBuilder = new StringBuilder();
 
-        // Pattern to find drawing commands
         Pattern commandPattern = Pattern.compile("(CONE3D|PYRAMID3D|CYLINDER3D|SPHERE3D|DRAW3D|LINE3D|PLANE3D):(.*)");
 
         for (String line : lines) {
@@ -263,7 +264,7 @@ public class GeometryInputActivity extends AppCompatActivity {
                         for (int i = 1; i < d.length; i++) labels.add(d[i]);
                         canvas3D.addPlane(labels);
                     }
-                } catch (Exception e) { Log.e(TAG, "Error parsing command: " + line, e); }
+                } catch (Exception e) { Log.e(TAG, "Error parsing command", e); }
             } else {
                 solutionBuilder.append(line).append("\n");
             }
@@ -304,10 +305,6 @@ public class GeometryInputActivity extends AppCompatActivity {
         canvas3D.invalidate();
     }
 
-    private void addSolutionCard(String text) {
-        addSolutionCard(text, false, false);
-    }
-
     private void addSolutionCard(String text, boolean isFinalResult, boolean isFirstStep) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -315,7 +312,7 @@ public class GeometryInputActivity extends AppCompatActivity {
         card.setRadius(24f); card.setCardElevation(6f);
 
         TextView tv = new TextView(this);
-        tv.setText(text); 
+        tv.setText(text);
         tv.setTextColor(Color.BLACK);
 
         if (isFinalResult) {
@@ -348,16 +345,28 @@ public class GeometryInputActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Save Solution");
         final EditText input = new EditText(this);
-        input.setText("unsave"); 
+
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        int unnamedCount = pref.getInt("unnamed_solution_count", 1);
+        String defaultName = getIntent().hasExtra("SAVED_NAME") ? getIntent().getStringExtra("SAVED_NAME") : "unnamed" + unnamedCount;
+
+        input.setText(defaultName);
+        input.setSelectAllOnFocus(true);
         builder.setView(input);
+
         builder.setPositiveButton("Save", (dialog, which) -> {
-            String name = input.getText().toString();
-            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            String name = input.getText().toString().trim();
+            if (name.isEmpty()) name = "unnamed" + unnamedCount;
+
+            if (name.startsWith("unnamed")) {
+                pref.edit().putInt("unnamed_solution_count", unnamedCount + 1).apply();
+            }
+
             String currentUser = pref.getString("username", "GuestUser");
             dbHelper.addHistory(currentUser, name, etDescription.getText().toString(), lastSolutionText, lastAIResponse);
             Toast.makeText(this, "Saved to History", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(this, HistoryActivity.class);
-            startActivity(intent);
+
+            startActivity(new Intent(this, HistoryActivity.class));
             resetAll();
         });
         builder.show();
@@ -371,7 +380,8 @@ public class GeometryInputActivity extends AppCompatActivity {
         inputArea.setVisibility(View.VISIBLE);
         setCanvasWeight(0.6f, 0.4f);
         canvas3D.setMoveMode(false);
-        ((ImageButton) findViewById(R.id.btnToggleMoveRotate)).setColorFilter(ContextCompat.getColor(this, R.color.primary));    }
+        ((ImageButton) findViewById(R.id.btnToggleMoveRotate)).setColorFilter(ContextCompat.getColor(this, R.color.primary));
+    }
 
     private float f(String s) { try { return Float.parseFloat(s.trim()); } catch (Exception e) { return 0f; } }
 }

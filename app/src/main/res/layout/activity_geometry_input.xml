@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@drawable/gradient_bg">
 
-    <!-- Header Section (Input Card) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/headerCard"
         android:layout_width="match_parent"
@@ -30,6 +29,15 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_revert"
+                    app:tint="@color/primary_dark" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -157,7 +165,6 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Canvas Area -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/canvasCard"
         android:layout_width="0dp"
@@ -183,7 +190,6 @@
                 android:layout_height="match_parent"
                 android:visibility="visible" />
 
-            <!-- Mode Toggle Control (Shifted down slightly to be closer to rotation buttons) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -203,7 +209,6 @@
                     app:tint="@color/primary" />
             </LinearLayout>
 
-            <!-- Controls for Zoom (Top End) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -240,10 +245,8 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_menu_zoom"
                     app:tint="@color/primary" />
-
             </LinearLayout>
 
-            <!-- Rotation Controls (Bottom-Start) -->
             <LinearLayout
                 android:id="@+id/rotationControls"
                 android:layout_width="wrap_content"
@@ -254,99 +257,32 @@
                 android:orientation="vertical"
                 android:padding="2dp">
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-
-                    <Button
-                        android:id="@+id/btnRotXMinus"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="-X"
-                        android:textSize="10sp" />
-
-                    <Button
-                        android:id="@+id/btnRotXPlus"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="+X"
-                        android:textSize="10sp" />
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotXMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-X" android:textSize="10sp" />
+                    <Button android:id="@+id/btnRotXPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+X" android:textSize="10sp" />
                 </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-
-                    <Button
-                        android:id="@+id/btnRotYMinus"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="-Y"
-                        android:textSize="10sp" />
-
-                    <Button
-                        android:id="@+id/btnRotYPlus"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="+Y"
-                        android:textSize="10sp" />
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotYMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-Y" android:textSize="10sp" />
+                    <Button android:id="@+id/btnRotYPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+Y" android:textSize="10sp" />
                 </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-
-                    <Button
-                        android:id="@+id/btnRotZMinus"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="-Z"
-                        android:textSize="10sp" />
-
-                    <Button
-                        android:id="@+id/btnRotZPlus"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="+Z"
-                        android:textSize="10sp" />
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotZMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-Z" android:textSize="10sp" />
+                    <Button android:id="@+id/btnRotZPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+Z" android:textSize="10sp" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Canvas Resize Controls (Bottom-End) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
                 android:layout_margin="12dp">
-
-                <ImageButton
-                    android:id="@+id/btnMinimizeCanvas"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/floating_controls_bg"
-                    android:src="@drawable/ic_minus"
-                    app:tint="@color/primary" />
-
-                <ImageButton
-                    android:id="@+id/btnMaximizeCanvas"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/floating_controls_bg"
-                    android:src="@drawable/ic_plus"
-                    app:tint="@color/primary" />
+                <ImageButton android:id="@+id/btnMinimizeCanvas" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginEnd="8dp" android:background="@drawable/floating_controls_bg" android:src="@drawable/ic_minus" app:tint="@color/primary" />
+                <ImageButton android:id="@+id/btnMaximizeCanvas" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/floating_controls_bg" android:src="@drawable/ic_plus" app:tint="@color/primary" />
             </LinearLayout>
 
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Results Section -->
     <LinearLayout
         android:id="@+id/resultSection"
         android:layout_width="0dp"
@@ -358,41 +294,39 @@
         app:layout_constraintTop_toBottomOf="@id/canvasCard"
         app:layout_constraintVertical_weight="0.4">
 
+        <!-- NEW SAVE / DON'T SAVE CONTROLS -->
         <LinearLayout
             android:id="@+id/solutionControls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:padding="8dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
 
-            <!-- Removed the "Don't Save" button based on user request -->
-            <!--
-            <Button
-                android:id="@+id/btnDiscard"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDontSave"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="Don't Save"
-                android:textColor="#C62828" />
-            -->
+                app:strokeColor="#C62828"
+                android:textColor="#C62828"/>
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSaveSolution"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:backgroundTint="@color/primary"
-                android:text="Save" />
-
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Save Solution"
+                app:backgroundTint="#27AE60" />
         </LinearLayout>
 
         <ScrollView
             android:id="@+id/resultScrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-
             <LinearLayout
                 android:id="@+id/stepsContainer"
                 android:layout_width="match_parent"

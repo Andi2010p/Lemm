@@ -23,16 +23,16 @@ public class SplashActivity extends AppCompatActivity {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                 
-                // If no user is logged in, automatically log in as Admin_Teacher
-                if (!pref.contains("username")) {
-                    pref.edit()
-                        .putString("username", "Admin_Teacher")
-                        .putBoolean("is_guest", false)
-                        .apply();
+                Intent intent;
+                // If a username exists, the user is logged in (Guest, Admin, or Registered)
+                if (pref.contains("username")) {
+                    intent = new Intent(SplashActivity.this, MainActivity.class);
+                } else {
+                    // First time or logged out: go to StartActivity
+                    intent = new Intent(SplashActivity.this, StartActivity.class);
                 }
                 
-                // Always go to MainActivity now since we auto-login if empty
-                startActivity(new Intent(SplashActivity.this, MainActivity.class));
+                startActivity(intent);
                 finish();
             }, 2000);
 
