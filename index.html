@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>LemmaGeoAi — AI Geometry Solver & Tutor</title>
+
+  <meta
+    name="description"
+    content="LemmaGeoAi is an AI geometry tutor that helps students solve geometry problems, draw 2D and 3D figures, scan tasks, watch tutorials, and export solutions."
+  />
+
+  <style>
+    :root {
+      --bg: #050816;
+      --bg2: #0b1026;
+      --card: rgba(255, 255, 255, 0.08);
+      --card2: rgba(255, 255, 255, 0.13);
+      --text: #eef3ff;
+      --muted: #aab4d4;
+      --line: rgba(255, 255, 255, 0.16);
+      --blue: #6dd5ff;
+      --purple: #9d7cff;
+      --green: #79ffa8;
+      --shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
+      --radius: 26px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(109, 213, 255, 0.26), transparent 28%),
+        radial-gradient(circle at 85% 12%, rgba(157, 124, 255, 0.30), transparent 30%),
+        radial-gradient(circle at 50% 85%, rgba(121, 255, 168, 0.16), transparent 35%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -3;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, black, transparent 90%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -2;
+      background:
+        linear-gradient(115deg, transparent 0%, rgba(109, 213, 255, 0.07) 25%, transparent 45%),
+        linear-gradient(245deg, transparent 0%, rgba(157, 124, 255, 0.08) 35%, transparent 60%);
+      animation: backgroundMove 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes backgroundMove {
+      from {
+        transform: translateX(-30px) translateY(-20px) scale(1);
+      }
+
+      to {
+        transform: translateX(30px) translateY(20px) scale(1.04);
+      }
+    }
+
+    .bg-shapes {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .shape {
+      position: absolute;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      background: rgba(255, 255, 255, 0.025);
+      animation: floatShape 14s ease-in-out infinite;
+    }
+
+    .shape.triangle {
+      width: 120px;
+      height: 120px;
+      left: 8%;
+      top: 24%;
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      border: none;
+      background: linear-gradient(135deg, rgba(109, 213, 255, 0.13), rgba(157, 124, 255, 0.04));
+    }
+
+    .shape.circle {
+      width: 160px;
+      height: 160px;
+      right: 8%;
+      top: 35%;
+      border-radius: 50%;
+      border-color: rgba(121, 255, 168, 0.18);
+    }
+
+    .shape.square {
+      width: 110px;
+      height: 110px;
+      left: 18%;
+      bottom: 12%;
+      transform: rotate(18deg);
+      border-radius: 24px;
+      border-color: rgba(157, 124, 255, 0.18);
+    }
+
+    .shape.line {
+      width: 260px;
+      height: 2px;
+      right: 12%;
+      bottom: 22%;
+      background: linear-gradient(90deg, transparent, rgba(109, 213, 255, 0.3), transparent);
+      border: none;
+      transform: rotate(-22deg);
+    }
+
+    @keyframes floatShape {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-25px) rotate(8deg);
+      }
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(18px);
+      background: rgba(6, 8, 20, 0.72);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav-inner {
+      max-width: 1180px;
+      margin: auto;
+      padding: 15px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+      letter-spacing: 0.3px;
+      text-decoration: none;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #07101f;
+      font-weight: 1000;
+      box-shadow: 0 0 25px rgba(109, 213, 255, 0.25);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .nav-links a:hover {
+      color: white;
+    }
+
+    .btn {
+      border: 0;
+      color: #08101d;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      padding: 13px 18px;
+      border-radius: 999px;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 14px 36px rgba(109, 213, 255, 0.22);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: 0.25s ease;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 46px rgba(109, 213, 255, 0.34);
+    }
+
+    .btn.secondary {
+      background: rgba(255, 255, 255, 0.09);
+      color: white;
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .hero {
+      max-width: 1180px;
+      margin: auto;
+      padding: 78px 22px 40px;
+      display: grid;
+      grid-template-columns: 1.03fr 0.97fr;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 9px;
+      align-items: center;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: clamp(42px, 6vw, 76px);
+      line-height: 0.95;
+      letter-spacing: -3px;
+      margin-bottom: 22px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, var(--blue), var(--purple), var(--green));
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      font-size: 19px;
+      line-height: 1.7;
+      color: var(--muted);
+      max-width: 650px;
+      margin-bottom: 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .site-link {
+      margin-top: 12px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .site-link a {
+      color: var(--blue);
+      font-weight: 800;
+      word-break: break-all;
+      text-decoration: none;
+    }
+
+    .site-link a:hover {
+      text-decoration: underline;
+    }
+
+    .mini-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 590px;
+    }
+
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px;
+      backdrop-filter: blur(14px);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 26px;
+      color: white;
+    }
+
+    .stat span {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .phone-wrap {
+      position: relative;
+      min-height: 560px;
+      display: grid;
+      place-items: center;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(8px);
+      opacity: 0.75;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .orb.one {
+      width: 120px;
+      height: 120px;
+      background: var(--blue);
+      left: 30px;
+      top: 40px;
+    }
+
+    .orb.two {
+      width: 150px;
+      height: 150px;
+      background: var(--purple);
+      right: 20px;
+      bottom: 75px;
+      animation-delay: 1.2s;
+    }
+
+    .orb.three {
+      width: 86px;
+      height: 86px;
+      background: var(--green);
+      left: 120px;
+      bottom: 20px;
+      animation-delay: 2s;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-22px);
+      }
+    }
+
+    .phone {
+      width: min(360px, 88vw);
+      min-height: 660px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 46px;
+      padding: 16px;
+      box-shadow: var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(24px);
+      transform: rotate(2deg);
+      animation: phoneIn 1.1s ease both;
+    }
+
+    @keyframes phoneIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px) rotate(6deg);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) rotate(2deg);
+      }
+    }
+
+    .screen {
+      background: linear-gradient(180deg, #111a39, #070916);
+      border-radius: 34px;
+      min-height: 628px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+    }
+
+    .screen-top {
+      padding: 28px 24px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mini-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #08101d;
+      font-weight: 1000;
+    }
+
+    .logo-card strong {
+      font-size: 15px;
+    }
+
+    .logo-card span {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .screen-chip {
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(121, 255, 168, 0.16);
+      color: var(--green);
+      font-weight: 900;
+    }
+
+    .geometry-demo {
+      padding: 18px 22px;
+    }
+
+    .canvas-card {
+      height: 300px;
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .canvas-card svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .ai-box {
+      margin-top: 16px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--line);
+      padding: 16px;
+    }
+
+    .ai-box h3 {
+      font-size: 17px;
+      margin-bottom: 8px;
+    }
+
+    .ai-box p {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .typing::after {
+      content: "|";
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .tool-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .tool {
+      padding: 13px 7px;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.08);
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    section {
+      max-width: 1180px;
+      margin: auto;
+      padding: 70px 22px;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .section-title h2 {
+      font-size: clamp(32px, 4vw, 50px);
+      letter-spacing: -1.5px;
+      margin-bottom: 12px;
+    }
+
+    .section-title p {
+      color: var(--muted);
+      font-size: 18px;
+      max-width: 720px;
+      margin: auto;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+      backdrop-filter: blur(16px);
+      transition: 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: auto -30px -40px auto;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: rgba(109, 213, 255, 0.08);
+    }
+
+    .card:hover {
+      transform: translateY(-7px);
+      background: var(--card2);
+    }
+
+    .icon {
+      font-size: 33px;
+      margin-bottom: 16px;
+    }
+
+    .card h3 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      counter-reset: step;
+    }
+
+    .step {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 22px;
+      position: relative;
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      font-weight: 900;
+      margin-bottom: 18px;
+      color: #08101d;
+    }
+
+    .step h3 {
+      margin-bottom: 10px;
+    }
+
+    .step p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .tutorial-layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .video-card {
+      background: #050713;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .video-thumb {
+      min-height: 290px;
+      background:
+        radial-gradient(circle at 50% 40%, rgba(109, 213, 255, 0.35), transparent 32%),
+        linear-gradient(135deg, rgba(157, 124, 255, 0.35), rgba(121, 255, 168, 0.13));
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .play {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      font-size: 36px;
+      backdrop-filter: blur(16px);
+    }
+
+    .video-info {
+      padding: 22px;
+    }
+
+    .video-info p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    .playlist {
+      display: grid;
+      gap: 13px;
+    }
+
+    .lesson {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px;
+    }
+
+    .lesson-num {
+      width: 46px;
+      height: 46px;
+      border-radius: 15px;
+      background: rgba(109, 213, 255, 0.16);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+
+    .lesson h4 {
+      margin-bottom: 5px;
+    }
+
+    .lesson p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .download {
+      background: linear-gradient(135deg, rgba(109, 213, 255, 0.16), rgba(157, 124, 255, 0.16));
+      border: 1px solid var(--line);
+      border-radius: 36px;
+      padding: 36px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: center;
+      box-shadow: var(--shadow);
+    }
+
+    .download h2 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .download p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .download-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .faq {
+      display: grid;
+      gap: 12px;
+      max-width: 850px;
+      margin: auto;
+    }
+
+    .faq details {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .faq summary {
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .faq p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    .faq a {
+      color: var(--blue);
+      font-weight: 800;
+      word-break: break-all;
+      text-decoration: none;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 28px 22px;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: 0.7s ease;
+    }
+
+    .reveal.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .tutorial-layout,
+      .download {
+        grid-template-columns: 1fr;
+      }
+
+      .phone-wrap {
+        min-height: auto;
+      }
+
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .steps {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .download-actions {
+        justify-content: flex-start;
+      }
+
+      .mini-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .grid,
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 45px;
+      }
+
+      h1 {
+        letter-spacing: -1.5px;
+      }
+
+      .phone {
+        transform: none;
+      }
+
+      .download {
+        padding: 24px;
+      }
+
+      .download h2 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg-shapes">
+    <div class="shape triangle"></div>
+    <div class="shape circle"></div>
+    <div class="shape square"></div>
+    <div class="shape line"></div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#top" aria-label="LemmaGeoAi home">
+        <div class="brand-logo">L</div>
+        <span>LemmaGeoAi</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#tutorials">Tutorials</a>
+        <a href="#download">Download</a>
+      </div>
+
+      <a class="btn" href="downloads/lemmageoai.apk" download>
+        Download APK
+      </a>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section class="hero">
+      <div>
+        <div class="badge">✨ AI tutor for geometry, sketches, and proofs</div>
+
+        <h1>
+          Turn geometry problems into
+          <span class="gradient-text">clear solutions</span>.
+        </h1>
+
+        <p>
+          LemmaGeoAi helps you type or scan geometry tasks, draw clean 2D and
+          3D figures, get step-by-step AI explanations, and save your solved
+          work for later.
+        </p>
+
+        <div class="download-actions">
+  <a class="btn" href="downloads/lemmageoai.apk" download>
+    Download Android APK
+  </a>
+
+          <a class="btn secondary" href="#tutorials">
+            Watch tutorials
+          </a>
+        </div>
+
+        <p class="site-link">
+          Project link:
+          <a href="https://github.com/Andi2010p/Lemm" target="_blank">
+            https://github.com/Andi2010p/Lemm
+          </a>
+        </p>
+
+        <div class="mini-stats">
+          <div class="stat">
+            <strong>2D/3D</strong>
+            <span>drawing canvas</span>
+          </div>
+
+          <div class="stat">
+            <strong>OCR</strong>
+            <span>scan problem text</span>
+          </div>
+
+          <div class="stat">
+            <strong>AI</strong>
+            <span>step-by-step help</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap" aria-hidden="true">
+        <span class="orb one"></span>
+        <span class="orb two"></span>
+        <span class="orb three"></span>
+
+        <div class="phone">
+          <div class="screen">
+            <div class="screen-top">
+              <div class="logo-card">
+                <div class="mini-logo">L</div>
+
+                <div>
+                  <strong>LemmaGeoAi</strong>
+                  <span>Smart solver</span>
+                </div>
+              </div>
+
+              <div class="screen-chip">LIVE</div>
+            </div>
+
+            <div class="geometry-demo">
+              <div class="canvas-card">
+                <svg viewBox="0 0 300 300" role="img" aria-label="Animated geometry drawing">
+                  <defs>
+                    <linearGradient id="g" x1="0" x2="1">
+                      <stop stop-color="#6dd5ff" />
+                      <stop offset="1" stop-color="#9d7cff" />
+                    </linearGradient>
+                  </defs>
+
+                  <circle
+                    cx="150"
+                    cy="150"
+                    r="95"
+                    fill="none"
+                    stroke="rgba(255,255,255,.13)"
+                    stroke-width="2"
+                  />
+
+                  <path
+                    d="M72 220 L150 58 L238 220 Z"
+                    fill="rgba(109,213,255,.08)"
+                    stroke="url(#g)"
+                    stroke-width="4"
+                    stroke-linejoin="round"
+                  >
+                    <animate
+                      attributeName="stroke-dasharray"
+                      values="0 700;700 0"
+                      dur="3s"
+                      repeatCount="indefinite"
+                    />
+                  </path>
+
+                  <line
+                    x1="150"
+                    y1="58"
+                    x2="150"
+                    y2="220"
+                    stroke="#79ffa8"
+                    stroke-width="3"
+                    stroke-dasharray="8 8"
+                  />
+
+                  <circle cx="72" cy="220" r="7" fill="#6dd5ff" />
+                  <circle cx="150" cy="58" r="7" fill="#79ffa8" />
+                  <circle cx="238" cy="220" r="7" fill="#9d7cff" />
+
+                  <text x="58" y="244" fill="white" font-size="18" font-weight="700">A</text>
+                  <text x="146" y="47" fill="white" font-size="18" font-weight="700">B</text>
+                  <text x="244" y="244" fill="white" font-size="18" font-weight="700">C</text>
+                </svg>
+              </div>
+
+              <div class="ai-box">
+                <h3>AI Solution</h3>
+
+                <p class="typing">
+                  The triangle is analyzed. The altitude, angle relations, and
+                  final answer are written step by step.
+                </p>
+              </div>
+
+              <div class="tool-row">
+                <div class="tool">Point</div>
+                <div class="tool">Line</div>
+                <div class="tool">Circle</div>
+                <div class="tool">Export</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section id="features">
+    <div class="section-title reveal">
+      <h2>Powerful tools for geometry learning</h2>
+
+      <p>
+        This page explains what your AI app can do before the user downloads the APK.
+      </p>
+    </div>
+
+    <div class="grid">
+      <div class="card reveal">
+        <div class="icon">🧠</div>
+        <h3>AI Geometry Solver</h3>
+        <p>
+          Write a problem and get a clean explanation with final answers,
+          formulas, and reasoning.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <div class="icon">📷</div>
+        <h3>Scan with OCR</h3>
+        <p>
+          Use a photo or camera scan to read geometry tasks instead of typing
+          everything manually.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <div class="icon">📐</div>
+        <h3>2D Drawing Tools</h3>
+        <p>
+          Create points, lines, circles, rectangles, angles, arcs, and labels on
+          a geometry canvas.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <div class="icon">🧊</div>
+        <h3>3D Geometry Canvas</h3>
+        <p>
+          Visualize 3D objects such as lines, planes, circles, and spheres for
+          harder spatial problems.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <div class="icon">🧾</div>
+        <h3>Solution History</h3>
+        <p>
+          Save previous problems, raw AI responses, solved results, and notes so
+          you can review them later.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <div class="icon">📥</div>
+        <h3>APK Download</h3>
+        <p>
+          Users can download LemmaGeoAi directly from the website using the APK
+          button.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="section-title reveal">
+      <h2>How LemmaGeoAi works</h2>
+
+      <p>
+        A simple tutorial path helps new users understand the app in seconds.
+      </p>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal">
+        <h3>Enter or scan</h3>
+        <p>
+          Type the geometry problem or scan it with OCR from an image.
+        </p>
+      </div>
+
+      <div class="step reveal">
+        <h3>Sketch the figure</h3>
+        <p>
+          Draw points, lines, circles, angles, and 3D objects to match the
+          problem.
+        </p>
+      </div>
+
+      <div class="step reveal">
+        <h3>Ask AI</h3>
+        <p>
+          The AI analyzes the problem and returns a structured solution.
+        </p>
+      </div>
+
+      <div class="step reveal">
+        <h3>Save result</h3>
+        <p>
+          Keep it in history, export as PDF/image, or share the answer.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tutorials">
+    <div class="section-title reveal">
+      <h2>Tutorial videos</h2>
+
+      <p>
+        Replace these placeholders with your real screen-recorded tutorial videos later.
+      </p>
+    </div>
+
+    <div class="tutorial-layout">
+      <div class="video-card reveal">
+        <div class="video-thumb">
+          <div class="play">▶</div>
+        </div>
+
+        <div class="video-info">
+          <h3>Quick start: solve your first geometry task</h3>
+
+          <p>
+            This block is designed for an embedded video. Later you can paste a
+            YouTube iframe here or add your own local video file.
+          </p>
+        </div>
+      </div>
+
+      <div class="playlist">
+        <div class="lesson reveal">
+          <div class="lesson-num">01</div>
+
+          <div>
+            <h4>How to type a problem</h4>
+            <p>
+              Show users where to write the task and how to start the AI.
+            </p>
+          </div>
+        </div>
+
+        <div class="lesson reveal">
+          <div class="lesson-num">02</div>
+
+          <div>
+            <h4>How to scan from photo</h4>
+            <p>
+              Explain OCR scanning and checking the recognized text.
+            </p>
+          </div>
+        </div>
+
+        <div class="lesson reveal">
+          <div class="lesson-num">03</div>
+
+          <div>
+            <h4>How to draw 2D figures</h4>
+            <p>
+              Teach point, line, circle, angle, move, undo, and zoom tools.
+            </p>
+          </div>
+        </div>
+
+        <div class="lesson reveal">
+          <div class="lesson-num">04</div>
+
+          <div>
+            <h4>How to use 3D canvas</h4>
+            <p>
+              Explain planes, spheres, 3D lines, and spatial visualization.
+            </p>
+          </div>
+        </div>
+
+        <div class="lesson reveal">
+          <div class="lesson-num">05</div>
+
+          <div>
+            <h4>How to export solutions</h4>
+            <p>
+              Show saving to gallery, PDF export, and history review.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="download reveal">
+      <div>
+        <h2>Ready to download LemmaGeoAi?</h2>
+
+        <p>
+          Download the LemmaGeoAi Android APK and install it on your device.
+          You can also view the project link below.
+        </p>
+
+        <p class="site-link">
+          Project link:
+          <a href="https://github.com/Andi2010p/Lemm" target="_blank">
+            https://github.com/Andi2010p/Lemm
+          </a>
+        </p>
+      </div>
+
+      <div class="download-actions">
+        <a class="btn" href="downloads/lemmageoai.apk" download>
+          Download Android APK
+        </a>
+
+        <a class="btn secondary" href="#how">
+          Learn first
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title reveal">
+      <h2>FAQ</h2>
+
+      <p>
+        These questions make the site feel more real and trustworthy.
+      </p>
+    </div>
+
+    <div class="faq">
+      <details class="reveal">
+        <summary>Is this for learning or just final answers?</summary>
+
+        <p>
+          LemmaGeoAi is presented as a learning tutor. It explains steps, shows
+          drawings, and helps students understand the geometry logic.
+        </p>
+      </details>
+
+      <details class="reveal">
+        <summary>Where is the APK file?</summary>
+
+        <p>
+          The APK button uses this path: downloads/lemmageoai.apk. Your APK must
+          be inside a folder named downloads and must be named lemmageoai.apk.
+        </p>
+      </details>
+
+      <details class="reveal">
+        <summary>Where is the project link?</summary>
+
+        <p>
+          The project link is:
+          <a href="https://github.com/Andi2010p/Lemm" target="_blank">
+            https://github.com/Andi2010p/Lemm
+          </a>
+        </p>
+      </details>
+
+      <details class="reveal">
+        <summary>Can I add real videos?</summary>
+
+        <p>
+          Yes. Replace the video placeholder with a YouTube iframe or add links
+          to your own tutorial videos.
+        </p>
+      </details>
+    </div>
+  </section>
+
+  <footer>
+    © 2026 LemmaGeoAi. Modern AI geometry tutorial and landing page.
+  </footer>
+
+  <script>
+    const reveals = document.querySelectorAll(".reveal");
+
+    const observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("show");
+          }
+        });
+      },
+      {
+        threshold: 0.15
+      }
+    );
+
+    reveals.forEach(function (el) {
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>
