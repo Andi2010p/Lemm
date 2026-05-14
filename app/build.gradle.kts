@@ -78,6 +78,8 @@ dependencies {
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
     // ML Kit & Text Recognition
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
+    implementation("com.sun.mail:android-mail:1.6.7")
+    implementation("com.sun.mail:android-activation:1.6.7")
 
     // Utilities
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

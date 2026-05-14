@@ -8,11 +8,12 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "UserDatabase.db";
-    private static final int DATABASE_VERSION = 5;
-    
+    private static final int DATABASE_VERSION = 6;
+
     private static final String TABLE_USERS = "users";
     private static final String KEY_ID = "id";
     private static final String KEY_USERNAME = "username";
+    private static final String KEY_EMAIL = "email";
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_GOOGLE_ID = "google_id";
 
@@ -43,6 +44,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String CREATE_USERS_TABLE = "CREATE TABLE " + TABLE_USERS + "("
                 + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + KEY_USERNAME + " TEXT UNIQUE,"
+                + KEY_EMAIL + " TEXT,"
                 + KEY_PASSWORD + " TEXT,"
                 + KEY_GOOGLE_ID + " TEXT" + ")";
         db.execSQL(CREATE_USERS_TABLE);
@@ -87,19 +89,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     + KEY_DRW_DATA + " TEXT,"
                     + KEY_DRW_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")");
         }
+        if (oldVersion < 6) db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + KEY_EMAIL + " TEXT");
     }
 
-    public boolean addUser(String u, String p) {
+    public boolean addUser(String u, String email, String p) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();
-        v.put(KEY_USERNAME, u); v.put(KEY_PASSWORD, p);
+        v.put(KEY_USERNAME, u);
+        v.put(KEY_EMAIL, email);
+        v.put(KEY_PASSWORD, p);
         return db.insert(TABLE_USERS, null, v) != -1;
     }
 
     public boolean syncGoogleUser(String email, String googleId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();
-        v.put(KEY_USERNAME, email); v.put(KEY_GOOGLE_ID, googleId);
+        v.put(KEY_USERNAME, email);
+        v.put(KEY_EMAIL, email);
+        v.put(KEY_GOOGLE_ID, googleId);
         return db.insertWithOnConflict(TABLE_USERS, null, v, SQLiteDatabase.CONFLICT_REPLACE) != -1;
     }
 
@@ -119,11 +126,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return exists;
     }
 
-    public boolean updatePassword(String u, String p) {
+    public String getUserEmail(String identifier) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT " + KEY_EMAIL + " FROM " + TABLE_USERS + " WHERE " + KEY_USERNAME + " = ? OR " + KEY_EMAIL + " = ?", new String[]{identifier, identifier});
+        String email = null;
+        if (c.moveToFirst()) {
+            email = c.getString(0);
+        }
+        c.close();
+        return email;
+    }
+
+    public boolean updatePassword(String identifier, String p) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();
         v.put(KEY_PASSWORD, p);
-        return db.update(TABLE_USERS, v, KEY_USERNAME + " = ?", new String[]{u}) > 0;
+        return db.update(TABLE_USERS, v, KEY_USERNAME + " = ? OR " + KEY_EMAIL + " = ?", new String[]{identifier, identifier}) > 0;
     }
 
     public void addHistory(String user, String name, String prob, String sol, String raw) {
@@ -158,25 +176,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Cursor getHistory(String user) {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery("SELECT * FROM " + TABLE_HISTORY + " WHERE " + KEY_HIST_USERNAME + " = ? ORDER BY " + KEY_HIST_DATE + " DESC", new String[]{user});
-    }
-
-    public int countSolutionsStartingWith(String username, String prefix) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        int count = 0;
-        try {
-            cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_HISTORY + 
-                               " WHERE " + KEY_HIST_USERNAME + " = ? AND " + KEY_HIST_NAME + " LIKE ?",
-                               new String[]{username, prefix + "%"});
-            if (cursor.moveToFirst()) {
-                count = cursor.getInt(0);
-            }
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        return count;
     }
 
     public void addDrawing(String user, String name, String data) {

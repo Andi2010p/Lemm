@@ -21,6 +21,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+import java.util.Random;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -76,9 +77,7 @@ public class LoginActivity extends AppCompatActivity {
             startActivityForResult(signInIntent, RC_SIGN_IN);
         });
 
-        tvSignUp.setOnClickListener(v -> {
-            startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
-        });
+        tvSignUp.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, RegisterActivity.class)));
 
         tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
     }
@@ -86,39 +85,97 @@ public class LoginActivity extends AppCompatActivity {
     private void showForgotPasswordDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Reset Password");
+        builder.setMessage("Enter your Email or Username to receive an OTP.");
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 0);
 
-        final EditText inputUser = new EditText(this);
-        inputUser.setHint("Enter Username/Email");
-        layout.addView(inputUser);
+        final EditText inputIdentifier = new EditText(this);
+        inputIdentifier.setHint("Email or Username");
+        layout.addView(inputIdentifier);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Send OTP", (dialog, which) -> {
+            String identifier = inputIdentifier.getText().toString().trim();
+            if (identifier.isEmpty()) {
+                Toast.makeText(this, "Please enter email or username", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String email = dbHelper.getUserEmail(identifier);
+            if (email != null && !email.isEmpty()) {
+                String otp = String.format("%06d", new Random().nextInt(999999));
+                EmailSender.sendEmail(email, "Password Reset OTP", "Your OTP for Geometry AI password reset is: " + otp);
+                Toast.makeText(this, "OTP sent to your email", Toast.LENGTH_SHORT).show();
+                showOTPDialog(identifier, otp);
+            } else {
+                Toast.makeText(this, "User not found or no email associated", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    private void showOTPDialog(String identifier, String correctOtp) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter OTP");
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 0);
+
+        final EditText inputOtp = new EditText(this);
+        inputOtp.setHint("6-digit OTP");
+        inputOtp.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(inputOtp);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Verify", (dialog, which) -> {
+            String enteredOtp = inputOtp.getText().toString().trim();
+            if (enteredOtp.equals(correctOtp)) {
+                showNewPasswordDialog(identifier);
+            } else {
+                Toast.makeText(this, "Invalid OTP", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    private void showNewPasswordDialog(String identifier) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Set New Password");
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 0);
 
         final EditText inputNewPass = new EditText(this);
-        inputNewPass.setHint("Enter New Password");
+        inputNewPass.setHint("New Password");
         inputNewPass.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(inputNewPass);
 
         builder.setView(layout);
 
-        builder.setPositiveButton("Reset", (dialog, which) -> {
-            String username = inputUser.getText().toString().trim();
+        builder.setPositiveButton("Update", (dialog, which) -> {
             String newPass = inputNewPass.getText().toString().trim();
-
-            if (username.isEmpty() || newPass.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
-            } else if (dbHelper.checkUsernameExists(username)) {
-                if (dbHelper.updatePassword(username, newPass)) {
+            if (newPass.length() < 8) {
+                Toast.makeText(this, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show();
+            } else {
+                if (dbHelper.updatePassword(identifier, newPass)) {
                     Toast.makeText(this, "Password updated successfully!", Toast.LENGTH_SHORT).show();
+                    String email = dbHelper.getUserEmail(identifier);
+                    if (email != null) {
+                        EmailSender.sendEmail(email, "Password Changed", "Your Geometry AI password has been successfully reset.");
+                    }
                 } else {
                     Toast.makeText(this, "Error updating password", Toast.LENGTH_SHORT).show();
                 }
-            } else {
-                Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show();
             }
         });
-
         builder.setNegativeButton("Cancel", null);
         builder.show();
     }
@@ -130,8 +187,10 @@ public class LoginActivity extends AppCompatActivity {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                if (account != null)
+                if (account != null) {
+                    dbHelper.syncGoogleUser(account.getEmail(), account.getId());
                     saveSessionAndGoMain(account.getEmail(), false);
+                }
             } catch (ApiException e) {
                 Toast.makeText(this, getString(R.string.google_sign_in_failed) + ": " + e.getStatusCode(), Toast.LENGTH_LONG).show();
                 e.printStackTrace();
@@ -142,9 +201,9 @@ public class LoginActivity extends AppCompatActivity {
     private void saveSessionAndGoMain(String username, boolean isGuest) {
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         pref.edit()
-            .putString("username", username)
-            .putBoolean("is_guest", isGuest)
-            .apply();
+                .putString("username", username)
+                .putBoolean("is_guest", isGuest)
+                .apply();
 
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
         startActivity(intent);

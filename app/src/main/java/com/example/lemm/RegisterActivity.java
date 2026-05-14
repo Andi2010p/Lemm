@@ -71,7 +71,10 @@ public class RegisterActivity extends AppCompatActivity {
                 Toast.makeText(this, getString(R.string.password_short), Toast.LENGTH_SHORT).show();
             } else {
                 try {
-                    if (dbHelper.addUser(user, pass)) {
+                    if (dbHelper.addUser(user, email, pass)) {
+                        EmailSender.sendEmail(email, "Welcome to Geometry AI",
+                                "Hello " + user + ",\n\nYour account has been successfully created. Welcome to Geometry AI!\n\nBest regards,\nGeometry AI Team");
+
                         Toast.makeText(this, getString(R.string.registration_successful), Toast.LENGTH_SHORT).show();
                         finish();
                     } else {
@@ -101,6 +104,11 @@ public class RegisterActivity extends AppCompatActivity {
             if (account != null) {
                 SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                 pref.edit().putString("username", account.getDisplayName()).apply();
+
+                dbHelper.syncGoogleUser(account.getEmail(), account.getId());
+                EmailSender.sendEmail(account.getEmail(), "Welcome to Geometry AI",
+                        "Hello " + account.getDisplayName() + ",\n\nYour account via Google Sign-In has been successfully created.\n\nBest regards,\nGeometry AI Team");
+
                 Toast.makeText(this, getString(R.string.welcome, account.getDisplayName()), Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(this, MainActivity.class));
                 finish();
