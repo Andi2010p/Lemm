@@ -1,5 +1,6 @@
 package com.example.lemm;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.PointF;
 import android.os.Bundle;
@@ -36,7 +37,7 @@ public class DrawingActivity extends AppCompatActivity {
     private Coordinate firstPoint = null;
     private float lastX, lastY;
     private boolean isStartSnapped = false;
-    private boolean isScaling = false; // Prevents "teleporting" zoom bug
+    private boolean isScaling = false;
 
     private List<Coordinate> activePolylinePoints = new ArrayList<>();
     private List<PointF> activePolylineDraw = new ArrayList<>();
@@ -105,7 +106,7 @@ public class DrawingActivity extends AppCompatActivity {
 
     private void showSaveDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Save Drawing");
+        builder.setTitle(getString(R.string.save_drawing));
 
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
@@ -123,7 +124,7 @@ public class DrawingActivity extends AppCompatActivity {
         layout.addView(input);
         builder.setView(layout);
 
-        builder.setPositiveButton("Save", (dialog, which) -> {
+        builder.setPositiveButton(getString(R.string.save), (dialog, which) -> {
             String name = input.getText().toString().trim();
             if (name.isEmpty()) name = "unnamed" + unnamedCount;
 
@@ -132,7 +133,7 @@ public class DrawingActivity extends AppCompatActivity {
             }
             saveToDatabase(name);
         });
-        builder.setNegativeButton("Cancel", null);
+        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
 
@@ -217,7 +218,6 @@ public class DrawingActivity extends AppCompatActivity {
         drawingCanvas.setOnTouchListener((v, event) -> {
             scaleDetector.onTouchEvent(event);
 
-            // Critical fix for Zoom "Teleporting"
             if (event.getActionMasked() == MotionEvent.ACTION_POINTER_UP) {
                 isScaling = true;
             }
@@ -355,7 +355,7 @@ public class DrawingActivity extends AppCompatActivity {
         } else return;
 
         builder.setView(layout);
-        builder.setPositiveButton("Apply", (dialog, which) -> {
+        builder.setPositiveButton(getString(R.string.update), (dialog, which) -> {
             try {
                 if (type.equals("LINE")) engine.resizeLine(geo, Double.parseDouble(input1.getText().toString()));
                 else if (type.equals("CIRCLE")) engine.resizeCircle(geo, Double.parseDouble(input1.getText().toString()));
@@ -363,7 +363,12 @@ public class DrawingActivity extends AppCompatActivity {
                 drawingCanvas.invalidate();
             } catch (Exception e) { Toast.makeText(this, "Invalid number", Toast.LENGTH_SHORT).show(); }
         });
-        builder.setNegativeButton("Cancel", null);
+        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 }

@@ -21,7 +21,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-            
+
             <TextView
                 android:id="@+id/tvHistoryName"
                 android:layout_width="0dp"
@@ -90,7 +90,7 @@
                 android:id="@+id/btnEditHistory"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Open/Edit"
+                android:text="@string/open_edit"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:textColor="#0C3D6A"
                 android:padding="0dp"/>

@@ -177,5 +177,9 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == CAMERA_PERMISSION_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             dispatchTakePictureIntent();
         }
+    }// You MUST have this in MainActivity.java for the buttons to translate!
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 }

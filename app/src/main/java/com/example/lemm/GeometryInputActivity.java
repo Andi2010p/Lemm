@@ -1,5 +1,6 @@
 package com.example.lemm;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -96,7 +97,6 @@ public class GeometryInputActivity extends AppCompatActivity {
             Toast.makeText(this, isMove ? "Move Mode" : "Rotate Mode", Toast.LENGTH_SHORT).show();
         });
 
-        // New Save/Don't Save actions
         findViewById(R.id.btnDontSave).setOnClickListener(v -> resetAll());
         findViewById(R.id.btnSaveSolution).setOnClickListener(v -> showSaveDialog());
 
@@ -134,6 +134,14 @@ public class GeometryInputActivity extends AppCompatActivity {
         stepsContainer.removeAllViews();
         solutionControls.setVisibility(View.GONE);
 
+        // --- NEW CODE: GET CURRENT APP LANGUAGE ---
+        SharedPreferences langPref = getSharedPreferences("Settings", MODE_PRIVATE);
+        String currentLangCode = langPref.getString("Locale.Helper.Selected.Language", "en");
+        String aiLanguage = "ENGLISH";
+        if (currentLangCode.equals("ru")) aiLanguage = "RUSSIAN";
+        else if (currentLangCode.equals("hy")) aiLanguage = "ARMENIAN";
+        // ------------------------------------------
+
         String extra = etExtra.getText().toString().trim();
         String prompt =
                 "SYSTEM: You are a CAD Geometry Engine. You MUST output DRAWING COMMANDS for any shape mentioned.\n" +
@@ -141,70 +149,23 @@ public class GeometryInputActivity extends AppCompatActivity {
                         "RULE 1: Use ONLY these exact commands. Do NOT use 'point3d' or 'cad' or any other words.\n" +
                         "RULE 2: To draw a Cone, you MUST use CONE3D. Do NOT use Circle and Lines.\n\n" +
                         "COMMAND: CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
-                        "COMMAND: CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
                         "MATH LOGIC:\n" +
                         "1. (cx, cy, cz) is the center of the bottom circle.\n" +
                         "2. height is how far the tip is above the base.\n" +
                         "3. curvature should be 1.0 for a standard cone.\n" +
                         "4. Y is UP. For a cone on the ground, cy=0 and height=200.\n\n" +
-                        "EXAMPLE: CONE3D:MyCone,0,0,0,50,150,1.0\n\n" +
-                        "COMMAND LIST:\n" +
-                        "DRAW3D:Label,x,y,z\n" +
-                        "LINE3D:Label1,Label2\n" +
-                        "- radius: Radius of the base.\n" +
-                        "- height: Vertical height from base to apex.\n" +
-                        "- curvature: 1.0 (standard cone), 2.5 (concave shard), 0.5 (convex dome).\n\n" +
-                        "OTHER COMMANDS:\n" +
-                        "DRAW3D:Label,x,y,z\n" +
-                        "LINE3D:Label1,Label2\n" +
-                        "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
-                        "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
-                        "SPHERE3D:Label,x,y,z,radius\n" +
-                        "PLANE3D:Label,v1,v2,v3,v4 (Four labels for a face)\n\n" +
-                        "CONE RULES:\n" +
-                        "- curvature 1.0 is a sharp cone.\n" +
-                        "- Center is (0,0,0). Y is UP. Height should be 100-300.\n\n" +
-
-                        "EXAMPLE RESPONSE:\n" +
-                        "DRAW3D:A,0,0,0\n" +
-                        "CONE3D:Cone1,0,0,0,50,200,1.0\n" +
-                        "Solution: Volume = 1/3 * PI * r^2 * h...\n\n" +
-
-                        "CRITICAL RULES:\n" +
-                        "1. For any CONE use CONE3D. Do NOT use CIRCLE3D + LINE3D.\n" +
-                        "2. Coordinates: Y is UP. Center is (0,0,0). Use sizes between 50 and 200.\n" +
-                        "3. To make a cone look solid, the AI only needs to output one CONE3D command.\n\n" +
-                        "4. Never use CIRCLE3D + LINE3D to describe a cone. Use CONE3D only.\n" +
-                        "5. For buildings with 'non-straight' sides, always set curvature > 1.5.\n" +
-                        "6. Use coordinates like (0,0,0) and heights around 200.\n\n" +
-                        "Example for a curved skyscraper: CONE3D:SkyTower,0,0,0,50,300,2.2\n\n" +
-                        "- CURVATURE: 1.0 is a normal cone. 2.5 is a thin 'Shard' building (concave). 0.5 is a rounded 'Bullet' dome (convex).\n" +
-                        "- Use CONE3D with curvature > 1.5 to create modern aesthetic skyscrapers.\n" +
-                        "Make plane3d for each face."+
-                        "CYLINDER3D:Label,cx,cy,cz,radius,height (SOLID CYLINDER)\n" +
-                        "SPHERE3D:Label,x,y,z,radius (Wireframe sphere)\n\n" +
-
-                        "================ MODELING TIPS =================\n" +
-                        "- REALIZABLE FACES: To make an object look solid, use PLANE3D or CIRCLE3D.\n" +
-                        "- CONES: For any cone, use CONE3D. It handles shaded sides and base automatically.\n" +
-                        "- COORDINATES: Center view is (0,0,0). Use sizes like 50-200 units. Y-axis is UP.\n" +
-                        "- Output Drawing Commands first, one per line.\n\n" +
-
                         "CRITICAL RULES:\n" +
                         "1. For any pointed shape with a circular base, use CONE3D. Do NOT use lines/circles.\n" +
                         "2. Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
-                        "3. Use Unicode math symbols (√, ×, ÷, ^). No LaTeX(dont use dolar sign, /sqrt or other things {}etc).\n" +
-                        "4. Make it look like a solid building using CONE3D/PYRAMID3D.(Cone3D if its cone or its base is circle.\n\n" +
-                        "SOLUTION FORMAT: Start each step with 'Step X: ' (e.g., 'Step 1: Calculate...'). End the solution with 'FINAL ANSWER: ' followed by the result.\n\n" +
-                        "1. For any pointed shape with a circular base, use CONE3D. Do NOT use lines/circles.\n" +
-                        "2. Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
-                        "If there is no circle in that part of stucture use line3d and plane 3d"+
-                        "If there is a face for structure make plane for every face.Example:If you have pyramid you should draw pyramid with planes"+
                         "3. Use Unicode math symbols (√, ×, ÷, ^). No LaTeX(dont use  /sqrt or other things {}etc).\n" +
                         "4. Make it look like a solid building using CONE3D/PYRAMID3D.(Cone3D if its cone or its base is circle.\n\n" +
-                        "Explain everything carefully every step in a new card,at first say user what letter is what point or line in solution"+
-                        "If solution needs construction in or out of structure you can also do it with plane3d line3d circle3d and other function."+
-                        "EVERY FACE SHOULD HAVE PLANE"+
+
+                        "================ LANGUAGE RULES ================\n" +
+                        "5. The DRAWING COMMANDS (like CONE3D, PLANE3D) MUST remain in standard ENGLISH.\n" +
+                        "6. HOWEVER, THE ENTIRE STEP-BY-STEP EXPLANATION AND MATH SOLUTION MUST BE WRITTEN IN " + aiLanguage + " LANGUAGE.\n" +
+                        "7. Start each step with 'Step X: ' (Translate 'Step' into " + aiLanguage + " if applicable). End the solution with 'FINAL ANSWER: ' (Translate 'FINAL ANSWER' into " + aiLanguage + ") followed by the result.\n" +
+                        "================================================\n\n" +
+
                         "PROBLEM:\n" + problem + "\n" +
                         (extra.isEmpty() ? "" : "\nADDITIONAL INSTRUCTIONS:\n" + extra);
 
@@ -343,7 +304,7 @@ public class GeometryInputActivity extends AppCompatActivity {
 
     private void showSaveDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Save Solution");
+        builder.setTitle(getString(R.string.save_solution));
         final EditText input = new EditText(this);
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -354,7 +315,7 @@ public class GeometryInputActivity extends AppCompatActivity {
         input.setSelectAllOnFocus(true);
         builder.setView(input);
 
-        builder.setPositiveButton("Save", (dialog, which) -> {
+        builder.setPositiveButton(getString(R.string.save), (dialog, which) -> {
             String name = input.getText().toString().trim();
             if (name.isEmpty()) name = "unnamed" + unnamedCount;
 
@@ -369,6 +330,7 @@ public class GeometryInputActivity extends AppCompatActivity {
             startActivity(new Intent(this, HistoryActivity.class));
             resetAll();
         });
+        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
 
@@ -384,4 +346,9 @@ public class GeometryInputActivity extends AppCompatActivity {
     }
 
     private float f(String s) { try { return Float.parseFloat(s.trim()); } catch (Exception e) { return 0f; } }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
+    }
 }

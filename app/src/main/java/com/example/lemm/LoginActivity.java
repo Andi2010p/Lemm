@@ -84,20 +84,19 @@ public class LoginActivity extends AppCompatActivity {
 
     private void showForgotPasswordDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Reset Password");
-        builder.setMessage("Enter your Email or Username to receive an OTP.");
+        builder.setTitle(getString(R.string.reset_password));
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 0);
 
         final EditText inputIdentifier = new EditText(this);
-        inputIdentifier.setHint("Email or Username");
+        inputIdentifier.setHint(getString(R.string.email_username));
         layout.addView(inputIdentifier);
 
         builder.setView(layout);
 
-        builder.setPositiveButton("Send OTP", (dialog, which) -> {
+        builder.setPositiveButton(getString(R.string.send_otp), (dialog, which) -> {
             String identifier = inputIdentifier.getText().toString().trim();
             if (identifier.isEmpty()) {
                 Toast.makeText(this, "Please enter email or username", Toast.LENGTH_SHORT).show();
@@ -107,33 +106,33 @@ public class LoginActivity extends AppCompatActivity {
             String email = dbHelper.getUserEmail(identifier);
             if (email != null && !email.isEmpty()) {
                 String otp = String.format("%06d", new Random().nextInt(999999));
-                EmailSender.sendEmail(email, "Password Reset OTP", "Your OTP for Geometry AI password reset is: " + otp);
+                EmailSender.sendEmail(email, "Password Reset OTP", "Your OTP for Lemma password reset is: " + otp);
                 Toast.makeText(this, "OTP sent to your email", Toast.LENGTH_SHORT).show();
                 showOTPDialog(identifier, otp);
             } else {
                 Toast.makeText(this, "User not found or no email associated", Toast.LENGTH_SHORT).show();
             }
         });
-        builder.setNegativeButton("Cancel", null);
+        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
 
     private void showOTPDialog(String identifier, String correctOtp) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Enter OTP");
+        builder.setTitle(getString(R.string.enter_otp));
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 0);
 
         final EditText inputOtp = new EditText(this);
-        inputOtp.setHint("6-digit OTP");
+        inputOtp.setHint(getString(R.string.otp_hint));
         inputOtp.setInputType(InputType.TYPE_CLASS_NUMBER);
         layout.addView(inputOtp);
 
         builder.setView(layout);
 
-        builder.setPositiveButton("Verify", (dialog, which) -> {
+        builder.setPositiveButton(getString(R.string.verify), (dialog, which) -> {
             String enteredOtp = inputOtp.getText().toString().trim();
             if (enteredOtp.equals(correctOtp)) {
                 showNewPasswordDialog(identifier);
@@ -141,42 +140,42 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(this, "Invalid OTP", Toast.LENGTH_SHORT).show();
             }
         });
-        builder.setNegativeButton("Cancel", null);
+        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
 
     private void showNewPasswordDialog(String identifier) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Set New Password");
+        builder.setTitle(getString(R.string.reset_password));
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 0);
 
         final EditText inputNewPass = new EditText(this);
-        inputNewPass.setHint("New Password");
+        inputNewPass.setHint(getString(R.string.new_password));
         inputNewPass.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(inputNewPass);
 
         builder.setView(layout);
 
-        builder.setPositiveButton("Update", (dialog, which) -> {
+        builder.setPositiveButton(getString(R.string.update), (dialog, which) -> {
             String newPass = inputNewPass.getText().toString().trim();
             if (newPass.length() < 8) {
-                Toast.makeText(this, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.password_short), Toast.LENGTH_SHORT).show();
             } else {
                 if (dbHelper.updatePassword(identifier, newPass)) {
                     Toast.makeText(this, "Password updated successfully!", Toast.LENGTH_SHORT).show();
                     String email = dbHelper.getUserEmail(identifier);
                     if (email != null) {
-                        EmailSender.sendEmail(email, "Password Changed", "Your Geometry AI password has been successfully reset.");
+                        EmailSender.sendEmail(email, "Password Changed", "Your Lemma password has been successfully reset.");
                     }
                 } else {
                     Toast.makeText(this, "Error updating password", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-        builder.setNegativeButton("Cancel", null);
+        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
 

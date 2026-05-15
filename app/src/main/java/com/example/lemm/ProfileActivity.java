@@ -1,5 +1,6 @@
 package com.example.lemm;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -41,13 +42,11 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> finish());
 
-        // Open Dialog Window for Password Change
         btnChangePass.setOnClickListener(v -> {
             SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
             String username = pref.getString("username", "");
             boolean isGuest = pref.getBoolean("is_guest", false);
 
-            // Restrict password change for Guest and Admin modes
             if (isGuest || username.startsWith("GuestUser_") || username.equals("Admin_Teacher")) {
                 Toast.makeText(this, "You cannot change the password in Guest or Admin mode.", Toast.LENGTH_LONG).show();
                 return;
@@ -76,22 +75,21 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void showChangePasswordDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Change Password");
+        builder.setTitle(getString(R.string.change_password));
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 0);
 
         final EditText inputCurrentPass = new EditText(this);
-        inputCurrentPass.setHint("Current Password");
+        inputCurrentPass.setHint(getString(R.string.current_password));
         inputCurrentPass.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(inputCurrentPass);
 
         final EditText inputNewPass = new EditText(this);
-        inputNewPass.setHint("New Password (min 8 chars)");
+        inputNewPass.setHint(getString(R.string.new_password));
         inputNewPass.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
-        // Add spacing between the two inputs
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(0, 20, 0, 0);
@@ -100,12 +98,12 @@ public class ProfileActivity extends AppCompatActivity {
 
         builder.setView(layout);
 
-        builder.setPositiveButton("Update", (dialog, which) -> {
+        builder.setPositiveButton(getString(R.string.update), (dialog, which) -> {
             String currentPass = inputCurrentPass.getText().toString().trim();
             String newPass = inputNewPass.getText().toString().trim();
 
             if (currentPass.isEmpty() || newPass.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.enter_all_fields), Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -114,25 +112,23 @@ public class ProfileActivity extends AppCompatActivity {
 
             if (dbHelper.checkUser(username, currentPass)) {
                 if (newPass.length() < 8) {
-                    Toast.makeText(this, "New password must be at least 8 characters", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.password_short), Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Update in database
                 dbHelper.updatePassword(username, newPass);
                 Toast.makeText(this, "Password changed successfully", Toast.LENGTH_SHORT).show();
 
-                // Send Email Notification
                 String email = dbHelper.getUserEmail(username);
                 if (email != null && !email.isEmpty()) {
-                    EmailSender.sendEmail(email, "Password Changed", "Your Geometry AI password has been successfully changed.");
+                    EmailSender.sendEmail(email, "Password Changed", "Your Lemma password has been successfully changed.");
                 }
             } else {
                 Toast.makeText(this, "Incorrect current password", Toast.LENGTH_SHORT).show();
             }
         });
 
-        builder.setNegativeButton("Cancel", null);
+        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
 
@@ -155,5 +151,10 @@ public class ProfileActivity extends AppCompatActivity {
             return count;
         }
         return 0;
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 }

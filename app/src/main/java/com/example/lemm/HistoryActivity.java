@@ -33,7 +33,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-
+import android.content.Context;import android.content.Context;
 public class HistoryActivity extends AppCompatActivity {
 
     private RecyclerView rvHistory;
@@ -343,10 +343,7 @@ public class HistoryActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleHelper.onAttach(newBase));
-    }
+
 
     private static class GenericItem {
         int id;
@@ -415,5 +412,9 @@ public class HistoryActivity extends AppCompatActivity {
                 btnDownload = itemView.findViewById(R.id.btnDownloadHistory);
             }
         }
+    }
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 }

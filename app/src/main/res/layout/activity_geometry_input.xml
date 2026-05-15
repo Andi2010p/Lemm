@@ -43,7 +43,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Geometry Problem Solver"
+                    android:text="@string/geometry_solver"
                     android:textStyle="bold"
                     android:textColor="@color/primary_dark"
                     android:textSize="16sp" />
@@ -88,7 +88,7 @@
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Problem description"
+                    android:hint="@string/describe_problem"
                     app:startIconDrawable="@android:drawable/ic_menu_edit"
                     app:startIconTint="@color/primary"
                     app:boxCornerRadiusBottomEnd="12dp"
@@ -114,7 +114,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:hint="Custom AI Instructions (Optional)"
+                    android:hint="@string/custom_ai_inst"
                     app:startIconDrawable="@android:drawable/ic_menu_info_details"
                     app:startIconTint="@color/secondary"
                     app:endIconMode="clear_text"
@@ -144,7 +144,7 @@
                     android:layout_height="48dp"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="@color/primary"
-                    android:text="Analyze &amp; Visualize"
+                    android:text="@string/analyze_visualize"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="14sp"
@@ -309,7 +309,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Don't Save"
+                android:text="@string/dont_save"
                 app:strokeColor="#C62828"
                 android:textColor="#C62828"/>
 
@@ -319,7 +319,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:text="Save Solution"
+                android:text="@string/save_solution"
                 app:backgroundTint="#27AE60" />
         </LinearLayout>
 

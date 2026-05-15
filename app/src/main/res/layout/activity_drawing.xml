@@ -23,7 +23,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sketch Tools"
+                android:text="@string/sketch_tools"
                 android:textSize="10sp"
                 android:paddingLeft="8dp"
                 android:paddingTop="2dp"
@@ -106,7 +106,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Don't Save"
+            android:text="@string/dont_save"
             app:strokeColor="#C62828"
             android:textColor="#C62828"/>
 
@@ -116,7 +116,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="Save Drawing"
+            android:text="@string/save_drawing"
             app:backgroundTint="#27AE60" />
     </LinearLayout>
 

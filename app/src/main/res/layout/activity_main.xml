@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Welcome Back"
+            android:text="@string/welcome_back"
             android:textSize="18sp"
             android:textColor="@color/primary"
             android:textStyle="bold" />
@@ -88,7 +88,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="New Problem"
+                        android:text="@string/new_problem"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary"
@@ -125,7 +125,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Scan (OCR)"
+                        android:text="@string/scan_ocr"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/secondary_dark"
@@ -162,7 +162,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Draw Geometry"
+                        android:text="@string/draw_geometry"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="#2E7D32"
@@ -199,7 +199,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="History"
+                        android:text="@string/history"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="#FF8F00"
@@ -209,7 +209,4 @@
 
         </GridLayout>
     </ScrollView>
-
-
-
 </LinearLayout>

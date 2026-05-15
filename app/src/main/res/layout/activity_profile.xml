@@ -31,7 +31,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="User Profile"
+                android:text="@string/user_profile"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="#0C3D6A" />
@@ -63,7 +63,7 @@
                     android:id="@+id/tvProfileUsername"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Username"
+                    android:text="@string/username"
                     android:textSize="22sp"
                     android:textStyle="bold"
                     android:textColor="#0C3D6A" />
@@ -72,7 +72,7 @@
                     android:id="@+id/tvProfileStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Online"
+                    android:text="@string/online"
                     android:textColor="#4CAF50"
                     android:textSize="14sp"
                     android:layout_marginTop="4dp"/>
@@ -96,7 +96,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Your Activity"
+                    android:text="@string/your_activity"
                     android:textStyle="bold"
                     android:textColor="#555555"
                     android:layout_marginBottom="12dp"/>
@@ -124,7 +124,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Solutions"
+                            android:text="@string/solutions"
                             android:textSize="12sp"
                             android:textColor="#888888"/>
                     </LinearLayout>
@@ -151,7 +151,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Drawings"
+                            android:text="@string/drawings"
                             android:textSize="12sp"
                             android:textColor="#888888"/>
                     </LinearLayout>
@@ -159,7 +159,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Security Card (Simplified with just a button) -->
+        <!-- Security Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -176,7 +176,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Security"
+                    android:text="@string/security"
                     android:textStyle="bold"
                     android:textColor="#555555"
                     android:layout_marginBottom="12dp"/>
@@ -185,7 +185,7 @@
                     android:id="@+id/btnChangePassword"
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
-                    android:text="Change Password"
+                    android:text="@string/change_password"
                     android:textColor="@color/white"
                     app:backgroundTint="#0C3D6A"
                     app:cornerRadius="12dp"
@@ -206,7 +206,7 @@
             android:id="@+id/btnProfileLogout"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Log Out"
+            android:text="@string/log_out"
             android:textColor="@color/white"
             app:backgroundTint="#C62828"
             app:cornerRadius="12dp"

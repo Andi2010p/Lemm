@@ -17,7 +17,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Login to Geometry AI"
+        android:text="@string/login_to_lemma"
         android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="#0C3D6A"
@@ -27,7 +27,7 @@
         android:id="@+id/etEmail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email Address/Username"
+        android:hint="@string/email_username"
         android:inputType="textEmailAddress"
         android:layout_marginBottom="10dp"/>
 
@@ -35,7 +35,7 @@
         android:id="@+id/etPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Password"
+        android:hint="@string/password"
         android:inputType="textPassword"
         android:layout_marginBottom="5dp"/>
 
@@ -45,7 +45,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="end"
         android:padding="5dp"
-        android:text="Forgot Password?"
+        android:text="@string/forgot_password"
         android:textColor="#0C3D6A"
         android:textSize="14sp"
         android:layout_marginBottom="15dp"
@@ -56,7 +56,7 @@
         android:id="@+id/btnLogin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login"
+        android:text="@string/login"
         android:backgroundTint="#0C3D6A"
         android:textColor="#FFFFFF" />
 
@@ -86,7 +86,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:padding="10dp"
-                android:text="Sign Up"
+                android:text="@string/sign_up"
                 android:textColor="#0C3D6A"
                 android:textSize="14sp"
                 android:textStyle="bold" />

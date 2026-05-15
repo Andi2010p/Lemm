@@ -16,7 +16,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome to Geometry AI"
+        android:text="@string/welcome_to_lemma"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="#0C3D6A"
@@ -26,7 +26,7 @@
         android:id="@+id/btnGoToLogin"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="Login"
+        android:text="@string/login"
         android:backgroundTint="#0C3D6A"
         android:layout_marginBottom="15dp"/>
 
@@ -35,7 +35,7 @@
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="Create Account"
+        android:text="@string/create_account"
         android:textColor="#0C3D6A"
         android:layout_marginBottom="15dp"/>
 
@@ -44,7 +44,7 @@
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="Try Guest Mode"
+        android:text="@string/try_guest_mode"
         android:textColor="#757575"
         android:layout_marginBottom="5dp"/>
 
@@ -53,7 +53,7 @@
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="Try Admin Mode"
+        android:text="@string/try_admin_mode"
         android:textColor="#B71C1C"/>
 
 </LinearLayout>

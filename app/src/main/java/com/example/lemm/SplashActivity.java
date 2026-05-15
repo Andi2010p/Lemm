@@ -56,7 +56,10 @@ public class SplashActivity extends AppCompatActivity {
         }
         return false;
     }
-
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
+    }
     private void showNoInternetDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("No Internet Connection")

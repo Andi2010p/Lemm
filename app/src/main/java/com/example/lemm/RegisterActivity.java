@@ -17,7 +17,7 @@ import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
-
+import android.content.Context;
 public class RegisterActivity extends AppCompatActivity {
 
     private TextInputEditText etUsername, etEmail, etPassword, etRepeatPassword;
@@ -72,7 +72,7 @@ public class RegisterActivity extends AppCompatActivity {
             } else {
                 try {
                     if (dbHelper.addUser(user, email, pass)) {
-                        EmailSender.sendEmail(email, "Welcome to Geometry AI",
+                        EmailSender.sendEmail(email, "Welcome to Lemma",
                                 "Hello " + user + ",\n\nYour account has been successfully created. Welcome to Geometry AI!\n\nBest regards,\nGeometry AI Team");
 
                         Toast.makeText(this, getString(R.string.registration_successful), Toast.LENGTH_SHORT).show();
@@ -97,7 +97,10 @@ public class RegisterActivity extends AppCompatActivity {
             handleSignInResult(task);
         }
     }
-
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
+    }
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
@@ -106,7 +109,7 @@ public class RegisterActivity extends AppCompatActivity {
                 pref.edit().putString("username", account.getDisplayName()).apply();
 
                 dbHelper.syncGoogleUser(account.getEmail(), account.getId());
-                EmailSender.sendEmail(account.getEmail(), "Welcome to Geometry AI",
+                EmailSender.sendEmail(account.getEmail(), "Welcome to Lemma",
                         "Hello " + account.getDisplayName() + ",\n\nYour account via Google Sign-In has been successfully created.\n\nBest regards,\nGeometry AI Team");
 
                 Toast.makeText(this, getString(R.string.welcome, account.getDisplayName()), Toast.LENGTH_SHORT).show();
@@ -118,8 +121,5 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleHelper.onAttach(newBase));
-    }
+
 }
