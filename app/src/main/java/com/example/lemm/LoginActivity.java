@@ -106,17 +106,23 @@ public class LoginActivity extends AppCompatActivity {
                 return;
             }
 
-            String email = dbHelper.getUserEmail(identifier);
-            if (email != null && !email.isEmpty()) {
-                String otp = String.format("%06d", new Random().nextInt(999999));
-                EmailSender.sendEmail(email, "Password Reset OTP", "Your OTP for Lemma password reset is: " + otp);
+            // Change "email" to "targetEmail" to avoid the duplicate name error
+            String targetEmail = dbHelper.getUserEmail(identifier);
+
+            if (targetEmail != null && !targetEmail.isEmpty()) {
+                String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+
+                String otpBody = "Your Lemma Password Reset Code is: " + otp;
+
+                // Use targetEmail here
+                EmailSender.sendEmail(targetEmail, "Password Reset OTP", otpBody);
+
                 Toast.makeText(this, "OTP sent to your email", Toast.LENGTH_SHORT).show();
                 showOTPDialog(identifier, otp);
             } else {
                 Toast.makeText(this, "User not found or no email associated", Toast.LENGTH_SHORT).show();
             }
-        });
-        builder.setNegativeButton(getString(R.string.cancel), null);
+        });        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
 

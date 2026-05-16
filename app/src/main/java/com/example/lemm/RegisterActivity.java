@@ -61,6 +61,18 @@ public class RegisterActivity extends AppCompatActivity {
             String pass = etPassword.getText().toString().trim();
             String repeatPass = etRepeatPassword.getText().toString().trim();
 
+            if (dbHelper.addUser(user, email, pass)) {
+                // SEND WELCOME EMAIL
+                String welcomeBody = "Hello " + user + ",\n\n" +
+                        "Welcome to Lemma! Your account has been successfully created.\n" +
+                        "You can now solve geometry problems and sync your drawings across devices.\n\n" +
+                        "Best regards,\nThe Lemma Team";
+
+                EmailSender.sendEmail(email, "Welcome to Lemma!", welcomeBody);
+
+                Toast.makeText(this, getString(R.string.registration_successful), Toast.LENGTH_SHORT).show();
+                finish();
+            }
             if (user.isEmpty() || email.isEmpty() || pass.isEmpty()) {
                 Toast.makeText(this, getString(R.string.enter_all_fields), Toast.LENGTH_SHORT).show();
             } else if (user.equalsIgnoreCase("GuestUser")) {

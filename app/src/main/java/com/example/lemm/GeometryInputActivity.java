@@ -169,69 +169,57 @@ public class GeometryInputActivity extends AppCompatActivity {
         String prompt;
 
         if (currentLangCode.equals("ru")) {
-            // RUSSIAN PROMPT
-            prompt = "СИСТЕМА: Вы - CAD геометрический движок.\n" +
-                    "ЗАДАЧА: Проанализируйте задачу, выведите КОМАНДЫ РИСОВАНИЯ (на английском), а затем пошаговое решение на русском языке.\n\n" +
-                    "ОЧЕНЬ ВАЖНО: ИСПОЛЬЗУЙТЕ ТОЛЬКО ЮНИКОД ДЛЯ ФОРМУЛ (√, ×, ÷, ^, °, ², ₁). НИКАКОГО LaTeX! НЕ используйте знаки доллара ($), \\frac, \\sqrt, {}, или \\cdot. Пишите дроби как a/b.\n\n" +
-                    "ПРАВИЛО 1: Используйте ТОЛЬКО точные команды из списка ниже.\n" +
-                    "ПРАВИЛО 2: Для конусов используйте CONE3D, а не круги и линии.\n\n" +
-                    "СПИСОК КОМАНД (Только на английском):\n" +
-                    "DRAW3D:Label,x,y,z\n" +
-                    "LINE3D:Label1,Label2\n" +
+            prompt = "СИСТЕМА: Вы - CAD геометрический движок. Вы ДОЛЖНЫ выводить КОМАНДЫ РИСОВАНИЯ для любой упомянутой фигуры.\n" +
+                    "Начните объяснение с того, что укажите, что изображено на вашем рисунке: что такое точка, что такое плоскость, что такое линия и т. д.\n\n" +
+                    "ГЛОБАЛЬНОЕ ПРАВИЛО: Независимо от текста задачи, вы ДОЛЖНЫ всегда рисовать в стороне две фигуры для масштаба:\n" +
+                    "1. Треугольную пирамиду (используйте 4 точки DRAW3D и 4 плоскости PLANE3D).\n" +
+                    "2. Прямоугольник на земле (используйте 4 точки DRAW3D и 1 плоскость PLANE3D).\n\n" +
+                    "ЗАДАЧА: Проанализируйте задачу и выведите КОМАНДЫ РИСОВАНИЯ, а затем пошаговое решение на русском языке.\n\n" +
+                    "ПРАВИЛО 1: Используйте ТОЛЬКО точные команды. НЕ используйте 'point3d', 'cad' и т.д.\n" +
+                    "ПРАВИЛО 2: Для любого конуса используйте CONE3D. НЕ используйте круги и линии.\n\n" +
+                    "МАТЕМАТИКА КОМАНД:\n" +
                     "CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
-                    "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
-                    "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
-                    "SPHERE3D:Label,x,y,z,radius\n" +
-                    "PLANE3D:Label,v1,v2,v3,v4\n\n" +
-                    "КООРДИНАТЫ: Ось Y направлена ВВЕРХ. Центр основания (0,0,0). Используйте размеры 50-200.\n" +
-                    "КАЖДАЯ ГРАНЬ ДОЛЖНА ИМЕТЬ PLANE3D.\n\n" +
-                    "ФОРМАТ РЕШЕНИЯ: Начинайте каждый шаг строго с 'Шаг X: '. Завершите решение фразой 'ОТВЕТ: '.\n" +
-                    "Сначала объясните, какая буква обозначает какую точку.\n\n" +
+                    "1. (cx, cy, cz) — центр основания. Y направлен ВВЕРХ.\n" +
+                    "PLANE3D:Label,v1,v2,v3,v4 (v4 опционально для треугольников).\n\n" +
+                    "ВАЖНЫЕ ПРАВИЛА МОДЕЛИРОВАНИЯ:\n" +
+                    "- КАЖДАЯ ГРАНЬ ДОЛЖНА ИМЕТЬ PLANE3D.\n" +
+                    "- Центр (0,0,0). Размеры 50-200.\n\n" +
+                    "КРИТИЧЕСКИ ВАЖНО: Используйте ТОЛЬКО символы Юникода (√, ×, ÷, ^). НИКАКОГО LaTeX!\n\n" +
+                    "ФОРМАТ РЕШЕНИЯ: Начинайте каждый шаг с 'Шаг X: '. Заканчивайте фразой 'ОТВЕТ: '.\n\n" +
                     "ЗАДАЧА:\n" + problem + extraText;
 
         } else if (currentLangCode.equals("hy")) {
-            // ARMENIAN PROMPT
-            prompt = "ՀԱՄԱԿԱՐԳ: Դուք CAD երկրաչափական շարժիչ եք:\n" +
-                    "ԱՌԱՋԱԴՐԱՆՔ: Վերլուծեք խնդիրը, արտածեք ԳԾԱԳՐՄԱՆ ՀՐԱՄԱՆՆԵՐԸ (անգլերենով), այնուհետև քայլ առ քայլ լուծումը հայերենով:\n\n" +
-                    "ԽԻՍՏ ԿԱՐԵՎՈՐ: Մաթեմատիկայի համար ՕԳՏԱԳՈՐԾԵՔ ՄԻԱՅՆ ՅՈՒՆԻԿՈԴ (√, ×, ÷, ^, °, ², ₁): ՈՉ ՄԻ LaTeX: ՄԻ օգտագործեք դոլարի նշաններ ($), \\frac, \\sqrt, {}, կամ \\cdot: Կոտորակները գրեք a/b տեսքով:\n\n" +
-                    "ԿԱՆՈՆ 1: Օգտագործեք ՄԻԱՅՆ ստորև նշված անգլերեն հրամանները:\n" +
-                    "ԿԱՆՈՆ 2: Կոն նկարելու համար օգտագործեք CONE3D:\n\n" +
-                    "ՀՐԱՄԱՆՆԵՐԻ ՑԱՆԿ (Միայն անգլերենով):\n" +
-                    "DRAW3D:Label,x,y,z\n" +
-                    "LINE3D:Label1,Label2\n" +
-                    "CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
-                    "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
-                    "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
-                    "SPHERE3D:Label,x,y,z,radius\n" +
-                    "PLANE3D:Label,v1,v2,v3,v4\n\n" +
-                    "ԿՈՈՐԴԻՆԱՏՆԵՐ: Y առանցքը ուղղված է ՎԵՐ: Հիմքի կենտրոնը (0,0,0) է: Օգտագործեք 50-200 չափսեր:\n" +
-                    "ՅՈՒՐԱՔԱՆՉՅՈՒՐ ՆԻՍՏ ՊԵՏՔ Է ՈՒՆԵՆԱ PLANE3D:\n\n" +
-                    "ԼՈՒԾՄԱՆ ՁԵՎԱՉԱՓ: Յուրաքանչյուր քայլ սկսեք խիստ 'Քայլ X: '-ով: Ավարտեք 'ՊԱՏԱՍԽԱՆ: '-ով:\n" +
-                    "Նախ բացատրեք, թե որ տառը որ կետն է:\n\n" +
+            prompt = "ՀԱՄԱԿԱՐԳ: Դուք CAD երկրաչափական շարժիչ եք: Դուք ՊԵՏՔ Է արտածեք ԳԾԱԳՐՄԱՆ ՀՐԱՄԱՆՆԵՐ նշված ցանկացած պատկերի համար:\n" +
+                    "Բացատրությունը սկսիր նշելով որն ինչ է քո գծագրում՝ որ կետն ինչն է, հարթությունը, գիծը և այլն:\n\n" +
+                    "ԳԼՈԲԱԼ ԿԱՆՈՆ. Անկախ խնդրի բովանդակությունից, դու ՄԻՇՏ պետք է կողքը գծագրես երկու պատկեր.\n" +
+                    "1. Եռանկյուն բուրգ (օգտագործիր 4 հատ DRAW3D և 4 հատ PLANE3D):\n" +
+                    "2. Ուղղանկյուն հիմքի վրա (օգտագործիր 4 հատ DRAW3D և 1 հատ PLANE3D):\n\n" +
+                    "ԱՌԱՋԱԴՐԱՆՔ: Վերլուծեք խնդիրը և արտածեք ԳԾԱԳՐՄԱՆ ՀՐԱՄԱՆՆԵՐ (անգլերենով), որին կհետևի քայլ առ քայլ լուծումը հայերենով:\n\n" +
+                    "ԿԱՆՈՆ 1: Օգտագործեք ՄԻԱՅՆ այս ճշգրիտ հրամանները: ՄԻ օգտագործեք 'point3d' կամ 'cad':\n" +
+                    "ԿԱՆՈՆ 2: Ցանկացած կոնի համար ՊԵՏՔ Է օգտագործել CONE3D:\n\n" +
+                    "ՄՈԴԵԼԱՎՈՐՄԱՆ ԿԱՆՈՆՆԵՐ:\n" +
+                    "- ՅՈՒՐԱՔԱՆՉՅՈՒՐ ՆԻՍՏ ՊԵՏՔ Է ՈՒՆԵՆԱ PLANE3D:\n" +
+                    "- Կենտրոնը (0,0,0): Չափսերը՝ 50-200:\n\n" +
+                    "ԽԻՍՏ ԿԱՐԵՎՈՐ: Օգտագործեք ՄԻԱՅՆ Յունիկոդ սիմվոլներ (√, ×, ÷, ^): ՈՉ ՄԻ LaTeX:\n\n" +
+                    "ԼՈՒԾՄԱՆ ՁԵՎԱՉԱՓ: Յուրաքանչյուր քայլ սկսեք 'Քայլ X: '-ով: Ավարտեք 'ՊԱՏԱՍԽԱՆ: '-ով:\n\n" +
                     "ԽՆԴԻՐ:\n" + problem + extraText;
 
         } else {
-            // ENGLISH PROMPT
-            prompt = "SYSTEM: You are a CAD Geometry Engine.\n" +
-                    "TASK: Analyze the problem and output DRAWING COMMANDS followed by the step-by-step solution in English.\n\n" +
-                    "CRITICAL: USE ONLY UNICODE MATH SYMBOLS (√, ×, ÷, ^, °, ², ₁). NO LaTeX! DO NOT use dollar signs ($), \\frac, \\sqrt, {}, or \\cdot. Write fractions as a/b.\n\n" +
-                    "RULE 1: Use ONLY these exact commands. Do NOT use 'point3d' or 'cad'.\n" +
-                    "RULE 2: To draw a Cone, you MUST use CONE3D. Do NOT use Circle and Lines.\n\n" +
-                    "COMMAND LIST:\n" +
-                    "DRAW3D:Label,x,y,z\n" +
-                    "LINE3D:Label1,Label2\n" +
-                    "CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
-                    "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
-                    "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
-                    "SPHERE3D:Label,x,y,z,radius\n" +
-                    "PLANE3D:Label,v1,v2,v3,v4\n\n" +
-                    "COORDINATES: Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
-                    "EVERY FACE SHOULD HAVE A PLANE3D.\n\n" +
-                    "SOLUTION FORMAT: Start each step with 'Step X: '. End with 'FINAL ANSWER: '.\n" +
-                    "First explain what letter is what point.\n\n" +
+            prompt = "SYSTEM: You are a CAD Geometry Engine. You MUST output DRAWING COMMANDS for any shape mentioned.\n" +
+                    "Start your explanation by stating what is what in your drawing: points, planes, lines, etc.\n\n" +
+                    "GLOBAL RULE: Regardless of the problem, you MUST always draw two extra shapes for reference:\n" +
+                    "1. A Triangle Pyramid (use 4 DRAW3D points and 4 PLANE3D faces).\n" +
+                    "2. A Rectangle on the ground plane (use 4 DRAW3D points and 1 PLANE3D face).\n\n" +
+                    "TASK: Analyze the problem and output DRAWING COMMANDS followed by the step-by-step solution.\n\n" +
+                    "RULE 1: Use ONLY exact commands: DRAW3D, LINE3D, PLANE3D, CONE3D, PYRAMID3D.\n" +
+                    "RULE 2: For Cones, use CONE3D only.\n\n" +
+                    "MODELING TIPS:\n" +
+                    "- EVERY FACE MUST HAVE A PLANE3D command.\n" +
+                    "- Center everything around (0,0,0). Use sizes 50-200.\n\n" +
+                    "CRITICAL: Use Unicode math symbols (√, ×, ÷, ^). NO LaTeX! No dollar signs.\n\n" +
+                    "SOLUTION FORMAT: Start each step with 'Step X: '. End with 'FINAL ANSWER: '.\n\n" +
                     "PROBLEM:\n" + problem + extraText;
         }
-
         ListenableFuture<GenerateContentResponse> future = geminiAI.getSolution(prompt);
         Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
             @Override
@@ -252,8 +240,7 @@ public class GeometryInputActivity extends AppCompatActivity {
                 });
             }
         }, ContextCompat.getMainExecutor(this));
-    }
-    private void processAIResult(String text) {
+    }    private void processAIResult(String text) {
         canvas3D.clear();
         String cleanText = text.replace("`", "").replace("*", "");
         String[] lines = cleanText.split("\n");

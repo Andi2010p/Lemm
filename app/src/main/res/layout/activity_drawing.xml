@@ -42,27 +42,28 @@
                     android:padding="4dp"
                     android:gravity="center_vertical">
 
-                    <ImageButton
-                        android:id="@+id/btnBack"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@android:drawable/ic_menu_revert"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#444444"
-                        android:tooltipText="Back"/>
+                    <ImageButton android:id="@+id/btnBack" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_revert" android:background="?attr/selectableItemBackground" app:tint="#444444" android:tooltipText="Back"/>
+                    <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
+
+                    <ImageButton android:id="@+id/btnToolMove" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_move" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Pan"/>
+                    <ImageButton android:id="@+id/btnToolSelect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_selection" android:background="?attr/selectableItemBackground" app:tint="#E67E22" android:tooltipText="Smart Select / Dimension"/>
+                    <ImageButton android:id="@+id/btnToolOrtho" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_sort_by_size" android:background="?attr/selectableItemBackground" app:tint="#7F8C8D" android:tooltipText="Toggle Ortho (90°)"/>
 
                     <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
 
-                    <ImageButton android:id="@+id/btnToolMove" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_move" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
-                    <ImageButton android:id="@+id/btnToolSelect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_selection" android:background="?attr/selectableItemBackground" app:tint="#E67E22" android:tooltipText="Select / Dimension"/>
-                    <ImageButton android:id="@+id/btnToolLine" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_line" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
-                    <ImageButton android:id="@+id/btnToolPoly" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_edit" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Continuous Sketch"/>
-                    <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
-                    <ImageButton android:id="@+id/btnToolCircle" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_circle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
-                    <ImageButton android:id="@+id/btnUndo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_undo" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A"/>
+                    <ImageButton android:id="@+id/btnToolLine" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_line" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Line"/>
+                    <ImageButton android:id="@+id/btnToolPoly" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_edit" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Polyline"/>
+                    <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Rectangle"/>
+                    <ImageButton android:id="@+id/btnToolCircle" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_circle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Circle"/>
 
                     <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
-                    <ImageButton android:id="@+id/btnToolClear" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_delete" android:background="?attr/selectableItemBackground" app:tint="#C62828"/>
+
+                    <ImageButton android:id="@+id/btnUndo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_undo" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Undo"/>
+                    <ImageButton android:id="@+id/btnToolClear" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_delete" android:background="?attr/selectableItemBackground" app:tint="#C62828" android:tooltipText="Clear Canvas"/>
+
+                    <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
+                    <ImageButton android:id="@+id/btnToolSaveTop" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_save" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Save Drawing"/>
+
                 </LinearLayout>
             </HorizontalScrollView>
         </LinearLayout>
@@ -88,7 +89,51 @@
                 android:layout_height="match_parent"
                 android:background="#FFFFFF" />
 
-            <!-- ZOOM CONTROLS OVERLAY -->
+            <!-- PROPERTIES PANEL (SOLIDWORKS STYLE) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/propertiesPanel"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_margin="12dp"
+                app:cardElevation="6dp"
+                app:cardCornerRadius="8dp"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#FAFAFA"
+                    android:padding="8dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Properties"
+                        android:textStyle="bold"
+                        android:textColor="#2C3E50"
+                        android:textSize="12sp"
+                        android:paddingBottom="4dp"/>
+                    <TextView
+                        android:id="@+id/tvShapeInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Area: 0\nLength: 0"
+                        android:textColor="#34495E"
+                        android:textSize="11sp"/>
+                    <Button
+                        android:id="@+id/btnEditProperties"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:text="Smart Dimension"
+                        android:textSize="10sp"
+                        android:textColor="#E67E22"
+                        android:layout_marginTop="4dp"
+                        android:padding="0dp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ZOOM CONTROLS -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -99,38 +144,14 @@
                 android:padding="4dp"
                 android:gravity="center_vertical">
 
-                <ImageButton
-                    android:id="@+id/btnZoomOut"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_zoom_out_custom"
-                    app:tint="#0C3D6A" />
-
-                <TextView
-                    android:id="@+id/tvZoomPercent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:paddingHorizontal="4dp"
-                    android:text="100%"
-                    android:textColor="#0C3D6A"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <ImageButton
-                    android:id="@+id/btnZoomIn"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@android:drawable/ic_menu_zoom"
-                    app:tint="#0C3D6A" />
+                <ImageButton android:id="@+id/btnZoomOut" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_zoom_out_custom" app:tint="#0C3D6A" />
+                <TextView android:id="@+id/tvZoomPercent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="4dp" android:text="100%" android:textColor="#0C3D6A" android:textSize="12sp" android:textStyle="bold" />
+                <ImageButton android:id="@+id/btnZoomIn" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_zoom" app:tint="#0C3D6A" />
             </LinearLayout>
 
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- SAVE / DON'T SAVE BUTTONS -->
     <LinearLayout
         android:id="@+id/bottomActions"
         android:layout_width="match_parent"

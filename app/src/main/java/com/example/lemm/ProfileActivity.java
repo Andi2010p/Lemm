@@ -101,14 +101,26 @@ public class ProfileActivity extends AppCompatActivity {
         builder.setPositiveButton(getString(R.string.update), (dialog, which) -> {
             String currentPass = inputCurrentPass.getText().toString().trim();
             String newPass = inputNewPass.getText().toString().trim();
+// Inside showChangePasswordDialog -> builder.setPositiveButton success block
+            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            String username = pref.getString("username", "");
+            if (dbHelper.updatePassword(username, newPass)) {
+                Toast.makeText(this, "Password changed successfully", Toast.LENGTH_SHORT).show();
 
-            if (currentPass.isEmpty() || newPass.isEmpty()) {
+                String email = dbHelper.getUserEmail(username);
+                if (email != null) {
+                    String changeBody = "Hello,\n\n" +
+                            "This is a confirmation that your Lemma account password has been changed.\n" +
+                            "If you did not perform this action, please contact support.";
+
+                    EmailSender.sendEmail(email, "Security Alert: Password Changed", changeBody);
+                }
+            }
+           if (currentPass.isEmpty() || newPass.isEmpty()) {
                 Toast.makeText(this, getString(R.string.enter_all_fields), Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            String username = pref.getString("username", "");
 
             if (dbHelper.checkUser(username, currentPass)) {
                 if (newPass.length() < 8) {

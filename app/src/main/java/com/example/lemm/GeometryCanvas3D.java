@@ -15,8 +15,7 @@ import java.util.List;
 
 public class GeometryCanvas3D extends View {
     private Paint linePaint, pointPaint, planePaint, textPaint;
-    private Paint xAxisPaint, yAxisPaint, zAxisPaint;
-    private Paint axesTextPaint; // New paint for axes labels
+    private Paint xAxisPaint, yAxisPaint, zAxisPaint, axesTextPaint;
 
     private List<Point3D> points = new ArrayList<>();
     private List<Line3D> lines = new ArrayList<>();
@@ -32,7 +31,10 @@ public class GeometryCanvas3D extends View {
     private float scaleFactor = 1.0f;
     private float translateX = 0f, translateY = 0f;
     private boolean isMoveMode = false;
-    private float prevX, prevY;
+
+    // Stabilizers
+    private float lastTouchX, lastTouchY;
+    private int activePointerId = -1;
     private ScaleGestureDetector scaleDetector;
 
     public interface OnZoomChangeListener { void onZoomChanged(int percentage); }
@@ -41,18 +43,14 @@ public class GeometryCanvas3D extends View {
 
     public static class Point3D {
         public String label; float x, y, z, sx, sy, sz; boolean isVertex;
-        Point3D(String l, float x, float y, float z) {
-            this.label = l; this.x = x; this.y = y; this.z = z;
-            this.isVertex = l != null && !l.isEmpty();
-        }
+        Point3D(String l, float x, float y, float z) { this.label = l; this.x = x; this.y = y; this.z = z; this.isVertex = l != null && !l.isEmpty(); }
     }
     private static class Line3D { String a, b; Line3D(String a, String b) { this.a = a; this.b = b; } }
     private static class Plane3D { List<String> labels; Plane3D(List<String> l) { this.labels = l; } }
     private static class Cone3D {
         String label; float cx, cy, cz, r, h, curvature;
         Cone3D(String l, float x, float y, float z, float r, float h, float curvature) {
-            this.label = l; this.cx = x; this.cy = y; this.cz = z; this.r = r; this.h = h;
-            this.curvature = Math.max(0.1f, curvature);
+            this.label = l; this.cx = x; this.cy = y; this.cz = z; this.r = r; this.h = h; this.curvature = Math.max(0.1f, curvature);
         }
     }
     private static class Pyramid3D {
@@ -71,30 +69,31 @@ public class GeometryCanvas3D extends View {
         Sphere3D(String l, float x, float y, float z, float r) { this.label = l; this.cx = x; this.cy = y; this.cz = z; this.r = r; }
     }
 
-    public GeometryCanvas3D(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init(context);
-    }
+    public GeometryCanvas3D(Context context, AttributeSet attrs) { super(context, attrs); init(context); }
 
     private void init(Context context) {
         linePaint = new Paint(Paint.ANTI_ALIAS_FLAG); linePaint.setColor(Color.BLACK); linePaint.setStrokeWidth(1.2f); linePaint.setStyle(Paint.Style.STROKE);
         pointPaint = new Paint(Paint.ANTI_ALIAS_FLAG); pointPaint.setColor(Color.RED);
         planePaint = new Paint(Paint.ANTI_ALIAS_FLAG); planePaint.setStyle(Paint.Style.FILL);
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG); textPaint.setTextSize(26f); textPaint.setColor(Color.parseColor("#0C3D6A")); textPaint.setTypeface(Typeface.DEFAULT_BOLD);
-
-        xAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); xAxisPaint.setColor(Color.RED); xAxisPaint.setStrokeWidth(5f); // Increased stroke width
-        yAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); yAxisPaint.setColor(Color.GREEN); yAxisPaint.setStrokeWidth(5f); // Increased stroke width
-        zAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); zAxisPaint.setColor(Color.BLUE); zAxisPaint.setStrokeWidth(5f); // Increased stroke width
-
-        axesTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); // New paint for axes labels
-        axesTextPaint.setTextSize(30f); // Increased text size
-        axesTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
-        // Colors will be set per axis in drawAxesCube
+        xAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); xAxisPaint.setColor(Color.RED); xAxisPaint.setStrokeWidth(5f);
+        yAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); yAxisPaint.setColor(Color.GREEN); yAxisPaint.setStrokeWidth(5f);
+        zAxisPaint = new Paint(Paint.ANTI_ALIAS_FLAG); zAxisPaint.setColor(Color.BLUE); zAxisPaint.setStrokeWidth(5f);
+        axesTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); axesTextPaint.setTextSize(30f); axesTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
 
         scaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override public boolean onScale(ScaleGestureDetector d) {
+                float oldScale = scaleFactor;
                 scaleFactor *= d.getScaleFactor();
                 scaleFactor = Math.max(0.1f, Math.min(scaleFactor, 10.0f));
+
+                // Keep scaling focused on the pinch center
+                float ratio = scaleFactor / oldScale;
+                float focusX = d.getFocusX();
+                float focusY = d.getFocusY();
+                translateX = focusX - (focusX - translateX) * ratio;
+                translateY = focusY - (focusY - translateY) * ratio;
+
                 if (zoomListener != null) zoomListener.onZoomChanged(getZoomPercentage());
                 invalidate(); return true;
             }
@@ -109,12 +108,8 @@ public class GeometryCanvas3D extends View {
     public void addPlane(List<String> labels) { saveToHistory(); planes.add(new Plane3D(labels)); invalidate(); }
     public void addCircle(String l, float x, float y, float z, float r) { saveToHistory(); circles.add(new Circle3D(l, x, y, z, r)); invalidate(); }
     public void addSphere(String l, float x, float y, float z, float r) { saveToHistory(); spheres.add(new Sphere3D(l, x, y, z, r)); invalidate(); }
-    public void addCone(String l, float x, float y, float z, float r, float h, float curvature) {
-        saveToHistory(); cones.add(new Cone3D(l, x, y, z, r, h, curvature)); invalidate();
-    }
-    public void addPyramid(String l, float x, float y, float z, float w, float d, float h) {
-        saveToHistory(); pyramids.add(new Pyramid3D(l, x, y, z, w, d, h)); invalidate();
-    }
+    public void addCone(String l, float x, float y, float z, float r, float h, float curvature) { saveToHistory(); cones.add(new Cone3D(l, x, y, z, r, h, curvature)); invalidate(); }
+    public void addPyramid(String l, float x, float y, float z, float w, float d, float h) { saveToHistory(); pyramids.add(new Pyramid3D(l, x, y, z, w, d, h)); invalidate(); }
     public void addCylinder(String l, float x, float y, float z, float r, float h) { saveToHistory(); cylinders.add(new Cylinder3D(l, x, y, z, r, h)); invalidate(); }
 
     public void clear() {
@@ -154,16 +149,12 @@ public class GeometryCanvas3D extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         canvas.drawColor(Color.WHITE);
-
         float drawCX = getWidth()/2f + translateX, drawCY = getHeight()/2f + translateY;
         float baseScale = (Math.min(getWidth(), getHeight()) / 600f) * scaleFactor;
         double rx = Math.toRadians(rotateX), ry = Math.toRadians(rotateY), rz = Math.toRadians(rotateZ);
 
         drawAxesCube(canvas, rx, ry, rz);
-
         for (Point3D p : points) project(p, rx, ry, rz, drawCX, drawCY, baseScale);
-
-        // 1. Planes
         for (Plane3D pl : planes) {
             Path path = new Path(); boolean first = true;
             for (String label : pl.labels) {
@@ -172,14 +163,10 @@ public class GeometryCanvas3D extends View {
             }
             if (!first) { path.close(); planePaint.setColor(Color.argb(140, 180, 220, 255)); canvas.drawPath(path, planePaint); canvas.drawPath(path, linePaint); }
         }
-
-        // 2. Circles
         for (Circle3D c : circles) {
             Path p = drawCirclePath(c.cx, c.cy, c.cz, c.r, rx, ry, rz, drawCX, drawCY, baseScale);
             planePaint.setColor(Color.argb(120, 135, 206, 250)); canvas.drawPath(p, planePaint); canvas.drawPath(p, linePaint);
         }
-
-        // 3. Cones
         for (Cone3D c : cones) {
             int slices = 48, stacks = 12;
             for (int i = 0; i < slices; i++) {
@@ -203,13 +190,7 @@ public class GeometryCanvas3D extends View {
             }
             Path base = drawCirclePath(c.cx, c.cy, c.cz, c.r, rx, ry, rz, drawCX, drawCY, baseScale);
             planePaint.setColor(Color.argb(120, 50, 100, 200)); canvas.drawPath(base, planePaint); canvas.drawPath(base, linePaint);
-            if (c.label != null && !c.label.isEmpty()) {
-                Point3D apex = new Point3D(null, c.cx, c.cy + c.h, c.cz); project(apex, rx, ry, rz, drawCX, drawCY, baseScale);
-                canvas.drawText(c.label, apex.sx, apex.sy - 15, textPaint);
-            }
         }
-
-        // 4. Pyramids
         for (Pyramid3D p : pyramids) {
             float hw = p.w / 2, hd = p.d / 2;
             Point3D apex = new Point3D(null, p.cx, p.cy + p.h, p.cz);
@@ -224,10 +205,7 @@ public class GeometryCanvas3D extends View {
                 path.close(); planePaint.setColor(Color.argb(160, 100 + i * 20, 150 + i * 10, 220));
                 canvas.drawPath(path, planePaint); canvas.drawPath(path, linePaint);
             }
-            if (p.label != null && !p.label.isEmpty()) canvas.drawText(p.label, apex.sx, apex.sy - 15, textPaint);
         }
-
-        // 5. Cylinders, Lines, Points, Spheres
         for (Cylinder3D cy : cylinders) {
             int segs = 32;
             for (int i = 0; i < segs; i++) {
@@ -255,21 +233,14 @@ public class GeometryCanvas3D extends View {
     }
 
     private void drawAxesCube(Canvas canvas, double rx, double ry, double rz) {
-        float cubeCX = 100f, cubeCY = 100f, cubeScale = 60f; // Moved to top-left and slightly larger
-        Point3D origin = new Point3D(null, 0, 0, 0);
-        Point3D xAxis = new Point3D(null, 1, 0, 0);
-        Point3D yAxis = new Point3D(null, 0, 1, 0);
-        Point3D zAxis = new Point3D(null, 0, 0, 1);
-
-        project(origin, rx, ry, rz, cubeCX, cubeCY, cubeScale);
-        project(xAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale);
-        project(yAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale);
-        project(zAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale);
-
+        float cubeCX = 100f, cubeCY = 100f, cubeScale = 60f;
+        Point3D origin = new Point3D(null, 0, 0, 0); Point3D xAxis = new Point3D(null, 1, 0, 0);
+        Point3D yAxis = new Point3D(null, 0, 1, 0); Point3D zAxis = new Point3D(null, 0, 0, 1);
+        project(origin, rx, ry, rz, cubeCX, cubeCY, cubeScale); project(xAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale);
+        project(yAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale); project(zAxis, rx, ry, rz, cubeCX, cubeCY, cubeScale);
         canvas.drawLine(origin.sx, origin.sy, xAxis.sx, xAxis.sy, xAxisPaint);
         canvas.drawLine(origin.sx, origin.sy, yAxis.sx, yAxis.sy, yAxisPaint);
         canvas.drawLine(origin.sx, origin.sy, zAxis.sx, zAxis.sy, zAxisPaint);
-
         axesTextPaint.setColor(Color.RED); canvas.drawText("X", xAxis.sx + 10, xAxis.sy + 10, axesTextPaint);
         axesTextPaint.setColor(Color.GREEN); canvas.drawText("Y", yAxis.sx + 10, yAxis.sy + 10, axesTextPaint);
         axesTextPaint.setColor(Color.BLUE); canvas.drawText("Z", zAxis.sx + 10, zAxis.sy + 10, axesTextPaint);
@@ -300,21 +271,57 @@ public class GeometryCanvas3D extends View {
 
     @Override public boolean onTouchEvent(MotionEvent e) {
         scaleDetector.onTouchEvent(e);
-        if (e.getPointerCount() == 1) {
-            if (e.getAction() == MotionEvent.ACTION_DOWN) { prevX = e.getX(); prevY = e.getY(); }
-            if (e.getAction() == MotionEvent.ACTION_MOVE) {
-                if (isMoveMode) {
-                    translateX += (e.getX() - prevX); translateY += (e.getY() - prevY);
-                } else {
-                    rotateY += (e.getX() - prevX) * 0.5f; rotateX -= (e.getY() - prevY) * 0.5f;
+        int action = e.getActionMasked();
+
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                activePointerId = e.getPointerId(0);
+                lastTouchX = e.getX(); lastTouchY = e.getY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (!scaleDetector.isInProgress() && activePointerId != -1) {
+                    int idx = e.findPointerIndex(activePointerId);
+                    if (idx != -1) {
+                        float dx = e.getX(idx) - lastTouchX;
+                        float dy = e.getY(idx) - lastTouchY;
+                        if (isMoveMode) { translateX += dx; translateY += dy; }
+                        else { rotateY += dx * 0.5f; rotateX -= dy * 0.5f; }
+                        lastTouchX = e.getX(idx); lastTouchY = e.getY(idx);
+                        invalidate();
+                    }
                 }
-                prevX = e.getX(); prevY = e.getY(); invalidate();
-            }
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                int pIdx = (action & MotionEvent.ACTION_POINTER_INDEX_MASK) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+                if (e.getPointerId(pIdx) == activePointerId) {
+                    int newIdx = pIdx == 0 ? 1 : 0;
+                    lastTouchX = e.getX(newIdx); lastTouchY = e.getY(newIdx);
+                    activePointerId = e.getPointerId(newIdx);
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                activePointerId = -1;
+                break;
         }
         return true;
     }
 
-    public void zoomIn() { scaleFactor *= 1.2f; invalidate(); notifyZoom(); }
-    public void zoomOut() { scaleFactor /= 1.2f; invalidate(); notifyZoom(); }
+    public void zoomIn() {
+        float oldScale = scaleFactor;
+        scaleFactor = Math.min(10.0f, scaleFactor * 1.2f);
+        float ratio = scaleFactor / oldScale;
+        translateX = getWidth()/2f - (getWidth()/2f - translateX) * ratio;
+        translateY = getHeight()/2f - (getHeight()/2f - translateY) * ratio;
+        invalidate(); notifyZoom();
+    }
+    public void zoomOut() {
+        float oldScale = scaleFactor;
+        scaleFactor = Math.max(0.1f, scaleFactor / 1.2f);
+        float ratio = scaleFactor / oldScale;
+        translateX = getWidth()/2f - (getWidth()/2f - translateX) * ratio;
+        translateY = getHeight()/2f - (getHeight()/2f - translateY) * ratio;
+        invalidate(); notifyZoom();
+    }
     private void notifyZoom() { if(zoomListener != null) zoomListener.onZoomChanged(getZoomPercentage()); }
 }

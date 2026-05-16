@@ -63,27 +63,32 @@ dependencies {
     // SceneView (3D Engine)
     implementation("io.github.sceneview:sceneview:2.2.1")
     implementation("io.github.sceneview:arsceneview:0.10.0")
-    implementation("dev.romainguy:kotlin-math:1.5.3")
+
+    // 🔥 FIX FOR 16 KB ERROR: Force the project to use the latest ARCore
+    implementation("com.google.ar:core:1.45.0")
 
     // Geometry/CAD Engine
     implementation("org.locationtech.jts:jts-core:1.19.0")
-    implementation ("com.google.mlkit:text-recognition:16.0.0")
+
     // Firebase (Using BOM for version management)
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // Google Sign-In Library
     implementation("com.google.android.gms:play-services-auth:21.1.1")
+
     // Google Generative AI
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
+
     // ML Kit & Text Recognition
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
+
+    // Mail Sending (OTP)
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")
-    implementation("com.google.firebase:firebase-auth:22.3.1")
-// Google Sign-In Library
-    implementation("com.google.android.gms:play-services-auth:21.0.0")
-//    implementation("com.google.mlkit:text-recognition-cyrillic:16.0.1")
+
     // Utilities
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.noties.markwon:core:4.6.2")
@@ -91,11 +96,10 @@ dependencies {
     implementation("com.google.guava:guava:33.0.0-android")
     implementation("dev.romainguy:kotlin-math:1.5.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation(libs.kotlin.math)
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.test:runner:1.5.2")
-
 }

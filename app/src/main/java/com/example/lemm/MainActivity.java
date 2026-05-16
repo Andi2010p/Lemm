@@ -137,8 +137,8 @@ public class MainActivity extends AppCompatActivity {
         try {
             Bitmap originalBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
 
-            // 1. HEAVY COMPRESSION: Scale down to 640px to prevent "Unexpected Response"
-            int maxDimension = 640;
+            // 1. COMPRESSION: Scaled to 1024px. 640px was too blurry for small math symbols.
+            int maxDimension = 1024;
             int width = originalBitmap.getWidth();
             int height = originalBitmap.getHeight();
 
@@ -147,10 +147,10 @@ public class MainActivity extends AppCompatActivity {
                 originalBitmap = Bitmap.createScaledBitmap(originalBitmap, (int) (width * ratio), (int) (height * ratio), true);
             }
 
-            // 2. FORMAT FIX: Convert to standard ARGB_8888 so Gemini doesn't reject weird camera pixel formats
+            // 2. FORMAT FIX: ARGB_8888 prevents Gemini from rejecting camera pixel formats
             Bitmap safeBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
 
-            // Show Loading Dialog (NOW USING TRANSLATIONS)
+            // Show Loading Dialog
             android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
                     .setTitle(getString(R.string.scan_dialog_title))
                     .setMessage(getString(R.string.scan_dialog_message))
@@ -159,8 +159,18 @@ public class MainActivity extends AppCompatActivity {
 
             GeminiAI geminiAI = new GeminiAI(BuildConfig.GEMINI_API_KEY);
 
-            // Simple, strict prompt
-            String prompt = "Read all the text and math equations in this image. Return ONLY the extracted text. Do not solve the problem or add any commentary.";
+            // 3. GET APP LANGUAGE
+            SharedPreferences langPref = getSharedPreferences("Settings", MODE_PRIVATE);
+            String currentLangCode = langPref.getString("Locale.Helper.Selected.Language", "en");
+
+            String targetLanguage = "English";
+            if (currentLangCode.equals("ru")) targetLanguage = "Russian (Русский)";
+            if (currentLangCode.equals("hy")) targetLanguage = "Armenian (Հայերեն)";
+
+            // 4. LANGUAGE-AWARE PROMPT
+            String prompt = "Read all the text and math equations in this image. " +
+                    "You MUST transcribe the text in " + targetLanguage + ". " +
+                    "Return ONLY the extracted text. Do not solve the problem or add any commentary.";
 
             Futures.addCallback(
                     geminiAI.extractTextFromImage(safeBitmap, prompt),
@@ -198,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, getString(R.string.scan_error_loading_photo), Toast.LENGTH_SHORT).show();
         }
-    }    @Override
+    }@Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CAMERA_PERMISSION_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

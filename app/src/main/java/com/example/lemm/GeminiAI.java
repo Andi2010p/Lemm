@@ -13,12 +13,10 @@ public class GeminiAI {
     private GenerativeModelFutures visionModel;
 
     public GeminiAI(String apiKey) {
-        // Model for normal text solving
         GenerativeModel gmText = new GenerativeModel("gemini-3-flash-preview", apiKey);
         this.textModel = GenerativeModelFutures.from(gmText);
 
-        // Model SPECIFICALLY for images (Required for older SDK versions)
-        GenerativeModel gmVision = new GenerativeModel("gemini-pro-vision", apiKey);
+        GenerativeModel gmVision = new GenerativeModel("gemini-3-flash-preview", apiKey);
         this.visionModel = GenerativeModelFutures.from(gmVision);
     }
 
@@ -32,7 +30,6 @@ public class GeminiAI {
                 .addImage(bitmap)
                 .addText(prompt)
                 .build();
-        // IMPORTANT: Use the vision model here!
         return visionModel.generateContent(content);
     }
 }
