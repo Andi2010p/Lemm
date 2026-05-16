@@ -10,6 +10,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView; // <--- THIS WAS MISSING
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -102,6 +103,16 @@ public class DrawingActivity extends AppCompatActivity {
 
         findViewById(R.id.btnDontSave).setOnClickListener(v -> finish());
         findViewById(R.id.btnSave).setOnClickListener(v -> showSaveDialog());
+
+        // --- NEW ZOOM BUTTONS LOGIC ---
+        TextView tvZoom = findViewById(R.id.tvZoomPercent);
+
+        drawingCanvas.setOnZoomChangeListener(pct -> {
+            if (tvZoom != null) tvZoom.setText(pct + "%");
+        });
+
+        findViewById(R.id.btnZoomIn).setOnClickListener(v -> drawingCanvas.zoomIn());
+        findViewById(R.id.btnZoomOut).setOnClickListener(v -> drawingCanvas.zoomOut());
     }
 
     private void showSaveDialog() {

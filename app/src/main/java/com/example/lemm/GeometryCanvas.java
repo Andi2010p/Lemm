@@ -1,4 +1,3 @@
-// D:/codes/Homeworks.Uwc/Lemm/app/src/main/java/com/example/lemm/GeometryCanvas.java
 package com.example.lemm;
 
 import android.content.Context;
@@ -16,7 +15,6 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 
 public class GeometryCanvas extends View {
     private List<GeometricObject> geometricObjects = new ArrayList<>();
@@ -49,15 +47,14 @@ public class GeometryCanvas extends View {
 
     public GeoPoint findPoint(String name) {
         if (name == null) return null;
-
-        // Iterate through your points list (ensure 'points' is the correct variable name)
         for (GeoPoint p : points) {
-            if (name.equalsIgnoreCase(p.label)) { // or p.getName() depending on your GeoPoint class
+            if (name.equalsIgnoreCase(p.label)) {
                 return p;
             }
         }
-        return null; // Return null if the point isn't found
+        return null;
     }
+
     public static abstract class GeometricObject {
         public abstract void draw(Canvas canvas, Paint paint, Matrix matrix, float zoom);
         public abstract boolean hitTest(float x, float y, Matrix inverseMatrix, float tolerance);
@@ -120,13 +117,13 @@ public class GeometryCanvas extends View {
         public String getLabel() { return label; }
     }
 
-    private float rotationDegrees = 0f; // Variable to store the current rotation
+    private float rotationDegrees = 0f;
     public void rotateCanvas(float degrees) {
         this.rotationDegrees += degrees;
-        // Keep the value within 0-360 for cleanliness, though not strictly required
         this.rotationDegrees %= 360;
-        invalidate(); // Redraw the view with the new rotation
+        invalidate();
     }
+
     public static class GeoLine extends GeometricObject {
         public GeoPoint p1, p2;
         public String label;
@@ -314,7 +311,6 @@ public class GeometryCanvas extends View {
         @Override
         public String getLabel() { return label; }
     }
-
 
     public static class GeoArc extends GeometricObject {
         public float centerX, centerY, radius, startAngle, sweepAngle;

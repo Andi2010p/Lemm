@@ -71,4 +71,10 @@
     <string name="geometry_solver">Решение задач</string>
     <string name="custom_ai_inst">Инструкции для ИИ (необязательно)</string>
     <string name="analyze_visualize">Анализ и визуализация</string>
+    <string name="scan_dialog_title">Сканирование изображения</string>
+    <string name="scan_dialog_message">Чтение текста и формул...</string>
+    <string name="scan_error_no_text">Текст на изображении не найден.</string>
+    <string name="scan_error_failed">Ошибка сканирования: </string>
+    <string name="scan_error_loading_photo">Ошибка загрузки фото</string>
+
 </resources>

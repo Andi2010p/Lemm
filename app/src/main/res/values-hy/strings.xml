@@ -71,5 +71,10 @@
     <string name="geometry_solver">Խնդրի լուծում</string>
     <string name="custom_ai_inst">Հրահանգներ ԱԲ-ի համար</string>
     <string name="analyze_visualize">Վերլուծել և պատկերել</string>
+    <string name="scan_dialog_title">Պատկերի սկանավորում</string>
+    <string name="scan_dialog_message">Տեքստի և բանաձևերի ընթերցում...</string>
+    <string name="scan_error_no_text">Պատկերում տեքստ չի գտնվել։</string>
+    <string name="scan_error_failed">Սկանավորման սխալ՝ </string>
+    <string name="scan_error_loading_photo">Լուսանկարի բեռնման սխալ</string>
 
 </resources>

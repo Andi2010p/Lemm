@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,10 +24,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import com.google.android.material.card.MaterialCardView;
-import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.TextRecognition;
-import com.google.mlkit.vision.text.TextRecognizer;
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.ai.client.generativeai.type.GenerateContentResponse;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +58,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // ONLY load the main layout
         setContentView(R.layout.activity_main);
 
         initViews();
@@ -77,22 +74,17 @@ public class MainActivity extends AppCompatActivity {
         cardScanProblem = findViewById(R.id.cardScanProblem);
         cardDrawProblem = findViewById(R.id.cardDrawProblem);
         cardHistory = findViewById(R.id.cardHistory);
-
     }
 
     private void setupUser() {
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String username = pref.getString("username", "User");
-        tvMainWelcome.setText("Welcome Back, " + username);
+        tvMainWelcome.setText(getString(R.string.welcome, username));
     }
 
     private void setupListeners() {
-        // Open Manual Input
-        cardNewProblem.setOnClickListener(v -> {
-            startActivity(new Intent(MainActivity.this, GeometryInputActivity.class));
-        });
+        cardNewProblem.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, GeometryInputActivity.class)));
 
-        // Open Scanner
         cardScanProblem.setOnClickListener(v -> {
             if (checkCameraPermission()) {
                 dispatchTakePictureIntent();
@@ -101,22 +93,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // OPEN THE CAD PAGE (This solves your errors)
-        cardDrawProblem.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, DrawingActivity.class);
-            startActivity(intent);
-        });
-
-        // Open History
-        cardHistory.setOnClickListener(v -> {
-            startActivity(new Intent(MainActivity.this, HistoryActivity.class));
-        });
-
+        cardDrawProblem.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, DrawingActivity.class)));
+        cardHistory.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HistoryActivity.class)));
         btnProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
         btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
     }
 
-    // --- CAMERA & OCR LOGIC ---
     private boolean checkCameraPermission() {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
@@ -131,8 +113,6 @@ public class MainActivity extends AppCompatActivity {
         try {
             photoFile = createImageFile();
         } catch (IOException ex) {
-            // Around line 133 in MainActivity.java
-            photoUri = FileProvider.getUriForFile(this, "com.example.lemm.fileprovider", photoFile);
             Log.e(TAG, "Error creating file", ex);
         }
         if (photoFile != null) {
@@ -150,34 +130,82 @@ public class MainActivity extends AppCompatActivity {
         return image;
     }
 
+    // --- GEMINI AI OCR SCANNER ---
+// --- GEMINI AI OCR SCANNER ---
+// --- GEMINI AI OCR SCANNER ---
     private void processCapturedPhoto() {
         try {
-            Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
-            recognizeTextFromImage(bitmap);
-        } catch (IOException e) {
-            Log.e(TAG, "Error loading image", e);
+            Bitmap originalBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
+
+            // 1. HEAVY COMPRESSION: Scale down to 640px to prevent "Unexpected Response"
+            int maxDimension = 640;
+            int width = originalBitmap.getWidth();
+            int height = originalBitmap.getHeight();
+
+            if (width > maxDimension || height > maxDimension) {
+                float ratio = Math.min((float) maxDimension / width, (float) maxDimension / height);
+                originalBitmap = Bitmap.createScaledBitmap(originalBitmap, (int) (width * ratio), (int) (height * ratio), true);
+            }
+
+            // 2. FORMAT FIX: Convert to standard ARGB_8888 so Gemini doesn't reject weird camera pixel formats
+            Bitmap safeBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+            // Show Loading Dialog (NOW USING TRANSLATIONS)
+            android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                    .setTitle(getString(R.string.scan_dialog_title))
+                    .setMessage(getString(R.string.scan_dialog_message))
+                    .setCancelable(false)
+                    .show();
+
+            GeminiAI geminiAI = new GeminiAI(BuildConfig.GEMINI_API_KEY);
+
+            // Simple, strict prompt
+            String prompt = "Read all the text and math equations in this image. Return ONLY the extracted text. Do not solve the problem or add any commentary.";
+
+            Futures.addCallback(
+                    geminiAI.extractTextFromImage(safeBitmap, prompt),
+                    new FutureCallback<GenerateContentResponse>() {
+                        @Override
+                        public void onSuccess(GenerateContentResponse result) {
+                            runOnUiThread(() -> {
+                                dialog.dismiss();
+                                String scannedText = result.getText();
+
+                                if (scannedText == null || scannedText.isEmpty()) {
+                                    Toast.makeText(MainActivity.this, getString(R.string.scan_error_no_text), Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+
+                                // Send the scanned text to the Input screen
+                                Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
+                                intent.putExtra("SCANNED_TEXT", scannedText.trim());
+                                startActivity(intent);
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            runOnUiThread(() -> {
+                                dialog.dismiss();
+                                Log.e("ScannerError", "Failed to scan", t);
+                                Toast.makeText(MainActivity.this, getString(R.string.scan_error_failed) + t.getMessage(), Toast.LENGTH_LONG).show();
+                            });
+                        }
+                    },
+                    ContextCompat.getMainExecutor(this)
+            );
+
+        } catch (Exception e) {
+            Toast.makeText(this, getString(R.string.scan_error_loading_photo), Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void recognizeTextFromImage(Bitmap bitmap) {
-        InputImage image = InputImage.fromBitmap(bitmap, 0);
-        TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-        recognizer.process(image)
-                .addOnSuccessListener(visionText -> {
-                    Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
-                    intent.putExtra("SCANNED_TEXT", visionText.getText());
-                    startActivity(intent);
-                })
-                .addOnFailureListener(e -> Toast.makeText(this, "OCR Error", Toast.LENGTH_SHORT).show());
-    }
-
-    @Override
+    }    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CAMERA_PERMISSION_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             dispatchTakePictureIntent();
         }
-    }// You MUST have this in MainActivity.java for the buttons to translate!
+    }
+
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleHelper.onAttach(newBase));

@@ -13,7 +13,6 @@ import android.widget.*;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import com.example.lemm.R;
 import com.google.ai.client.generativeai.type.GenerateContentResponse;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -97,9 +96,6 @@ public class GeometryInputActivity extends AppCompatActivity {
             Toast.makeText(this, isMove ? "Move Mode" : "Rotate Mode", Toast.LENGTH_SHORT).show();
         });
 
-        findViewById(R.id.btnDontSave).setOnClickListener(v -> resetAll());
-        findViewById(R.id.btnSaveSolution).setOnClickListener(v -> showSaveDialog());
-
         handleIntent(getIntent());
     }
 
@@ -110,11 +106,24 @@ public class GeometryInputActivity extends AppCompatActivity {
     }
 
     private void handleIntent(Intent intent) {
-        if (intent != null && intent.hasExtra("SAVED_RAW")) {
-            String raw = intent.getStringExtra("SAVED_RAW");
-            String problem = intent.getStringExtra("SAVED_PROBLEM");
-            if (problem != null) etDescription.setText(problem);
-            processAIResult(raw);
+        if (intent != null) {
+            // Handle loading saved history
+            if (intent.hasExtra("SAVED_RAW")) {
+                String raw = intent.getStringExtra("SAVED_RAW");
+                String problem = intent.getStringExtra("SAVED_PROBLEM");
+                if (problem != null) etDescription.setText(problem);
+                processAIResult(raw);
+            }
+
+            // --- FIX: AUTOMATICALLY START SOLVING SCANNED TEXT ---
+            if (intent.hasExtra("SCANNED_TEXT")) {
+                String scannedText = intent.getStringExtra("SCANNED_TEXT");
+                if (scannedText != null && !scannedText.isEmpty()) {
+                    etDescription.setText(scannedText);
+                    // Automatically trigger the AI! You don't have to click the button anymore.
+                    solveWithAI(scannedText);
+                }
+            }
         }
     }
 
@@ -134,13 +143,11 @@ public class GeometryInputActivity extends AppCompatActivity {
         stepsContainer.removeAllViews();
         solutionControls.setVisibility(View.GONE);
 
-        // --- NEW CODE: GET CURRENT APP LANGUAGE ---
         SharedPreferences langPref = getSharedPreferences("Settings", MODE_PRIVATE);
         String currentLangCode = langPref.getString("Locale.Helper.Selected.Language", "en");
         String aiLanguage = "ENGLISH";
         if (currentLangCode.equals("ru")) aiLanguage = "RUSSIAN";
         else if (currentLangCode.equals("hy")) aiLanguage = "ARMENIAN";
-        // ------------------------------------------
 
         String extra = etExtra.getText().toString().trim();
         String prompt =
@@ -163,7 +170,7 @@ public class GeometryInputActivity extends AppCompatActivity {
                         "================ LANGUAGE RULES ================\n" +
                         "5. The DRAWING COMMANDS (like CONE3D, PLANE3D) MUST remain in standard ENGLISH.\n" +
                         "6. HOWEVER, THE ENTIRE STEP-BY-STEP EXPLANATION AND MATH SOLUTION MUST BE WRITTEN IN " + aiLanguage + " LANGUAGE.\n" +
-                        "7. Start each step with 'Step X: ' (Translate 'Step' into " + aiLanguage + " if applicable). End the solution with 'FINAL ANSWER: ' (Translate 'FINAL ANSWER' into " + aiLanguage + ") followed by the result.\n" +
+                        "7. Start each step with the exact prefix 'Step X: ' (Translate 'Step' to " + aiLanguage + " if you want). End the solution with 'FINAL ANSWER: ' (Translate 'FINAL ANSWER' to " + aiLanguage + ") followed by the result.\n" +
                         "================================================\n\n" +
 
                         "PROBLEM:\n" + problem + "\n" +
@@ -185,7 +192,7 @@ public class GeometryInputActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
                     findViewById(R.id.btnSolveProblem).setEnabled(true);
-                    Toast.makeText(GeometryInputActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GeometryInputActivity.this, "AI Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
                 });
             }
         }, ContextCompat.getMainExecutor(this));
@@ -234,7 +241,8 @@ public class GeometryInputActivity extends AppCompatActivity {
         lastSolutionText = solutionBuilder.toString().trim();
         stepsContainer.removeAllViews();
 
-        Pattern stepPattern = Pattern.compile("^(Step \\d+: .*)|" + Pattern.quote("FINAL ANSWER:") + ".*", Pattern.MULTILINE);
+        // --- FIX: THIS REGEX NOW SUPPORTS RUSSIAN AND ARMENIAN WORDS ---
+        Pattern stepPattern = Pattern.compile("^(Step \\d+:.*|Шаг \\d+:.*|Քայլ \\d+:.*|FINAL ANSWER:.*|ОТВЕТ:.*|ՊԱՏԱՍԽԱՆ:.*)", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
         Matcher stepMatcher = stepPattern.matcher(lastSolutionText);
 
         List<String> segments = new ArrayList<>();
@@ -250,11 +258,18 @@ public class GeometryInputActivity extends AppCompatActivity {
         if (!finalSegment.isEmpty()) segments.add(finalSegment);
 
         boolean firstStepProcessed = false;
+
+        // --- FIX: SAFELY COLOR-CODE CARDS IN ANY LANGUAGE ---
         for (String segment : segments) {
-            if (segment.startsWith("Step 1:") && !firstStepProcessed) {
+            String checkStr = segment.toUpperCase();
+
+            boolean isFirst = (checkStr.contains("STEP 1:") || checkStr.contains("ШАГ 1:") || checkStr.contains("ՔԱՅԼ 1:")) && !firstStepProcessed;
+            boolean isFinal = checkStr.contains("FINAL ANSWER:") || checkStr.contains("ОТВЕТ:") || checkStr.contains("ՊԱՏԱՍԽԱՆ:");
+
+            if (isFirst) {
                 addSolutionCard(segment, false, true);
                 firstStepProcessed = true;
-            } else if (segment.startsWith("FINAL ANSWER:")) {
+            } else if (isFinal) {
                 addSolutionCard(segment, true, false);
             } else {
                 addSolutionCard(segment, false, false);

@@ -22,12 +22,14 @@ import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import java.util.Random;
+// Add this with your other variables at the top of LoginActivity
 
 public class LoginActivity extends AppCompatActivity {
+    private com.google.firebase.auth.FirebaseAuth mAuth;
 
     private EditText etUsername, etPassword;
     private Button btnLogin;
-    private SignInButton btnGoogleLogin;
+    private com.google.android.material.button.MaterialButton btnGoogleLogin;
     private TextView tvSignUp, tvForgotPassword;
     private DatabaseHelper dbHelper;
 
@@ -39,8 +41,11 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        mAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
+
+        // Notice the new .requestIdToken() line! This is required for Firebase.
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
+                .requestIdToken("481743722691-874nj07keqhs20s6bolgram4bp4ghfdr.apps.googleusercontent.com")                .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
@@ -52,8 +57,6 @@ public class LoginActivity extends AppCompatActivity {
         tvSignUp = findViewById(R.id.tvSignUp);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
-        btnGoogleLogin.setSize(SignInButton.SIZE_WIDE);
-        btnGoogleLogin.setColorScheme(SignInButton.COLOR_DARK);
 
         btnLogin.setOnClickListener(v -> {
             String user = etUsername.getText().toString().trim();
@@ -187,14 +190,35 @@ public class LoginActivity extends AppCompatActivity {
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 if (account != null) {
-                    dbHelper.syncGoogleUser(account.getEmail(), account.getId());
-                    saveSessionAndGoMain(account.getEmail(), false);
+                    // WE GOT THE GOOGLE ACCOUNT! Now send it to Firebase.
+                    firebaseAuthWithGoogle(account.getIdToken(), account);
                 }
             } catch (ApiException e) {
-                Toast.makeText(this, getString(R.string.google_sign_in_failed) + ": " + e.getStatusCode(), Toast.LENGTH_LONG).show();
-                e.printStackTrace();
+                Toast.makeText(this, "Google Sign-In failed: " + e.getStatusCode(), Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    private void firebaseAuthWithGoogle(String idToken, GoogleSignInAccount account) {
+        com.google.firebase.auth.AuthCredential credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null);
+
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        // Sign in success!
+                        String email = account.getEmail();
+                        String name = account.getDisplayName();
+
+                        // Save to your local SQLite database so history works
+                        dbHelper.syncGoogleUser(email, account.getId());
+
+                        Toast.makeText(this, getString(R.string.welcome, name), Toast.LENGTH_SHORT).show();
+                        saveSessionAndGoMain(email, false);
+                    } else {
+                        // If sign in fails, display a message to the user.
+                        Toast.makeText(LoginActivity.this, "Firebase Authentication Failed.", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void saveSessionAndGoMain(String username, boolean isGuest) {

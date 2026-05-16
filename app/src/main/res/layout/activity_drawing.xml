@@ -88,6 +88,45 @@
                 android:layout_height="match_parent"
                 android:background="#FFFFFF" />
 
+            <!-- ZOOM CONTROLS OVERLAY -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="12dp"
+                android:background="@drawable/floating_controls_bg"
+                android:orientation="horizontal"
+                android:padding="4dp"
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/btnZoomOut"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_zoom_out_custom"
+                    app:tint="#0C3D6A" />
+
+                <TextView
+                    android:id="@+id/tvZoomPercent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:paddingHorizontal="4dp"
+                    android:text="100%"
+                    android:textColor="#0C3D6A"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/btnZoomIn"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_zoom"
+                    app:tint="#0C3D6A" />
+            </LinearLayout>
+
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 

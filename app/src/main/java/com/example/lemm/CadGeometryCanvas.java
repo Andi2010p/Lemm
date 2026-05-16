@@ -36,6 +36,17 @@ public class CadGeometryCanvas extends View {
     private List<PointF> activePolyline = new ArrayList<>();
     private Geometry selectedGeometry = null;
 
+    // --- NEW ZOOM LISTENER ---
+    public interface OnZoomChangeListener {
+        void onZoomChanged(int percentage);
+    }
+    private OnZoomChangeListener zoomListener;
+
+    public void setOnZoomChangeListener(OnZoomChangeListener listener) {
+        this.zoomListener = listener;
+    }
+    // --------------------------
+
     public CadGeometryCanvas(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
@@ -108,7 +119,7 @@ public class CadGeometryCanvas extends View {
         previewPaint.setStrokeWidth(adjustedStroke);
         snapIndicatorPaint.setStrokeWidth(3f / scale);
         centerPaint.setStrokeWidth(2f / scale);
-        textPaint.setTextSize(35f / scale); // Text scales with zoom automatically
+        textPaint.setTextSize(35f / scale);
 
         if (engine != null) {
             for (Geometry geo : engine.getGeometries()) {
@@ -120,7 +131,6 @@ public class CadGeometryCanvas extends View {
                 canvas.drawLine((float)center.x - cSize, (float)center.y, (float)center.x + cSize, (float)center.y, centerPaint);
                 canvas.drawLine((float)center.x, (float)center.y - cSize, (float)center.x, (float)center.y + cSize, centerPaint);
 
-                // Draw Dimensions if they exist!
                 if (geo.getUserData() != null) {
                     canvas.drawText(geo.getUserData().toString(), (float)center.x, (float)center.y - (20f/scale), textPaint);
                 }
@@ -205,11 +215,36 @@ public class CadGeometryCanvas extends View {
         return new PointF(tempPts[0], tempPts[1]);
     }
 
+    // --- UPDATED ZOOM LOGIC ---
     public void applyZoom(float factor, float focusX, float focusY) {
-        scale *= factor;
+        float newScale = scale * factor;
+
+        if (newScale < 0.1f) {
+            factor = 0.1f / scale;
+            scale = 0.1f;
+        } else if (newScale > 10.0f) {
+            factor = 10.0f / scale;
+            scale = 10.0f;
+        } else {
+            scale = newScale;
+        }
+
         matrix.postScale(factor, factor, focusX, focusY);
         invalidate();
+
+        if (zoomListener != null) {
+            zoomListener.onZoomChanged(getZoomPercentage());
+        }
     }
+
+    public void zoomIn() {
+        applyZoom(1.2f, getWidth() / 2f, getHeight() / 2f);
+    }
+
+    public void zoomOut() {
+        applyZoom(1f / 1.2f, getWidth() / 2f, getHeight() / 2f);
+    }
+    // ---------------------------
 
     public void pan(float dx, float dy) {
         matrix.postTranslate(dx, dy);
