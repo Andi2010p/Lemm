@@ -39,6 +39,9 @@ public class GeometryInputActivity extends AppCompatActivity {
     private LinearLayout resultSection;
     private String lastSolutionText = "";
     private String lastAIResponse = "";
+    // Add this with your other variables at the top
+    private int editId = -1;
+    private boolean isViewOnly = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +89,8 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         findViewById(R.id.btnZoomIn).setOnClickListener(v -> canvas3D.zoomIn());
         findViewById(R.id.btnZoomOut).setOnClickListener(v -> canvas3D.zoomOut());
+        findViewById(R.id.btnSaveSolution).setOnClickListener(v -> showSaveDialog());
+        findViewById(R.id.btnDontSave).setOnClickListener(v -> resetAll());
         canvas3D.setOnZoomChangeListener(pct -> tvZoom.setText(pct + "%"));
 
         ImageButton btnToggleMode = findViewById(R.id.btnToggleMoveRotate);
@@ -107,26 +112,37 @@ public class GeometryInputActivity extends AppCompatActivity {
 
     private void handleIntent(Intent intent) {
         if (intent != null) {
+            // Check if we are editing an existing item
+            if (intent.hasExtra("EDIT_ID")) {
+                editId = intent.getIntExtra("EDIT_ID", -1);
+            }
+
             // Handle loading saved history
             if (intent.hasExtra("SAVED_RAW")) {
                 String raw = intent.getStringExtra("SAVED_RAW");
+                lastAIResponse = raw;
+
                 String problem = intent.getStringExtra("SAVED_PROBLEM");
                 if (problem != null) etDescription.setText(problem);
+
+                // If it is NOT edit mode, hide the save buttons
+                if (!intent.getBooleanExtra("EDIT_MODE", false)) {
+                    isViewOnly = true;
+                }
+
                 processAIResult(raw);
             }
 
-            // --- FIX: AUTOMATICALLY START SOLVING SCANNED TEXT ---
+            // AUTOMATICALLY START SOLVING SCANNED TEXT
             if (intent.hasExtra("SCANNED_TEXT")) {
                 String scannedText = intent.getStringExtra("SCANNED_TEXT");
                 if (scannedText != null && !scannedText.isEmpty()) {
                     etDescription.setText(scannedText);
-                    // Automatically trigger the AI! You don't have to click the button anymore.
                     solveWithAI(scannedText);
                 }
             }
         }
     }
-
     private void setCanvasWeight(float canvasWeight, float resultWeight) {
         androidx.constraintlayout.widget.ConstraintLayout root = (androidx.constraintlayout.widget.ConstraintLayout) canvasCard.getParent();
         androidx.constraintlayout.widget.ConstraintSet set = new androidx.constraintlayout.widget.ConstraintSet();
@@ -137,6 +153,8 @@ public class GeometryInputActivity extends AppCompatActivity {
     }
 
     private void solveWithAI(String problem) {
+        isViewOnly = false;
+
         progressBar.setVisibility(View.VISIBLE);
         findViewById(R.id.btnSolveProblem).setEnabled(false);
         canvas3D.clear();
@@ -145,36 +163,74 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         SharedPreferences langPref = getSharedPreferences("Settings", MODE_PRIVATE);
         String currentLangCode = langPref.getString("Locale.Helper.Selected.Language", "en");
-        String aiLanguage = "ENGLISH";
-        if (currentLangCode.equals("ru")) aiLanguage = "RUSSIAN";
-        else if (currentLangCode.equals("hy")) aiLanguage = "ARMENIAN";
-
         String extra = etExtra.getText().toString().trim();
-        String prompt =
-                "SYSTEM: You are a CAD Geometry Engine. You MUST output DRAWING COMMANDS for any shape mentioned.\n" +
-                        "TASK: Analyze the problem and output DRAWING COMMANDS followed by the step-by-step solution.\n\n" +
-                        "RULE 1: Use ONLY these exact commands. Do NOT use 'point3d' or 'cad' or any other words.\n" +
-                        "RULE 2: To draw a Cone, you MUST use CONE3D. Do NOT use Circle and Lines.\n\n" +
-                        "COMMAND: CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
-                        "MATH LOGIC:\n" +
-                        "1. (cx, cy, cz) is the center of the bottom circle.\n" +
-                        "2. height is how far the tip is above the base.\n" +
-                        "3. curvature should be 1.0 for a standard cone.\n" +
-                        "4. Y is UP. For a cone on the ground, cy=0 and height=200.\n\n" +
-                        "CRITICAL RULES:\n" +
-                        "1. For any pointed shape with a circular base, use CONE3D. Do NOT use lines/circles.\n" +
-                        "2. Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
-                        "3. Use Unicode math symbols (√, ×, ÷, ^). No LaTeX(dont use  /sqrt or other things {}etc).\n" +
-                        "4. Make it look like a solid building using CONE3D/PYRAMID3D.(Cone3D if its cone or its base is circle.\n\n" +
+        String extraText = extra.isEmpty() ? "" : "\n\nADDITIONAL INSTRUCTIONS:\n" + extra;
 
-                        "================ LANGUAGE RULES ================\n" +
-                        "5. The DRAWING COMMANDS (like CONE3D, PLANE3D) MUST remain in standard ENGLISH.\n" +
-                        "6. HOWEVER, THE ENTIRE STEP-BY-STEP EXPLANATION AND MATH SOLUTION MUST BE WRITTEN IN " + aiLanguage + " LANGUAGE.\n" +
-                        "7. Start each step with the exact prefix 'Step X: ' (Translate 'Step' to " + aiLanguage + " if you want). End the solution with 'FINAL ANSWER: ' (Translate 'FINAL ANSWER' to " + aiLanguage + ") followed by the result.\n" +
-                        "================================================\n\n" +
+        String prompt;
 
-                        "PROBLEM:\n" + problem + "\n" +
-                        (extra.isEmpty() ? "" : "\nADDITIONAL INSTRUCTIONS:\n" + extra);
+        if (currentLangCode.equals("ru")) {
+            // RUSSIAN PROMPT
+            prompt = "СИСТЕМА: Вы - CAD геометрический движок.\n" +
+                    "ЗАДАЧА: Проанализируйте задачу, выведите КОМАНДЫ РИСОВАНИЯ (на английском), а затем пошаговое решение на русском языке.\n\n" +
+                    "ОЧЕНЬ ВАЖНО: ИСПОЛЬЗУЙТЕ ТОЛЬКО ЮНИКОД ДЛЯ ФОРМУЛ (√, ×, ÷, ^, °, ², ₁). НИКАКОГО LaTeX! НЕ используйте знаки доллара ($), \\frac, \\sqrt, {}, или \\cdot. Пишите дроби как a/b.\n\n" +
+                    "ПРАВИЛО 1: Используйте ТОЛЬКО точные команды из списка ниже.\n" +
+                    "ПРАВИЛО 2: Для конусов используйте CONE3D, а не круги и линии.\n\n" +
+                    "СПИСОК КОМАНД (Только на английском):\n" +
+                    "DRAW3D:Label,x,y,z\n" +
+                    "LINE3D:Label1,Label2\n" +
+                    "CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
+                    "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
+                    "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
+                    "SPHERE3D:Label,x,y,z,radius\n" +
+                    "PLANE3D:Label,v1,v2,v3,v4\n\n" +
+                    "КООРДИНАТЫ: Ось Y направлена ВВЕРХ. Центр основания (0,0,0). Используйте размеры 50-200.\n" +
+                    "КАЖДАЯ ГРАНЬ ДОЛЖНА ИМЕТЬ PLANE3D.\n\n" +
+                    "ФОРМАТ РЕШЕНИЯ: Начинайте каждый шаг строго с 'Шаг X: '. Завершите решение фразой 'ОТВЕТ: '.\n" +
+                    "Сначала объясните, какая буква обозначает какую точку.\n\n" +
+                    "ЗАДАЧА:\n" + problem + extraText;
+
+        } else if (currentLangCode.equals("hy")) {
+            // ARMENIAN PROMPT
+            prompt = "ՀԱՄԱԿԱՐԳ: Դուք CAD երկրաչափական շարժիչ եք:\n" +
+                    "ԱՌԱՋԱԴՐԱՆՔ: Վերլուծեք խնդիրը, արտածեք ԳԾԱԳՐՄԱՆ ՀՐԱՄԱՆՆԵՐԸ (անգլերենով), այնուհետև քայլ առ քայլ լուծումը հայերենով:\n\n" +
+                    "ԽԻՍՏ ԿԱՐԵՎՈՐ: Մաթեմատիկայի համար ՕԳՏԱԳՈՐԾԵՔ ՄԻԱՅՆ ՅՈՒՆԻԿՈԴ (√, ×, ÷, ^, °, ², ₁): ՈՉ ՄԻ LaTeX: ՄԻ օգտագործեք դոլարի նշաններ ($), \\frac, \\sqrt, {}, կամ \\cdot: Կոտորակները գրեք a/b տեսքով:\n\n" +
+                    "ԿԱՆՈՆ 1: Օգտագործեք ՄԻԱՅՆ ստորև նշված անգլերեն հրամանները:\n" +
+                    "ԿԱՆՈՆ 2: Կոն նկարելու համար օգտագործեք CONE3D:\n\n" +
+                    "ՀՐԱՄԱՆՆԵՐԻ ՑԱՆԿ (Միայն անգլերենով):\n" +
+                    "DRAW3D:Label,x,y,z\n" +
+                    "LINE3D:Label1,Label2\n" +
+                    "CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
+                    "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
+                    "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
+                    "SPHERE3D:Label,x,y,z,radius\n" +
+                    "PLANE3D:Label,v1,v2,v3,v4\n\n" +
+                    "ԿՈՈՐԴԻՆԱՏՆԵՐ: Y առանցքը ուղղված է ՎԵՐ: Հիմքի կենտրոնը (0,0,0) է: Օգտագործեք 50-200 չափսեր:\n" +
+                    "ՅՈՒՐԱՔԱՆՉՅՈՒՐ ՆԻՍՏ ՊԵՏՔ Է ՈՒՆԵՆԱ PLANE3D:\n\n" +
+                    "ԼՈՒԾՄԱՆ ՁԵՎԱՉԱՓ: Յուրաքանչյուր քայլ սկսեք խիստ 'Քայլ X: '-ով: Ավարտեք 'ՊԱՏԱՍԽԱՆ: '-ով:\n" +
+                    "Նախ բացատրեք, թե որ տառը որ կետն է:\n\n" +
+                    "ԽՆԴԻՐ:\n" + problem + extraText;
+
+        } else {
+            // ENGLISH PROMPT
+            prompt = "SYSTEM: You are a CAD Geometry Engine.\n" +
+                    "TASK: Analyze the problem and output DRAWING COMMANDS followed by the step-by-step solution in English.\n\n" +
+                    "CRITICAL: USE ONLY UNICODE MATH SYMBOLS (√, ×, ÷, ^, °, ², ₁). NO LaTeX! DO NOT use dollar signs ($), \\frac, \\sqrt, {}, or \\cdot. Write fractions as a/b.\n\n" +
+                    "RULE 1: Use ONLY these exact commands. Do NOT use 'point3d' or 'cad'.\n" +
+                    "RULE 2: To draw a Cone, you MUST use CONE3D. Do NOT use Circle and Lines.\n\n" +
+                    "COMMAND LIST:\n" +
+                    "DRAW3D:Label,x,y,z\n" +
+                    "LINE3D:Label1,Label2\n" +
+                    "CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
+                    "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
+                    "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
+                    "SPHERE3D:Label,x,y,z,radius\n" +
+                    "PLANE3D:Label,v1,v2,v3,v4\n\n" +
+                    "COORDINATES: Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
+                    "EVERY FACE SHOULD HAVE A PLANE3D.\n\n" +
+                    "SOLUTION FORMAT: Start each step with 'Step X: '. End with 'FINAL ANSWER: '.\n" +
+                    "First explain what letter is what point.\n\n" +
+                    "PROBLEM:\n" + problem + extraText;
+        }
 
         ListenableFuture<GenerateContentResponse> future = geminiAI.getSolution(prompt);
         Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
@@ -197,7 +253,6 @@ public class GeometryInputActivity extends AppCompatActivity {
             }
         }, ContextCompat.getMainExecutor(this));
     }
-
     private void processAIResult(String text) {
         canvas3D.clear();
         String cleanText = text.replace("`", "").replace("*", "");
@@ -276,7 +331,12 @@ public class GeometryInputActivity extends AppCompatActivity {
             }
         }
 
-        solutionControls.setVisibility(View.VISIBLE);
+         if (!isViewOnly) {
+            solutionControls.setVisibility(View.VISIBLE);
+        } else {
+            solutionControls.setVisibility(View.GONE);
+        }
+
         inputArea.setVisibility(View.GONE);
         canvas3D.invalidate();
     }
@@ -320,7 +380,12 @@ public class GeometryInputActivity extends AppCompatActivity {
     private void showSaveDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.save_solution));
+
         final EditText input = new EditText(this);
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 0);
+        layout.addView(input);
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         int unnamedCount = pref.getInt("unnamed_solution_count", 1);
@@ -328,7 +393,7 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         input.setText(defaultName);
         input.setSelectAllOnFocus(true);
-        builder.setView(input);
+        builder.setView(layout);
 
         builder.setPositiveButton(getString(R.string.save), (dialog, which) -> {
             String name = input.getText().toString().trim();
@@ -339,8 +404,15 @@ public class GeometryInputActivity extends AppCompatActivity {
             }
 
             String currentUser = pref.getString("username", "GuestUser");
-            dbHelper.addHistory(currentUser, name, etDescription.getText().toString(), lastSolutionText, lastAIResponse);
-            Toast.makeText(this, "Saved to History", Toast.LENGTH_SHORT).show();
+
+            // Update if editing, Add if new
+            if (editId != -1) {
+                dbHelper.updateHistory(editId, name, etDescription.getText().toString(), lastSolutionText, lastAIResponse);
+                Toast.makeText(this, "Updated in History", Toast.LENGTH_SHORT).show();
+            } else {
+                dbHelper.addHistory(currentUser, name, etDescription.getText().toString(), lastSolutionText, lastAIResponse);
+                Toast.makeText(this, "Saved to History", Toast.LENGTH_SHORT).show();
+            }
 
             startActivity(new Intent(this, HistoryActivity.class));
             resetAll();
@@ -348,7 +420,6 @@ public class GeometryInputActivity extends AppCompatActivity {
         builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
-
     private void resetAll() {
         canvas3D.clear();
         etExtra.setText("");
@@ -358,8 +429,12 @@ public class GeometryInputActivity extends AppCompatActivity {
         setCanvasWeight(0.6f, 0.4f);
         canvas3D.setMoveMode(false);
         ((ImageButton) findViewById(R.id.btnToggleMoveRotate)).setColorFilter(ContextCompat.getColor(this, R.color.primary));
-    }
 
+        // Reset tracking variables
+        editId = -1;
+        lastAIResponse = "";
+        lastSolutionText = "";
+    }
     private float f(String s) { try { return Float.parseFloat(s.trim()); } catch (Exception e) { return 0f; } }
 
     @Override
