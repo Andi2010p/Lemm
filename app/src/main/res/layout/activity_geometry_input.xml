@@ -5,8 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:id="@+id/geometryInputRoot"
     tools:context=".GeometryInputActivity">
+
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/headerCard"
         android:layout_width="match_parent"
@@ -230,7 +232,7 @@
                 android:layout_height="match_parent"
                 android:visibility="visible" />
 
-            <!-- Mode Toggle Control -->
+            <!-- Mode Toggle Control (FIXED reset icon) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -246,7 +248,7 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_reset_view_custom"
+                    android:src="@android:drawable/ic_popup_sync"
                     android:tooltipText="Reset View"
                     app:tint="@color/primary" />
 
@@ -260,7 +262,7 @@
                     app:tint="@color/primary" />
             </LinearLayout>
 
-            <!-- Controls for Zoom (Top End) -->
+            <!-- Controls for Zoom (Top End) (FIXED to Text Buttons) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -268,36 +270,41 @@
                 android:layout_margin="12dp"
                 android:background="@drawable/floating_controls_bg"
                 android:orientation="horizontal"
-                android:padding="4dp"
+                android:paddingHorizontal="4dp"
                 android:gravity="center_vertical">
 
-                <ImageButton
+                <Button
                     android:id="@+id/btnZoomOut"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_zoom_out_custom"
-                    app:tint="@color/primary" />
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="-"
+                    android:textColor="@color/primary"
+                    android:textSize="20sp" />
 
                 <TextView
                     android:id="@+id/tvZoomPercent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:paddingHorizontal="4dp"
+                    android:paddingHorizontal="8dp"
                     android:text="100%"
                     android:textColor="@color/primary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <ImageButton
+                <Button
                     android:id="@+id/btnZoomIn"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_zoom_in_custom"
-                    app:tint="@color/primary" />
-
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="+"
+                    android:textColor="@color/primary"
+                    android:textSize="20sp" />
             </LinearLayout>
 
             <!-- Rotation Controls (Bottom-Start) -->
@@ -375,29 +382,36 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Canvas Resize Controls (Bottom-End) -->
+            <!-- Canvas Resize Controls (Bottom-End) (FIXED to Text Buttons) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
-                android:layout_margin="12dp">
+                android:layout_margin="12dp"
+                android:background="@drawable/floating_controls_bg"
+                android:paddingHorizontal="4dp">
 
-                <ImageButton
+                <Button
                     android:id="@+id/btnMinimizeCanvas"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/floating_controls_bg"
-                    android:src="@drawable/ic_minus"
-                    app:tint="@color/primary" />
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="-"
+                    android:textColor="@color/primary"
+                    android:textSize="20sp" />
 
-                <ImageButton
+                <Button
                     android:id="@+id/btnMaximizeCanvas"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:background="@drawable/floating_controls_bg"
-                    android:src="@drawable/ic_plus"
-                    app:tint="@color/primary" />
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="+"
+                    android:textColor="@color/primary"
+                    android:textSize="20sp" />
             </LinearLayout>
 
         </FrameLayout>

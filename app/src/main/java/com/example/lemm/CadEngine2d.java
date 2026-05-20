@@ -87,23 +87,48 @@ public class CadEngine2d {
         return best;
     }
 
+    // --- CRITICAL FIX: Angle Math Corrected ---
     public void setAngleBetweenLines(LineString refLine, LineString moveLine, double targetDegrees) {
         saveHistory();
         Coordinate pivot = findSharedVertex(refLine, moveLine);
-        if (pivot == null) pivot = moveLine.getCoordinates()[0];
+        if (pivot == null) pivot = moveLine.getCoordinates()[0]; // Fallback
 
+        // Find the ends of the lines that are NOT the pivot
+        Coordinate refEnd = refLine.getCoordinates()[0].distance(pivot) < 0.1 ? refLine.getCoordinates()[1] : refLine.getCoordinates()[0];
         Coordinate moveEnd = moveLine.getCoordinates()[0].distance(pivot) < 0.1 ? moveLine.getCoordinates()[1] : moveLine.getCoordinates()[0];
-        double length = pivot.distance(moveEnd);
-        double refAngle = Math.atan2(refLine.getCoordinates()[1].y - refLine.getCoordinates()[0].y, refLine.getCoordinates()[1].x - refLine.getCoordinates()[0].x);
-        double newAngle = refAngle + Math.toRadians(targetDegrees);
 
+        double length = pivot.distance(moveEnd);
+
+        // Calculate the absolute angle of the reference line radiating OUTWARD from the pivot
+        double refAngle = Math.atan2(refEnd.y - pivot.y, refEnd.x - pivot.x);
+
+        // Calculate the current angle of the moving line radiating OUTWARD from the pivot
+        double currentMoveAngle = Math.atan2(moveEnd.y - pivot.y, moveEnd.x - pivot.x);
+
+        // Figure out if the line is currently clockwise or counter-clockwise relative to the refLine
+        double diff = currentMoveAngle - refAngle;
+
+        // Normalize the difference to be between -PI and PI
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        while (diff <= -Math.PI) diff += 2 * Math.PI;
+
+        // If diff is positive, it's drawn on one side, if negative, the other side.
+        double direction = diff >= 0 ? 1.0 : -1.0;
+
+        // Apply the new angle on the SAME side it was already drawn on
+        double newAngle = refAngle + (direction * Math.toRadians(targetDegrees));
+
+        // Calculate the new X and Y for the end of the moving line
         Coordinate newEnd = new Coordinate(pivot.x + length * Math.cos(newAngle), pivot.y + length * Math.sin(newAngle));
         updateNamedPointCoords(moveEnd, newEnd);
 
+        // Update the geometry in the engine
         Geometry newLine = factory.createLineString(new Coordinate[]{pivot, newEnd});
         int index = geometries.indexOf(moveLine);
         if (index != -1) {
             geometries.set(index, newLine);
+
+            // Update the Angle Annotations on the screen
             angleAnnotations.removeIf(a -> a.line1 == refLine || a.line1 == moveLine || a.line2 == refLine || a.line2 == moveLine);
             angleAnnotations.add(new AngleAnnotation(refLine, (LineString) newLine, targetDegrees));
         }
@@ -230,32 +255,36 @@ public class CadEngine2d {
     }
 
     public double getCircleRadiusAngle(Geometry circle) { return circleRadiusAngles.getOrDefault(circle, Math.toRadians(45)); }
+
     public Coordinate findSharedVertex(LineString l1, LineString l2) {
         for (Coordinate p1 : l1.getCoordinates()) for (Coordinate p2 : l2.getCoordinates()) if (p1.distance(p2) < 0.1) return p1;
         return null;
     }
+
     public List<Geometry> getGeometries() { return geometries; }
     public List<NamedPoint> getNamedPoints() { return namedPoints; }
     public List<Coordinate> getAllSnapPoints() { return allSnapPoints; }
     public List<AngleAnnotation> getAngleAnnotations() { return angleAnnotations; }
+
     public String getPropertiesText(android.content.Context context, Geometry g) {
         if (g instanceof LineString) {
             return context.getString(R.string.prop_length, g.getLength());
         } else {
             return context.getString(R.string.prop_area, g.getArea());
         }
-    }    public Geometry getGeometryAt(double x, double y, double tol) {
+    }
+
+    public Geometry getGeometryAt(double x, double y, double tol) {
         Point touchPoint = factory.createPoint(new Coordinate(x, y));
         for (int i = geometries.size() - 1; i >= 0; i--) {
             Geometry geo = geometries.get(i);
-            // distance() for a Polygon returns 0 if the point is inside or on the boundary.
-            // This ensures the whole rectangle is selected as one object.
             if (geo.distance(touchPoint) < tol) {
                 return geo;
             }
         }
         return null;
     }
+
     public void calculateAndSetDrivenDimension(Geometry geo, String type) {
         if (geo == null) return;
 
@@ -264,7 +293,6 @@ public class CadEngine2d {
             double len = geo.getLength();
             label = String.format("L: %.1f", len);
         } else if (type.equals("CIRCLE")) {
-            // Radius is half the width of the bounding box
             double radius = geo.getEnvelopeInternal().getWidth() / 2.0;
             label = String.format("R: %.1f", radius);
         } else if (type.equals("RECT")) {
@@ -275,10 +303,12 @@ public class CadEngine2d {
 
         geo.setUserData(label);
     }
+
     public NamedPoint getNamedPointAt(double x, double y, double tol) {
         for (NamedPoint np : namedPoints) if (Math.hypot(np.x-x, np.y-y) < tol) return np;
         return null;
     }
+
     public void setGeometriesAndPoints(List<Geometry> g, List<NamedPoint> p) { geometries.clear(); geometries.addAll(g); namedPoints.clear(); namedPoints.addAll(p); rebuildPoints(); }
     public void clear() { geometries.clear(); namedPoints.clear(); angleAnnotations.clear(); circleRadiusAngles.clear(); labelCounter = 0; allSnapPoints.clear(); }
 }

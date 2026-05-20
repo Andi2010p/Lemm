@@ -18,6 +18,9 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 public class SettingsActivity extends AppCompatActivity {
 
     private String currentLang;
+    private BillingManager billingManager;
+    private MaterialButton btnBuyPro;
+    private TextView tvStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,24 +43,37 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
-        // API Key Button
         findViewById(R.id.btnApiKeyConfig).setOnClickListener(v -> openApiKeyDialog());
 
-        // Pro Button Logic
-        MaterialButton btnBuyPro = findViewById(R.id.btnBuyPro);
-        TextView tvStatus = findViewById(R.id.tvProStatus);
-        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        btnBuyPro = findViewById(R.id.btnBuyPro);
+        tvStatus = findViewById(R.id.tvProStatus);
 
-        if (userPrefs.getBoolean("is_pro_user", false)) {
-            tvStatus.setText("Status: Pro Tier Active");
-            btnBuyPro.setVisibility(View.GONE);
-        }
+        checkCurrentProStatus();
+
+        // Initialize Google Play Billing
+        billingManager = new BillingManager(this, new BillingManager.BillingListener() {
+            @Override
+            public void onBillingReady() {
+                // Connection successful
+            }
+
+            @Override
+            public void onPriceFetched(String price) {
+                // Updates the button to show exactly how much it costs
+                btnBuyPro.setText(getString(R.string.upgrade_pro) + " (" + price + ")");
+            }
+
+            @Override
+            public void onPurchaseSuccess() {
+                // If payment succeeds, update UI
+                checkCurrentProStatus();
+            }
+        });
+
+        billingManager.startConnection();
 
         btnBuyPro.setOnClickListener(v -> {
-            // Simulated Payment Gate for Play Market
-            userPrefs.edit().putBoolean("is_pro_user", true).apply();
-            Toast.makeText(this, "Pro Access Granted!", Toast.LENGTH_SHORT).show();
-            recreate();
+            billingManager.initiatePurchase();
         });
 
         findViewById(R.id.btnAboutUs).setOnClickListener(v -> {
@@ -65,6 +81,15 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+    }
+
+    private void checkCurrentProStatus() {
+        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        if (userPrefs.getBoolean("is_pro_user", false)) {
+            tvStatus.setText("Status: Pro Tier Active");
+            tvStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50")); // Green
+            btnBuyPro.setVisibility(View.GONE); // Hide buy button because they already own it
+        }
     }
 
     private void openApiKeyDialog() {

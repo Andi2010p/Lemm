@@ -1,4 +1,4 @@
- package com.example.lemm;
+package com.example.lemm;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,6 +13,7 @@ import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -36,12 +37,13 @@ public class GeometryInputActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private GeminiAI geminiAI;
     private DatabaseHelper dbHelper;
-    private ImageButton btnStopAI, btnToggleInput, btnExpandDesc, btnExpandExtra;
+    private ImageButton btnStopAI, btnToggleInput, btnExpandDesc, btnExpandExtra, btnHistory;
 
     private String lastSolutionText = "";
     private String lastAIResponse = "";
     private int editId = -1;
-    private boolean isFromHistory = false; // Tracks if opened from History
+    private boolean isFromHistory = false;
+    private boolean isSaved = true; // THIS WAS THE MISSING VARIABLE
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,8 +63,12 @@ public class GeometryInputActivity extends AppCompatActivity {
         btnToggleInput = findViewById(R.id.btnToggleInput);
         btnExpandDesc = findViewById(R.id.btnExpandDesc);
         btnExpandExtra = findViewById(R.id.btnExpandExtra);
+        btnHistory = findViewById(R.id.btnHistory);
 
         // --- BUTTON LISTENERS ---
+
+        btnHistory.setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
+
         findViewById(R.id.btnResetView).setOnClickListener(v -> {
             canvas3D.resetRotation();
             Toast.makeText(this, "View Reset", Toast.LENGTH_SHORT).show();
@@ -74,7 +80,6 @@ public class GeometryInputActivity extends AppCompatActivity {
             ((ImageButton)v).setColorFilter(mode ? Color.RED : ContextCompat.getColor(this, R.color.primary));
         });
 
-        // Pencil Button Logic: Completely hide / show the input area
         btnToggleInput.setOnClickListener(v -> {
             if (inputArea.getVisibility() == View.VISIBLE) {
                 inputArea.setVisibility(View.GONE);
@@ -85,7 +90,6 @@ public class GeometryInputActivity extends AppCompatActivity {
             }
         });
 
-        // Expand/Collapse Problem Description Text Box
         btnExpandDesc.setOnClickListener(v -> {
             if (etDescription.getMaxLines() == 3) {
                 etDescription.setMaxLines(50);
@@ -96,7 +100,6 @@ public class GeometryInputActivity extends AppCompatActivity {
             }
         });
 
-        // Expand/Collapse Custom AI Instructions Text Box
         btnExpandExtra.setOnClickListener(v -> {
             if (etExtra.getMaxLines() == 2) {
                 etExtra.setMaxLines(50);
@@ -124,20 +127,42 @@ public class GeometryInputActivity extends AppCompatActivity {
             if (!prob.isEmpty()) solveWithAI(prob);
         });
 
-        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
-
         btnStopAI.setOnClickListener(v -> resetAll());
 
-        findViewById(R.id.btnSave).setOnClickListener(v -> showSaveDialog());
+        findViewById(R.id.btnSave).setOnClickListener(v -> showSaveDialog(false));
 
-        // Hide "Don't Save" functionality, it just hides the controls
         findViewById(R.id.btnDontSave).setOnClickListener(v -> {
+            isSaved = true;
             solutionControls.setVisibility(View.GONE);
         });
 
         canvas3D.setOnZoomChangeListener(pct -> tvZoom.setText(pct + "%"));
 
+        // EXIT HANDLING
+        findViewById(R.id.btnBack).setOnClickListener(v -> confirmExit());
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                confirmExit();
+            }
+        });
+
         handleIntent(getIntent());
+    }
+
+    private void confirmExit() {
+        if (isSaved || lastAIResponse.isEmpty() || isFromHistory) {
+            finish();
+        } else {
+            new AlertDialog.Builder(this)
+                    .setTitle("Save Solution?")
+                    .setMessage("You have an unsaved solution. Do you want to save it before exiting?")
+                    .setPositiveButton("Save", (dialog, which) -> showSaveDialog(true))
+                    .setNegativeButton("Don't Save", (dialog, which) -> finish())
+                    .setNeutralButton("Cancel", null)
+                    .show();
+        }
     }
 
     private void updateCanvasSize(float weight) {
@@ -257,12 +282,27 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         SharedPreferences apiPrefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
         SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+
         String username = userPrefs.getString("username", "");
         String userKey = apiPrefs.getString("user_api_key", "");
-        String keyToUse = username.equals("Admin_Teacher") ? BuildConfig.GEMINI_API_KEY : userKey;
+        boolean isProUser = userPrefs.getBoolean("is_pro_user", false);
 
-        if (keyToUse.isEmpty()) { showPaymentDialog(); return; }
+        String keyToUse = "";
 
+        // --- PRO ACCESS LOGIC ---
+        if (username.equals("Admin_Teacher") || isProUser) {
+            keyToUse = BuildConfig.GEMINI_API_KEY;
+        }
+        else if (!userKey.isEmpty()) {
+            keyToUse = userKey;
+        }
+
+        if (keyToUse.isEmpty()) {
+            showPaymentDialog();
+            return;
+        }
+
+        isSaved = false;
         geminiAI = new GeminiAI(keyToUse);
         progressBar.setVisibility(View.VISIBLE);
 
@@ -280,7 +320,11 @@ public class GeometryInputActivity extends AppCompatActivity {
                 });
             }
             @Override public void onFailure(Throwable t) {
-                runOnUiThread(() -> progressBar.setVisibility(View.GONE));
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(GeometryInputActivity.this, "AI Error: Check your API Key or Network Connection.", Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Gemini Error", t);
+                });
             }
         }, ContextCompat.getMainExecutor(this));
     }
@@ -289,11 +333,9 @@ public class GeometryInputActivity extends AppCompatActivity {
         canvas3D.clear();
         stepsContainer.removeAllViews();
 
-        // Hide red cross once solved
         btnStopAI.setVisibility(View.GONE);
 
-        // Only show save controls if it is NOT from history
-        if (!isFromHistory) {
+        if (!isFromHistory && !isSaved) {
             solutionControls.setVisibility(View.VISIBLE);
         } else {
             solutionControls.setVisibility(View.GONE);
@@ -317,13 +359,9 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         String fullText = explanationText.toString();
 
-        // Fix "Step5" to "STEP 5" (Add space)
         fullText = fullText.replaceAll("(?i)STEP\\s*(\\d+)", "STEP $1");
-
-        // Fix "STEP: In our problem" to "In our problem" (Strips "STEP:" if there's no number)
         fullText = fullText.replaceAll("(?i)STEP\\s*:\\s*", "");
 
-        // Extract "FINAL ANSWER:" into its own string
         String finalAnswerText = "";
         String[] finalSplit = fullText.split("(?i)FINAL\\s*ANSWER\\s*:?");
         if (finalSplit.length > 1) {
@@ -331,13 +369,11 @@ public class GeometryInputActivity extends AppCompatActivity {
             finalAnswerText = finalSplit[1].trim();
         }
 
-        // Split the remaining text by "STEP "
         String[] sections = fullText.split("(?i)STEP\\s+");
         for (int i = 0; i < sections.length; i++) {
             String section = sections[i].trim();
             if (section.isEmpty()) continue;
 
-            // If it is the first block and doesn't start with STEP, it's the Intro/Given
             if (i == 0 && !fullText.trim().toUpperCase().startsWith("STEP")) {
                 addSetupCard(section);
             } else {
@@ -345,12 +381,10 @@ public class GeometryInputActivity extends AppCompatActivity {
             }
         }
 
-        // Add the Final Answer card securely at the very end
         if (!finalAnswerText.isEmpty()) {
             addFinalAnswerCard(finalAnswerText);
         }
 
-        // Hide problem description box to show solutions clearly
         inputArea.setVisibility(View.GONE);
         btnToggleInput.setColorFilter(Color.parseColor("#E67E22"));
     }
@@ -417,7 +451,6 @@ public class GeometryInputActivity extends AppCompatActivity {
         }
     }
 
-    // SETUP CARD (For the "GIVEN" section, no "STEP" text)
     private void addSetupCard(String text) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -444,7 +477,6 @@ public class GeometryInputActivity extends AppCompatActivity {
         stepsContainer.addView(card);
     }
 
-    // NORMAL STEP CARD (Prepends translated "STEP")
     private void addStepCard(String sectionText) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -475,7 +507,6 @@ public class GeometryInputActivity extends AppCompatActivity {
         stepsContainer.addView(card);
     }
 
-    // FINAL ANSWER CARD (Distinct Green Card at the very end)
     private void addFinalAnswerCard(String answerText) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -512,6 +543,7 @@ public class GeometryInputActivity extends AppCompatActivity {
         inputArea.setVisibility(View.VISIBLE);
         btnToggleInput.setColorFilter(ContextCompat.getColor(this, R.color.primary));
         btnStopAI.setVisibility(View.VISIBLE);
+        isSaved = true;
         updateCanvasSize(0.60f);
     }
 
@@ -519,15 +551,14 @@ public class GeometryInputActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.access_denied)
                 .setMessage(R.string.access_denied_msg)
-                .setPositiveButton("Pro Member", (d, w) -> {
-                    getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("is_pro_user", true).apply();
-                    Toast.makeText(this, "Pro Unlocked", Toast.LENGTH_SHORT).show();
+                .setPositiveButton(R.string.upgrade_pro, (dialog, which) -> {
+                    startActivity(new Intent(this, SettingsActivity.class));
                 })
-                .setNeutralButton("Settings", (d, w) -> startActivity(new Intent(this, SettingsActivity.class)))
+                .setNegativeButton(R.string.cancel, null)
                 .show();
     }
 
-    private void showSaveDialog () {
+    private void showSaveDialog (boolean exitAfter) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Save Solution");
         final EditText input = new EditText(this);
@@ -557,8 +588,12 @@ public class GeometryInputActivity extends AppCompatActivity {
                 Toast.makeText(this, "Saved Locally", Toast.LENGTH_SHORT).show();
             }
 
-            // Just hide the save buttons instead of closing the activity
+            isSaved = true;
             solutionControls.setVisibility(View.GONE);
+
+            if (exitAfter) {
+                finish();
+            }
         });
         builder.setNegativeButton("Cancel", null).show();
     }
@@ -579,10 +614,11 @@ public class GeometryInputActivity extends AppCompatActivity {
         }
 
         if (intent.hasExtra("SAVED_RAW")) {
-            isFromHistory = true; // Mark as opened from history
+            isFromHistory = true;
+            isSaved = true;
 
-            // Hide Red Cross immediately
             btnStopAI.setVisibility(View.GONE);
+            solutionControls.setVisibility(View.GONE);
 
             String savedProblem = intent.getStringExtra("SAVED_PROBLEM");
             String savedRaw = intent.getStringExtra("SAVED_RAW");

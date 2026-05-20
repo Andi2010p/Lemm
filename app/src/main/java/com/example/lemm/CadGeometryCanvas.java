@@ -50,9 +50,13 @@ public class CadGeometryCanvas extends View {
             for (Geometry geo : engine.getGeometries()) {
                 Paint p = (geo == selectedGeometry) ? selectedPaint : linePaint;
                 drawJtsGeometry(canvas, geo, p);
+
+                // Draw Dimensions based on shape type
                 if (geo instanceof Polygon) {
                     if (geo.getCoordinates().length == 5) drawRectDimensions(canvas, (Polygon) geo);
                     else drawVisualRadius(canvas, geo);
+                } else if (geo instanceof LineString) {
+                    drawLineDimension(canvas, (LineString) geo);
                 }
             }
             textPaint.setTextSize(40f/scale);
@@ -84,39 +88,61 @@ public class CadGeometryCanvas extends View {
         canvas.drawText(String.format("R:%.1f", radius), (float)(center.x+endX)/2, (float)(center.y+endY)/2, textPaint);
     }
 
-// Inside CadGeometryCanvas.java
-
     private void drawRectDimensions(Canvas canvas, Polygon rect) {
         Coordinate[] c = rect.getCoordinates();
         textPaint.setTextSize(28f / scale);
-        textPaint.setColor(Color.parseColor("#8E44AD")); // Purple color for clarity
+        textPaint.setColor(Color.parseColor("#8E44AD"));
 
-        // Loop through the 4 sides of the rectangle
         for (int i = 0; i < 4; i++) {
             double x1 = c[i].x, y1 = c[i].y;
             double x2 = c[i+1].x, y2 = c[i+1].y;
 
-            // Calculate Midpoint
             float midX = (float) ((x1 + x2) / 2);
             float midY = (float) ((y1 + y2) / 2);
 
-            // Calculate distance
             double dist = c[i].distance(c[i+1]);
             String label = String.format("%.1f", dist);
 
-            // Apply a small offset so text isn't directly on top of the line
             float offset = 20f / scale;
             if (Math.abs(x1 - x2) < 1.0) {
-                // Vertical line: move text to the right
                 canvas.drawText(label, midX + offset, midY, textPaint);
             } else {
-                // Horizontal line: move text above
                 canvas.drawText(label, midX, midY - offset, textPaint);
             }
         }
-        // Reset text color for other drawings
         textPaint.setColor(Color.parseColor("#0C3D6A"));
-    }    private void drawAngleArc(Canvas canvas, CadEngine2d.AngleAnnotation ann) {
+    }
+
+    // NEW METHOD: Draws length near the midpoint of lines
+    private void drawLineDimension(Canvas canvas, LineString line) {
+        Coordinate[] c = line.getCoordinates();
+        if (c.length < 2) return;
+
+        double x1 = c[0].x, y1 = c[0].y;
+        double x2 = c[1].x, y2 = c[1].y;
+
+        float midX = (float) ((x1 + x2) / 2);
+        float midY = (float) ((y1 + y2) / 2);
+
+        double dist = c[0].distance(c[1]);
+        String label = String.format("%.1f", dist);
+
+        textPaint.setTextSize(28f / scale);
+        textPaint.setColor(Color.parseColor("#8E44AD")); // Purple color for clarity
+
+        float offset = 20f / scale;
+        if (Math.abs(x1 - x2) < 1.0) {
+            // Vertical line
+            canvas.drawText(label, midX + offset, midY, textPaint);
+        } else {
+            // Horizontal/Diagonal line
+            canvas.drawText(label, midX, midY - offset, textPaint);
+        }
+
+        textPaint.setColor(Color.parseColor("#0C3D6A")); // Reset color back to normal
+    }
+
+    private void drawAngleArc(Canvas canvas, CadEngine2d.AngleAnnotation ann) {
         Coordinate pivot = engine.findSharedVertex(ann.line1, ann.line2);
         if (pivot == null) return;
         Coordinate p1 = getOtherPoint(ann.line1, pivot), p2 = getOtherPoint(ann.line2, pivot);
@@ -147,6 +173,7 @@ public class CadGeometryCanvas extends View {
         canvas.drawPath(path, p);
         for (Coordinate c : coords) canvas.drawCircle((float)c.x, (float)c.y, 6f/scale, vertexPaint);
     }
+
     public void zoomIn() { applyZoom(1.2f, getWidth() / 2f, getHeight() / 2f); }
     public void zoomOut() { applyZoom(1f / 1.2f, getWidth() / 2f, getHeight() / 2f); }
 

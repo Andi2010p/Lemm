@@ -40,7 +40,7 @@ public class DrawingActivity extends AppCompatActivity {
     private ScaleGestureDetector scaleDetector;
     private String currentTool = "MOVE";
     private boolean isOrthoMode = false;
-    private Geometry referenceLine = null; // Stores the first selected line
+    private Geometry referenceLine = null;
     private int activePointerId = -1;
     private Coordinate firstPoint = null;
     private float lastX, lastY;
@@ -104,7 +104,7 @@ public class DrawingActivity extends AppCompatActivity {
         } else {
             new AlertDialog.Builder(this)
                     .setTitle(getString(R.string.save_drawing) + "?")
-                    .setMessage("You have an active drawing. Do you want to save it before exiting?")
+                    .setMessage(getString(R.string.msg_confirm_exit))
                     .setPositiveButton(getString(R.string.save), (dialog, which) -> showSaveDialog())
                     .setNegativeButton(getString(R.string.dont_save), (dialog, which) -> finish())
                     .setNeutralButton(getString(R.string.cancel), null)
@@ -138,7 +138,7 @@ public class DrawingActivity extends AppCompatActivity {
             isOrthoMode = !isOrthoMode;
             int tintColor = isOrthoMode ? Color.parseColor("#E67E22") : Color.parseColor("#7F8C8D");
             btnOrtho.setColorFilter(tintColor, PorterDuff.Mode.SRC_IN);
-            Toast.makeText(this, isOrthoMode ? "Ortho Mode ON" : "Ortho Mode OFF", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, isOrthoMode ? getString(R.string.tool_ortho_on) : getString(R.string.tool_ortho_off), Toast.LENGTH_SHORT).show();
         });
 
         findViewById(R.id.btnUndo).setOnClickListener(v -> { engine.undo(); resetPolyline(); drawingCanvas.invalidate(); });
@@ -206,16 +206,45 @@ public class DrawingActivity extends AppCompatActivity {
             scaleDetector.onTouchEvent(event);
             int action = event.getActionMasked();
 
-            if (action == MotionEvent.ACTION_DOWN) {
-                activePointerId = event.getPointerId(0);
-                lastX = event.getX(); lastY = event.getY();
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    activePointerId = event.getPointerId(0);
+                    lastX = event.getX();
+                    lastY = event.getY();
+                    isScaling = false;
+                    break;
+
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    isScaling = true;
+                    break;
+
+                // --- CRITICAL ZOOM FIX: Multi-Touch Pointer Handoff ---
+                case MotionEvent.ACTION_POINTER_UP:
+                    int pointerIndex = event.getActionIndex();
+                    int pointerId = event.getPointerId(pointerIndex);
+                    if (pointerId == activePointerId) {
+                        int newPointerIndex = pointerIndex == 0 ? 1 : 0;
+                        if (newPointerIndex < event.getPointerCount()) {
+                            lastX = event.getX(newPointerIndex);
+                            lastY = event.getY(newPointerIndex);
+                            activePointerId = event.getPointerId(newPointerIndex);
+                        }
+                    }
+                    if (event.getPointerCount() <= 2) {
+                        isScaling = false;
+                    }
+                    break;
             }
 
-            if (scaleDetector.isInProgress() || event.getPointerCount() > 1) return true;
+            if (scaleDetector.isInProgress() || event.getPointerCount() > 1 || isScaling) {
+                return true;
+            }
 
             int idx = event.findPointerIndex(activePointerId);
             if (idx == -1) return true;
-            float currX = event.getX(idx); float currY = event.getY(idx);
+
+            float currX = event.getX(idx);
+            float currY = event.getY(idx);
 
             PointF worldPt = drawingCanvas.getRawWorldCoords(currX, currY);
             double threshold = 50.0 / drawingCanvas.getZoomPercentage() * 100;
@@ -253,7 +282,7 @@ public class DrawingActivity extends AppCompatActivity {
                         }
 
                         drawingCanvas.setSelectedGeometry(tapped);
-                        tvShapeInfo.setText(engine.getPropertiesText(this, tapped)); // Added 'this'
+                        tvShapeInfo.setText(engine.getPropertiesText(this, tapped));
                         propertiesPanel.setVisibility(View.VISIBLE);
                     } else {
                         propertiesPanel.setVisibility(View.GONE);
@@ -272,16 +301,21 @@ public class DrawingActivity extends AppCompatActivity {
                 } else if (firstPoint != null) {
                     drawingCanvas.setPreviewPoints(new PointF((float)firstPoint.x, (float)firstPoint.y), new PointF(x, y));
                 }
-                lastX = currX; lastY = currY;
+                lastX = currX;
+                lastY = currY;
             }
-            else if (action == MotionEvent.ACTION_UP) {
+            else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
                 if (firstPoint != null && !currentTool.equals("MOVE") && !currentTool.equals("SELECT")) commitShape(x, y);
                 drawingCanvas.clearSnapIndicator();
+                activePointerId = -1;
+                isScaling = false;
             }
+
             drawingCanvas.invalidate();
             return true;
         });
     }
+
     private void handlePolylineTap(float x, float y) {
         if (activePolylinePoints.isEmpty()) {
             activePolylinePoints.add(new Coordinate(x, y));
@@ -305,13 +339,14 @@ public class DrawingActivity extends AppCompatActivity {
             }
         }
     }
+
     private void promptForAngle(LineString line1, LineString line2) {
         if (isViewOnly) return;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.title_set_angle));
 
         final EditText input = new EditText(this);
-        input.setHint("Angle in Degrees (e.g. 45)");
+        input.setHint(getString(R.string.hint_angle));
         input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
 
         LinearLayout layout = new LinearLayout(this);
@@ -319,18 +354,19 @@ public class DrawingActivity extends AppCompatActivity {
         layout.addView(input);
         builder.setView(layout);
 
-        builder.setPositiveButton("Apply", (dialog, which) -> {
+        builder.setPositiveButton(getString(R.string.update), (dialog, which) -> {
             try {
                 double angle = Double.parseDouble(input.getText().toString());
                 engine.setAngleBetweenLines(line1, line2, angle);
                 drawingCanvas.invalidate();
             } catch (Exception e) {
-                Toast.makeText(this, "Invalid angle", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error_invalid_angle), Toast.LENGTH_SHORT).show();
             }
         });
-        builder.setNegativeButton("Cancel", null);
+        builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
+
     private void commitShape(float x, float y) {
         Geometry created = null;
         try {
@@ -409,20 +445,19 @@ public class DrawingActivity extends AppCompatActivity {
         input2.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
 
         if (type.equals("LINE")) {
-            input1.setHint("Exact Length (e.g. 100)");
+            input1.setHint(getString(R.string.hint_exact_length));
             layout.addView(input1);
         } else if (type.equals("CIRCLE")) {
-            input1.setHint("Exact Radius (e.g. 50)");
+            input1.setHint(getString(R.string.hint_exact_radius));
             layout.addView(input1);
         } else if (type.equals("RECT")) {
-            input1.setHint("Width");
-            input2.setHint("Height");
+            input1.setHint(getString(R.string.hint_width));
+            input2.setHint(getString(R.string.hint_height));
             layout.addView(input1);
             layout.addView(input2);
         } else return;
 
         builder.setView(layout);
-        // Inside promptForDimensions Positive Button
         builder.setPositiveButton(getString(R.string.update), (dialog, which) -> {
             try {
                 double val1 = Double.parseDouble(input1.getText().toString());
@@ -433,14 +468,13 @@ public class DrawingActivity extends AppCompatActivity {
                 if (type.equals("LINE")) {
                     updatedGeo = engine.resizeLine(geo, val1);
                 } else if (type.equals("CIRCLE")) {
-                    updatedGeo = engine.resizeCircle(geo, val1); // Make sure resizeCircle also returns Geometry
+                    updatedGeo = engine.resizeCircle(geo, val1);
                 } else if (type.equals("RECT")) {
                     double val2 = Double.parseDouble(input2.getText().toString());
                     if (val2 <= 0.1) throw new NumberFormatException();
-                    updatedGeo = engine.resizeRect(geo, val1, val2); // Make sure resizeRect also returns Geometry
+                    updatedGeo = engine.resizeRect(geo, val1, val2);
                 }
 
-                // CRITICAL FIX: Update the selection so the next resize works on the new object
                 if (updatedGeo != null) {
                     drawingCanvas.setSelectedGeometry(updatedGeo);
                     tvShapeInfo.setText(engine.getPropertiesText(this, updatedGeo));
@@ -448,7 +482,7 @@ public class DrawingActivity extends AppCompatActivity {
 
                 drawingCanvas.invalidate();
             } catch (NumberFormatException e) {
-                Toast.makeText(this, "Dimension must be > 0.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error_dim_positive), Toast.LENGTH_SHORT).show();
             }
         });
         builder.setNegativeButton(getString(R.string.cancel), null);
@@ -461,31 +495,27 @@ public class DrawingActivity extends AppCompatActivity {
 
         final EditText input = new EditText(this);
 
-        // 1. Get default name
         String defaultName = getIntent().hasExtra("SAVED_NAME")
                 ? getIntent().getStringExtra("SAVED_NAME")
                 : "Drawing_" + System.currentTimeMillis();
         input.setText(defaultName);
         input.setSelectAllOnFocus(true);
 
-        // 2. Set up layout
         LinearLayout layout = new LinearLayout(this);
         layout.setPadding(50, 20, 50, 0);
         layout.addView(input);
         builder.setView(layout);
 
-        // 3. Set the save button
         builder.setPositiveButton(getString(R.string.save), (dialog, which) -> {
             String name = input.getText().toString().trim();
             if (name.isEmpty()) name = "unnamed";
-
-            // This calls the helper method that handles local + cloud save
             saveAndSync(name);
         });
 
         builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
+
     private void saveAndSync(String drawingName) {
         String serializedData = serializeDrawing();
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -505,28 +535,8 @@ public class DrawingActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "Save Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-    }    private void saveToDatabase(String drawingName) {
-        String serializedData = serializeDrawing();
-        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        String currentUser = pref.getString("username", "GuestUser");
-        boolean isGuest = pref.getBoolean("is_guest", false);
-
-        try {
-            // 1. Save to local SQLite (for offline use)
-            if (editId != -1) dbHelper.deleteDrawing(editId);
-            dbHelper.addDrawing(currentUser, drawingName, serializedData);
-
-            // 2. Push to Cloud (if not a guest)
-            if (!isGuest) {
-                CloudSyncManager.syncLocalToCloud(dbHelper, currentUser);
-            }
-
-            Toast.makeText(this, "Saved & Synced to Cloud", Toast.LENGTH_SHORT).show();
-            finish();
-        } catch (Exception e) {
-            Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
     }
+
     private String serializeDrawing() {
         try {
             JSONObject root = new JSONObject();
@@ -587,12 +597,14 @@ public class DrawingActivity extends AppCompatActivity {
             drawingCanvas.invalidate();
         } catch (Exception e) { Toast.makeText(this, "Error loading drawing", Toast.LENGTH_SHORT).show(); }
     }
+
     private void resetPolyline() {
         activePolylinePoints.clear();
         activePolylineDraw.clear();
         drawingCanvas.setActivePolyline(activePolylineDraw);
         drawingCanvas.setPreviewPoints(null, null);
     }
+
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleHelper.onAttach(newBase));

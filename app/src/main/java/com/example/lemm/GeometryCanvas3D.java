@@ -31,7 +31,9 @@ public class GeometryCanvas3D extends View {
     private float translateX = 0f, translateY = 0f;
     private boolean isMoveMode = false;
 
+    // Multi-touch tracking to prevent jumping
     private float lastTouchX, lastTouchY;
+    private int activePointerId = -1;
     private ScaleGestureDetector scaleDetector;
 
     public interface OnZoomChangeListener { void onZoomChanged(int percentage); }
@@ -116,17 +118,14 @@ public class GeometryCanvas3D extends View {
 
         drawAxesCube(canvas, radX, radY, radZ, 120f, 350f);
 
-        // 1. Project ALL points first
         for (Point3D p : points) projectPoint(p, radX, radY, radZ, centerX, centerY, sceneScale);
 
-        // 2. Draw 3D Objects 
         for (Cone3D c : cones) drawCone(canvas, c, radX, radY, radZ, centerX, centerY, sceneScale);
         for (Cylinder3D c : cylinders) drawCylinder(canvas, c, radX, radY, radZ, centerX, centerY, sceneScale);
         for (Pyramid3D p : pyramids) drawPyramid(canvas, p, radX, radY, radZ, centerX, centerY, sceneScale);
         for (Circle3D c : circles) drawCircle(canvas, c, radX, radY, radZ, centerX, centerY, sceneScale);
         for (Sphere3D s : spheres) drawSphere(canvas, s, radX, radY, radZ, centerX, centerY, sceneScale);
 
-        // 3. Draw Planes (Shaded Surfaces) FIRST so lines are on top
         for (Plane3D pl : planes) {
             Path path = new Path();
             boolean first = true;
@@ -140,15 +139,14 @@ public class GeometryCanvas3D extends View {
             if (!first) {
                 path.close();
                 planePaint.setStyle(Paint.Style.FILL);
-                planePaint.setColor(Color.argb(120, 180, 210, 255)); // Light Blue Shade
+                planePaint.setColor(Color.argb(120, 180, 210, 255));
                 canvas.drawPath(path, planePaint);
                 planePaint.setStyle(Paint.Style.STROKE);
-                planePaint.setColor(Color.BLACK); // Outline
+                planePaint.setColor(Color.BLACK);
                 canvas.drawPath(path, planePaint);
             }
         }
 
-        // 4. Draw Lines (Edges)
         for (Line3D l : lines) {
             Point3D p1 = findPt(l.a), p2 = findPt(l.b);
             if (p1 != null && p2 != null) {
@@ -157,7 +155,6 @@ public class GeometryCanvas3D extends View {
             }
         }
 
-        // 5. Draw Vertices and Labels
         for (Point3D p : points) {
             if (p.isVertex) {
                 canvas.drawCircle(p.sx, p.sy, 6, pointPaint);
@@ -206,22 +203,16 @@ public class GeometryCanvas3D extends View {
             double ang = 2 * Math.PI * i / segments;
             Point3D curr = new Point3D("", c.cx + (float)Math.cos(ang)*c.r, c.cy, c.cz + (float)Math.sin(ang)*c.r);
             projectPoint(curr, rx, ry, rz, cx, cy, scale);
-            if (prev != null) {
-                canvas.drawLine(prev.sx, prev.sy, curr.sx, curr.sy, linePaint);
-            } else {
-                first = curr;
-            }
+            if (prev != null) canvas.drawLine(prev.sx, prev.sy, curr.sx, curr.sy, linePaint);
+            else first = curr;
             prev = curr;
         }
-        if (prev != null && first != null) {
-            canvas.drawLine(prev.sx, prev.sy, first.sx, first.sy, linePaint);
-        }
+        if (prev != null && first != null) canvas.drawLine(prev.sx, prev.sy, first.sx, first.sy, linePaint);
     }
 
     private void drawSphere(Canvas canvas, Sphere3D s, double rx, double ry, double rz, float cx, float cy, float scale) {
         Point3D center = new Point3D("", s.x, s.y, s.z);
         projectPoint(center, rx, ry, rz, cx, cy, scale);
-        // Simple 2D perspective circle to represent the sphere body wireframe
         canvas.drawCircle(center.sx, center.sy, s.r * scale, linePaint);
     }
 
@@ -276,14 +267,62 @@ public class GeometryCanvas3D extends View {
         return null;
     }
 
-    @Override public boolean onTouchEvent(MotionEvent e) {
+    // --- CRITICAL ZOOM FIX: Multi-Touch Pointer Handoff ---
+    @Override
+    public boolean onTouchEvent(MotionEvent e) {
         scaleDetector.onTouchEvent(e);
-        if (e.getAction() == MotionEvent.ACTION_DOWN) { lastTouchX = e.getX(); lastTouchY = e.getY(); }
-        else if (e.getAction() == MotionEvent.ACTION_MOVE && !scaleDetector.isInProgress()) {
-            float dx = e.getX() - lastTouchX; float dy = e.getY() - lastTouchY;
-            if (isMoveMode) { translateX += dx; translateY += dy; }
-            else { rotateY += dx * 0.5f; rotateX -= dy * 0.5f; }
-            lastTouchX = e.getX(); lastTouchY = e.getY(); invalidate();
+        int action = e.getActionMasked();
+
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                activePointerId = e.getPointerId(0);
+                lastTouchX = e.getX();
+                lastTouchY = e.getY();
+                break;
+
+            case MotionEvent.ACTION_POINTER_UP:
+                // When a finger is lifted, re-assign the active pointer to the remaining finger
+                // This prevents the camera from "jumping/teleporting"
+                int pointerIndex = e.getActionIndex();
+                int pointerId = e.getPointerId(pointerIndex);
+                if (pointerId == activePointerId) {
+                    int newPointerIndex = pointerIndex == 0 ? 1 : 0;
+                    if (newPointerIndex < e.getPointerCount()) {
+                        lastTouchX = e.getX(newPointerIndex);
+                        lastTouchY = e.getY(newPointerIndex);
+                        activePointerId = e.getPointerId(newPointerIndex);
+                    }
+                }
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                if (!scaleDetector.isInProgress() && e.getPointerCount() == 1) {
+                    int idx = e.findPointerIndex(activePointerId);
+                    if (idx != -1) {
+                        float currX = e.getX(idx);
+                        float currY = e.getY(idx);
+                        float dx = currX - lastTouchX;
+                        float dy = currY - lastTouchY;
+
+                        if (isMoveMode) {
+                            translateX += dx;
+                            translateY += dy;
+                        } else {
+                            rotateY += dx * 0.5f;
+                            rotateX -= dy * 0.5f;
+                        }
+
+                        lastTouchX = currX;
+                        lastTouchY = currY;
+                        invalidate();
+                    }
+                }
+                break;
+
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                activePointerId = -1;
+                break;
         }
         return true;
     }
