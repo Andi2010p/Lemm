@@ -84,7 +84,7 @@ dependencies {
 
     // ML Kit & Text Recognition
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
-
+    implementation("com.google.firebase:firebase-database:20.3.0")
     // Mail Sending (OTP)
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")

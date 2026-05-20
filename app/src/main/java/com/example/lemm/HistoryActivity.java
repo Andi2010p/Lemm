@@ -154,20 +154,13 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void saveDrawingToGallery(GenericItem item, Bitmap.CompressFormat format, String ext, String mimeType) {
-        GeometryCanvas tempCanvas = new GeometryCanvas(this, null);
-        tempCanvas.measure(View.MeasureSpec.makeMeasureSpec(1440, View.MeasureSpec.EXACTLY),
-                          View.MeasureSpec.makeMeasureSpec(1440, View.MeasureSpec.EXACTLY));
-        tempCanvas.layout(0, 0, 1440, 1440);
-        tempCanvas.setDrawingData(item.data);
-        
         try {
-            Bitmap bitmap = Bitmap.createBitmap(1440, 1440, Bitmap.Config.ARGB_8888);
-            android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
-            tempCanvas.draw(canvas);
+            // 1. Create a specialized bitmap for the CAD drawing
+            Bitmap bitmap = renderCadToBitmap(item.data);
 
             String fileName = item.title.replaceAll("[^a-zA-Z0-9]", "_") + "_" + System.currentTimeMillis() + ext;
             OutputStream fos;
-            
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues contentValues = new ContentValues();
                 contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
@@ -186,25 +179,23 @@ public class HistoryActivity extends AppCompatActivity {
             fos.close();
             Toast.makeText(this, "Saved to Gallery", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Toast.makeText(this, "Failed to save drawing", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Export Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
 
     private void saveDrawingAsPdf(GenericItem item) {
-        GeometryCanvas tempCanvas = new GeometryCanvas(this, null);
-        tempCanvas.measure(View.MeasureSpec.makeMeasureSpec(1440, View.MeasureSpec.EXACTLY),
-                          View.MeasureSpec.makeMeasureSpec(2036, View.MeasureSpec.EXACTLY)); // A4-like aspect
-        tempCanvas.layout(0, 0, 1440, 2036);
-        tempCanvas.setDrawingData(item.data);
-
-        PdfDocument document = new PdfDocument();
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(1440, 2036, 1).create();
-        PdfDocument.Page page = document.startPage(pageInfo);
-        tempCanvas.draw(page.getCanvas());
-        document.finishPage(page);
-
         try {
+            Bitmap bitmap = renderCadToBitmap(item.data);
+            PdfDocument document = new PdfDocument();
+
+            // Standard A4 Size roughly
+            PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(bitmap.getWidth(), bitmap.getHeight(), 1).create();
+            PdfDocument.Page page = document.startPage(pageInfo);
+
+            page.getCanvas().drawBitmap(bitmap, 0, 0, null);
+            document.finishPage(page);
+
             String fileName = item.title.replaceAll("[^a-zA-Z0-9]", "_") + "_" + System.currentTimeMillis() + ".pdf";
             OutputStream fos;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -226,6 +217,61 @@ public class HistoryActivity extends AppCompatActivity {
             Toast.makeText(this, "PDF Export Failed", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
+    }
+
+    // --- CRITICAL HELPER: Renders the CAD JSON into an actual Image ---
+    private Bitmap renderCadToBitmap(String jsonData) throws Exception {
+        int size = 2000; // High resolution
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
+        canvas.drawColor(Color.WHITE); // Background
+
+        // Initialize the CAD Engine for rendering
+        CadEngine2d tempEngine = new CadEngine2d();
+        org.locationtech.jts.io.WKTReader reader = new org.locationtech.jts.io.WKTReader();
+        List<org.locationtech.jts.geom.Geometry> geometries = new ArrayList<>();
+        List<CadEngine2d.NamedPoint> points = new ArrayList<>();
+
+        // Parse the JSON exactly like DrawingActivity does
+        if (jsonData.trim().startsWith("[")) {
+            org.json.JSONArray array = new org.json.JSONArray(jsonData);
+            for (int i = 0; i < array.length(); i++) {
+                org.json.JSONObject obj = array.getJSONObject(i);
+                org.locationtech.jts.geom.Geometry g = reader.read(obj.getString("wkt"));
+                if (obj.has("userData")) g.setUserData(obj.getString("userData"));
+                geometries.add(g);
+            }
+        } else {
+            org.json.JSONObject root = new org.json.JSONObject(jsonData);
+            org.json.JSONArray geoArray = root.getJSONArray("geometries");
+            for (int i = 0; i < geoArray.length(); i++) {
+                org.json.JSONObject obj = geoArray.getJSONObject(i);
+                org.locationtech.jts.geom.Geometry g = reader.read(obj.getString("wkt"));
+                if (obj.has("userData")) g.setUserData(obj.getString("userData"));
+                geometries.add(g);
+            }
+            org.json.JSONArray ptsArray = root.getJSONArray("points");
+            for (int i = 0; i < ptsArray.length(); i++) {
+                org.json.JSONObject obj = ptsArray.getJSONObject(i);
+                points.add(new CadEngine2d.NamedPoint(obj.getDouble("x"), obj.getDouble("y"), obj.getString("label")));
+            }
+        }
+        tempEngine.setGeometriesAndPoints(geometries, points);
+
+        // Create a temporary UI Canvas to handle the drawing
+        CadGeometryCanvas tempView = new CadGeometryCanvas(this, null);
+        tempView.setEngine(tempEngine);
+
+        // Auto-center the drawing for the export
+        tempView.measure(View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY));
+        tempView.layout(0, 0, size, size);
+
+        // Pan to middle because world coordinates might be far away
+        tempView.pan(size/2f, size/2f);
+
+        tempView.draw(canvas);
+        return bitmap;
     }
 
     private void showRenameDialog(GenericItem item) {

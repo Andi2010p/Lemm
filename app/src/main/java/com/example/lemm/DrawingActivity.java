@@ -34,10 +34,13 @@ import java.util.List;
 
 public class DrawingActivity extends AppCompatActivity {
     private CadGeometryCanvas drawingCanvas;
+    private Geometry secondSelectedGeometry = null;
     private CadEngine2d engine;
+
     private ScaleGestureDetector scaleDetector;
     private String currentTool = "MOVE";
     private boolean isOrthoMode = false;
+    private Geometry referenceLine = null; // Stores the first selected line
     private int activePointerId = -1;
     private Coordinate firstPoint = null;
     private float lastX, lastY;
@@ -52,6 +55,7 @@ public class DrawingActivity extends AppCompatActivity {
     private boolean isViewOnly = false;
     private View propertiesPanel;
     private TextView tvShapeInfo;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,6 +163,26 @@ public class DrawingActivity extends AppCompatActivity {
 
         findViewById(R.id.btnZoomIn).setOnClickListener(v -> drawingCanvas.zoomIn());
         findViewById(R.id.btnZoomOut).setOnClickListener(v -> drawingCanvas.zoomOut());
+        findViewById(R.id.btnDeleteShape).setOnClickListener(v -> {
+            Geometry selected = drawingCanvas.getSelectedGeometry();
+            if (selected != null) {
+                engine.deleteGeometry(selected);
+                drawingCanvas.setSelectedGeometry(null);
+                propertiesPanel.setVisibility(View.GONE);
+                drawingCanvas.invalidate();
+            }
+        });
+
+        findViewById(R.id.btnSetAngleAction).setOnClickListener(v -> {
+            Geometry selected = drawingCanvas.getSelectedGeometry();
+            if (referenceLine instanceof org.locationtech.jts.geom.LineString &&
+                    selected instanceof org.locationtech.jts.geom.LineString) {
+                promptForAngle((org.locationtech.jts.geom.LineString) referenceLine,
+                        (org.locationtech.jts.geom.LineString) selected);
+            } else {
+                Toast.makeText(this, "Select a second line first", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void selectTool(String tool) {
@@ -185,16 +209,8 @@ public class DrawingActivity extends AppCompatActivity {
             if (action == MotionEvent.ACTION_DOWN) {
                 activePointerId = event.getPointerId(0);
                 lastX = event.getX(); lastY = event.getY();
-            } else if (action == MotionEvent.ACTION_POINTER_UP) {
-                int pIdx = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
-                if (event.getPointerId(pIdx) == activePointerId) {
-                    int newIdx = pIdx == 0 ? 1 : 0;
-                    lastX = event.getX(newIdx); lastY = event.getY(newIdx);
-                    activePointerId = event.getPointerId(newIdx);
-                }
             }
 
-            // Block drawing while zooming
             if (scaleDetector.isInProgress() || event.getPointerCount() > 1) return true;
 
             int idx = event.findPointerIndex(activePointerId);
@@ -215,32 +231,58 @@ public class DrawingActivity extends AppCompatActivity {
             drawingCanvas.setSnapIndicator(x, y);
 
             if (action == MotionEvent.ACTION_DOWN) {
-                if (currentTool.equals("POLYLINE")) handlePolylineTap(x, y);
+                if (currentTool.equals("POLYLINE")) {
+                    handlePolylineTap(x, y);
+                }
                 else if (currentTool.equals("SELECT")) {
                     CadEngine2d.NamedPoint np = engine.getNamedPointAt(worldPt.x, worldPt.y, threshold);
-                    if (np != null) promptToRenamePoint(np);
-                    else {
-                        Geometry tapped = engine.getGeometryAt(worldPt.x, worldPt.y, threshold);
-                        drawingCanvas.setSelectedGeometry(tapped);
-                        if (tapped != null) propertiesPanel.setVisibility(View.VISIBLE);
-                        else propertiesPanel.setVisibility(View.GONE);
+                    if (np != null) {
+                        promptToRenamePoint(np);
                     }
-                } else if (!currentTool.equals("MOVE")) { firstPoint = new Coordinate(x, y); }
-            } else if (action == MotionEvent.ACTION_MOVE) {
+
+                    Geometry tapped = engine.getGeometryAt(worldPt.x, worldPt.y, threshold);
+                    Geometry previouslySelected = drawingCanvas.getSelectedGeometry();
+
+                    if (tapped != null) {
+                        if (tapped instanceof LineString && previouslySelected instanceof LineString && previouslySelected != tapped) {
+                            referenceLine = previouslySelected;
+                            findViewById(R.id.btnSetAngleAction).setVisibility(View.VISIBLE);
+                        } else {
+                            findViewById(R.id.btnSetAngleAction).setVisibility(View.GONE);
+                            referenceLine = null;
+                        }
+
+                        drawingCanvas.setSelectedGeometry(tapped);
+                        tvShapeInfo.setText(engine.getPropertiesText(this, tapped)); // Added 'this'
+                        propertiesPanel.setVisibility(View.VISIBLE);
+                    } else {
+                        propertiesPanel.setVisibility(View.GONE);
+                        drawingCanvas.setSelectedGeometry(null);
+                        referenceLine = null;
+                        findViewById(R.id.btnSetAngleAction).setVisibility(View.GONE);
+                    }
+                }
+                else if (!currentTool.equals("MOVE")) {
+                    firstPoint = new Coordinate(x, y);
+                }
+            }
+            else if (action == MotionEvent.ACTION_MOVE) {
                 if (currentTool.equals("MOVE")) {
                     drawingCanvas.pan(currX - lastX, currY - lastY);
                 } else if (firstPoint != null) {
                     drawingCanvas.setPreviewPoints(new PointF((float)firstPoint.x, (float)firstPoint.y), new PointF(x, y));
                 }
                 lastX = currX; lastY = currY;
-            } else if (action == MotionEvent.ACTION_UP) {
+            }
+            else if (action == MotionEvent.ACTION_UP) {
                 if (firstPoint != null && !currentTool.equals("MOVE") && !currentTool.equals("SELECT")) commitShape(x, y);
                 drawingCanvas.clearSnapIndicator();
             }
             drawingCanvas.invalidate();
             return true;
         });
-    }    private void handlePolylineTap(float x, float y) {
+    }
+    private void handlePolylineTap(float x, float y) {
         if (activePolylinePoints.isEmpty()) {
             activePolylinePoints.add(new Coordinate(x, y));
             activePolylineDraw.add(new PointF(x, y));
@@ -251,7 +293,7 @@ public class DrawingActivity extends AppCompatActivity {
                 Geometry poly = engine.addPolygon(new ArrayList<>(activePolylinePoints));
                 if (poly != null) {
                     drawingCanvas.setSelectedGeometry(poly);
-                    tvShapeInfo.setText(engine.getPropertiesText(poly));
+                    tvShapeInfo.setText(engine.getPropertiesText(this, poly));
                     propertiesPanel.setVisibility(View.VISIBLE);
                 }
                 resetPolyline();
@@ -263,7 +305,32 @@ public class DrawingActivity extends AppCompatActivity {
             }
         }
     }
+    private void promptForAngle(LineString line1, LineString line2) {
+        if (isViewOnly) return;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.title_set_angle));
 
+        final EditText input = new EditText(this);
+        input.setHint("Angle in Degrees (e.g. 45)");
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setPadding(60, 20, 60, 20);
+        layout.addView(input);
+        builder.setView(layout);
+
+        builder.setPositiveButton("Apply", (dialog, which) -> {
+            try {
+                double angle = Double.parseDouble(input.getText().toString());
+                engine.setAngleBetweenLines(line1, line2, angle);
+                drawingCanvas.invalidate();
+            } catch (Exception e) {
+                Toast.makeText(this, "Invalid angle", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
     private void commitShape(float x, float y) {
         Geometry created = null;
         try {
@@ -283,7 +350,7 @@ public class DrawingActivity extends AppCompatActivity {
         if (created != null) {
             engine.calculateAndSetDrivenDimension(created, currentTool);
             drawingCanvas.setSelectedGeometry(created);
-            tvShapeInfo.setText(engine.getPropertiesText(created));
+            tvShapeInfo.setText(engine.getPropertiesText(this, created));
             propertiesPanel.setVisibility(View.VISIBLE);
 
             if (!isOrthoMode && !isViewOnly) promptForDimensions(created, currentTool);
@@ -303,7 +370,7 @@ public class DrawingActivity extends AppCompatActivity {
     private void promptToRenamePoint(CadEngine2d.NamedPoint pt) {
         if (isViewOnly) return;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Rename Vertex");
+        builder.setTitle(getString(R.string.title_rename_vertex));
 
         final EditText input = new EditText(this);
         input.setText(pt.label);
@@ -330,7 +397,7 @@ public class DrawingActivity extends AppCompatActivity {
     private void promptForDimensions(Geometry geo, String type) {
         if (isViewOnly) return;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Smart Dimension");
+        builder.setTitle(getString(R.string.title_smart_dim));
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -355,20 +422,30 @@ public class DrawingActivity extends AppCompatActivity {
         } else return;
 
         builder.setView(layout);
+        // Inside promptForDimensions Positive Button
         builder.setPositiveButton(getString(R.string.update), (dialog, which) -> {
             try {
                 double val1 = Double.parseDouble(input1.getText().toString());
                 if (val1 <= 0.1) throw new NumberFormatException();
 
-                if (type.equals("LINE")) engine.resizeLine(geo, val1);
-                else if (type.equals("CIRCLE")) engine.resizeCircle(geo, val1);
-                else if (type.equals("RECT")) {
+                Geometry updatedGeo = null;
+
+                if (type.equals("LINE")) {
+                    updatedGeo = engine.resizeLine(geo, val1);
+                } else if (type.equals("CIRCLE")) {
+                    updatedGeo = engine.resizeCircle(geo, val1); // Make sure resizeCircle also returns Geometry
+                } else if (type.equals("RECT")) {
                     double val2 = Double.parseDouble(input2.getText().toString());
                     if (val2 <= 0.1) throw new NumberFormatException();
-                    engine.resizeRect(geo, val1, val2);
+                    updatedGeo = engine.resizeRect(geo, val1, val2); // Make sure resizeRect also returns Geometry
                 }
 
-                tvShapeInfo.setText(engine.getPropertiesText(geo));
+                // CRITICAL FIX: Update the selection so the next resize works on the new object
+                if (updatedGeo != null) {
+                    drawingCanvas.setSelectedGeometry(updatedGeo);
+                    tvShapeInfo.setText(engine.getPropertiesText(this, updatedGeo));
+                }
+
                 drawingCanvas.invalidate();
             } catch (NumberFormatException e) {
                 Toast.makeText(this, "Dimension must be > 0.", Toast.LENGTH_SHORT).show();
@@ -381,40 +458,75 @@ public class DrawingActivity extends AppCompatActivity {
     private void showSaveDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.save_drawing));
+
         final EditText input = new EditText(this);
-        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        int unnamedCount = pref.getInt("unnamed_drawing_count", 1);
-        String defaultName = getIntent().hasExtra("SAVED_NAME") ? getIntent().getStringExtra("SAVED_NAME") : "unnamed" + unnamedCount;
+
+        // 1. Get default name
+        String defaultName = getIntent().hasExtra("SAVED_NAME")
+                ? getIntent().getStringExtra("SAVED_NAME")
+                : "Drawing_" + System.currentTimeMillis();
         input.setText(defaultName);
         input.setSelectAllOnFocus(true);
+
+        // 2. Set up layout
         LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 0);
         layout.addView(input);
         builder.setView(layout);
 
+        // 3. Set the save button
         builder.setPositiveButton(getString(R.string.save), (dialog, which) -> {
             String name = input.getText().toString().trim();
-            if (name.isEmpty()) name = "unnamed" + unnamedCount;
-            if (name.startsWith("unnamed")) pref.edit().putInt("unnamed_drawing_count", unnamedCount + 1).apply();
-            saveToDatabase(name);
+            if (name.isEmpty()) name = "unnamed";
+
+            // This calls the helper method that handles local + cloud save
+            saveAndSync(name);
         });
+
         builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
     }
-
-    private void saveToDatabase(String drawingName) {
+    private void saveAndSync(String drawingName) {
         String serializedData = serializeDrawing();
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String currentUser = pref.getString("username", "GuestUser");
+        boolean isGuest = pref.getBoolean("is_guest", false);
+
         try {
             if (editId != -1) dbHelper.deleteDrawing(editId);
             dbHelper.addDrawing(currentUser, drawingName, serializedData);
-            Toast.makeText(this, "Drawing Saved to History", Toast.LENGTH_SHORT).show();
-            finish();
-        } catch (Exception e) { Toast.makeText(this, "Failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show(); }
-    }
 
+            if (!isGuest) {
+                CloudSyncManager.syncLocalToCloud(dbHelper, currentUser);
+            }
+
+            Toast.makeText(this, "Saved & Synced", Toast.LENGTH_SHORT).show();
+            finish();
+        } catch (Exception e) {
+            Toast.makeText(this, "Save Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }    private void saveToDatabase(String drawingName) {
+        String serializedData = serializeDrawing();
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String currentUser = pref.getString("username", "GuestUser");
+        boolean isGuest = pref.getBoolean("is_guest", false);
+
+        try {
+            // 1. Save to local SQLite (for offline use)
+            if (editId != -1) dbHelper.deleteDrawing(editId);
+            dbHelper.addDrawing(currentUser, drawingName, serializedData);
+
+            // 2. Push to Cloud (if not a guest)
+            if (!isGuest) {
+                CloudSyncManager.syncLocalToCloud(dbHelper, currentUser);
+            }
+
+            Toast.makeText(this, "Saved & Synced to Cloud", Toast.LENGTH_SHORT).show();
+            finish();
+        } catch (Exception e) {
+            Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
     private String serializeDrawing() {
         try {
             JSONObject root = new JSONObject();

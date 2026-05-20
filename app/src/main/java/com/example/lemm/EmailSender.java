@@ -20,7 +20,7 @@ public class EmailSender {
     private static final String APP_EMAIL = "LemmaOfficial13@gmail.com";
 
     // Put the 16-character Google APP PASSWORD here (NOT your normal password)
-    private static final String APP_PASSWORD = "qahl nues yxkz vtox\n";
+    private static final String APP_PASSWORD = "lppt xisf mobj pfhv";
 
     public static void sendEmail(String toEmail, String subject, String body) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -48,6 +48,7 @@ public class EmailSender {
                 Log.d("EmailSender", "✅ Email sent successfully to " + toEmail);
             } catch (Exception e) {
                 Log.e("EmailSender", "❌ Failed to send email to " + toEmail, e);
+                e.printStackTrace();
             }
         });
     }

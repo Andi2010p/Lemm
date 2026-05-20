@@ -1,97 +1,124 @@
 <resources>
     <string name="app_name">Lemma</string>
 
-    <!-- Start / General -->
+    <!-- General / Navigation -->
     <string name="welcome_to_lemma">Welcome to Lemma</string>
-    <string name="login">Login</string>
-    <string name="login_to_lemma">Login to Lemma</string>
-    <string name="create_account">Create Account</string>
-    <string name="try_guest_mode">Try Guest Mode</string>
-    <string name="try_admin_mode">Try Admin Mode</string>
     <string name="welcome_back">Welcome back</string>
+    <string name="welcome">Welcome, %1$s!</string>
     <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="dont_save">Don\'t Save</string>
+    <string name="delete">Delete</string>
+    <string name="update">Update</string>
+    <string name="logout">Logout</string>
+    <string name="log_out">Log Out</string>
     <string name="logout_confirm">Are you sure you want to log out?</string>
-    <!-- Main Menu -->
-    <string name="new_problem">New Problem</string>
-    <string name="scan_ocr">Scan OCR</string>
-    <string name="draw_geometry">Draw Geometry</string>
+    <string name="settings">Settings</string>
     <string name="history">History</string>
     <string name="solutions">Solutions</string>
     <string name="drawings">Drawings</string>
+    <string name="open_edit">Open / Edit</string>
 
-    <!-- Profile & Settings -->
-    <string name="user_profile">User Profile</string>
-    <string name="username">Username</string>
-    <string name="online">Online</string>
-    <string name="your_activity">Your Activity</string>
-    <string name="security">Security</string>
-    <string name="change_password">Change Password</string>
-    <string name="log_out">Log Out</string>
-    <string name="settings">Settings</string>
-    <string name="change_language">Change Language</string>
-    <string name="language_en">English</string>
-    <string name="language_ru">Русский</string>
-    <string name="language_hy">Հայերեն</string>
-    <string name="information">Information</string>
-    <string name="about_us">About Us</string>
-
-    <!-- Auth -->
-    <string name="email_username">Email or Username</string>
-    <string name="password">Password</string>
-    <string name="forgot_password">Forgot Password?</string>
+    <!-- Auth & Account -->
+    <string name="login">Login</string>
+    <string name="login_to_lemma">Login to Lemma</string>
     <string name="sign_up">Sign Up</string>
+    <string name="create_account">Create Account</string>
+    <string name="already_have_account">Already have an account? Login</string>
+    <string name="email_username">Email or Username</string>
     <string name="email">Email</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
     <string name="password_hint">Password (min 8 chars)</string>
     <string name="repeat_password">Repeat Password</string>
-    <string name="already_have_account">Already have an account? Login</string>
-
-    <!-- Settings & Profile Actions -->
-    <string name="current_password">Current Password</string>
-    <string name="new_password">New Password</string>
-    <string name="update">Update</string>
-    <string name="logout">Logout</string>
-
-    <!-- Login & Register Actions -->
-    <string name="enter_all_fields">Please enter all fields</string>
-    <string name="restricted_prefix">Restricted username used</string>
-    <string name="invalid_credentials">Invalid credentials</string>
-    <string name="google_sign_in_failed">Google Sign-In Failed</string>
+    <string name="forgot_password">Forgot Password?</string>
     <string name="reset_password">Reset Password</string>
+    <string name="change_password">Change Password</string>
     <string name="send_otp">Send OTP</string>
     <string name="enter_otp">Enter OTP</string>
     <string name="otp_hint">Enter 6-digit OTP</string>
     <string name="verify">Verify</string>
-    <string name="passwords_mismatch">Passwords do not match</string>
-    <string name="password_short">Password must be at least 8 characters</string>
+    <string name="new_password">New Password</string>
+    <string name="current_password">Current Password</string>
+
+    <!-- Auth Error/Toast Messages -->
+    <string name="enter_all_fields">Please enter all fields</string>
+    <string name="invalid_credentials">Invalid credentials</string>
     <string name="registration_successful">Registration Successful</string>
     <string name="user_exists">User already exists</string>
-    <string name="welcome">Welcome, %1$s!</string>
+    <string name="restricted_prefix">Restricted username used</string>
+    <string name="password_short">Password must be at least 8 characters</string>
+    <string name="passwords_mismatch">Passwords do not match</string>
+    <string name="google_sign_in_failed">Google Sign-In Failed</string>
 
-    <!-- Geometry Input & AI -->
+    <!-- Profile -->
+    <string name="user_profile">User Profile</string>
+    <string name="online">Online</string>
+    <string name="your_activity">Your Activity</string>
+    <string name="security">Security</string>
+
+    <!-- Main Features -->
+    <string name="new_problem">New Problem</string>
+    <string name="scan_ocr">Scan OCR</string>
+    <string name="draw_geometry">Draw Geometry</string>
     <string name="geometry_solver">Geometry Solver</string>
     <string name="describe_problem">Describe your problem...</string>
     <string name="custom_ai_inst">Custom AI Instructions</string>
     <string name="analyze_visualize">Analyze &amp; Visualize</string>
     <string name="save_solution">Save Solution</string>
+    <string name="save_drawing">Save Drawing</string>
+
+    <!-- AI & Monetization -->
+    <string name="api_key_title">AI Configuration</string>
+    <string name="api_key_hint">Paste Gemini API Key here</string>
+    <string name="api_key_save">Save Key</string>
+    <string name="api_key_info">Lemma AI usage is high. Provide your own key or purchase Pro.</string>
+    <string name="upgrade_pro">Upgrade to Pro</string>
+    <string name="access_denied">Access Required</string>
+    <string name="access_denied_msg">Please enter an API Key in Settings or purchase Pro.</string>
+    <string name="error_not_geometry">Security Filter: Lemma AI only solves math and geometry.</string>
 
     <!-- Scanner -->
     <string name="scan_dialog_title">Scanning Image</string>
-    <string name="scan_dialog_message">Reading text and math formulas...</string>
-    <string name="scan_error_no_text">No text found in image.</string>
-    <string name="scan_error_failed">Scanner Error: </string>
-    <string name="scan_error_loading_photo">Error loading photo from camera</string>
+    <string name="scan_dialog_message">Analyzing for geometry...</string>
+    <string name="scan_error_no_text">No geometry problem found.</string>
+    <string name="scan_error_failed">Scanner Error: Connection lost.</string>
+    <string name="scan_error_loading_photo">Error: Could not load photo.</string>
 
-    <!-- Drawing -->
+    <!-- CAD Tools -->
+    <string name="title_set_angle">Set Angle Between Lines</string>
+    <string name="title_smart_dim">Smart Dimension</string>
+    <string name="title_rename_vertex">Rename Vertex</string>
+    <string name="hint_angle">Angle in Degrees (e.g. 45)</string>
+    <string name="hint_exact_length">Exact Length</string>
+    <string name="hint_exact_radius">Exact Radius</string>
+    <string name="hint_width">Width</string>
+    <string name="hint_height">Height</string>
+    <string name="prop_length">Length: %.1f</string>
+    <string name="prop_area">Area: %.1f</string>
+    <string name="tool_ortho_on">Ortho Mode ON</string>
+    <string name="tool_ortho_off">Ortho Mode OFF</string>
     <string name="sketch_tools">Sketch Tools</string>
-    <string name="dont_save">Don\'t Save</string>
-    <string name="save_drawing">Save Drawing</string>
-    <string name="save">Save</string>
+    <string name="drawing_date">Date: %1$s</string>
+    <string name="error_invalid_angle">Invalid angle</string>
+    <string name="error_dim_positive">Dimension must be > 0</string>
+    <string name="msg_confirm_exit">You have an active drawing. Save it before exiting?</string>
 
-    <!-- History -->
+    <!-- History Actions -->
     <string name="delete_item_title">Delete Item</string>
     <string name="delete_item_msg">Are you sure you want to delete this item?</string>
-    <string name="delete">Delete</string>
     <string name="deleted_toast">Item deleted</string>
-    <string name="open_edit">Open / Edit</string>
-    <string name="drawing_date">Date: %1$s</string>
+
+    <!-- Settings UI -->
+    <string name="change_language">Change Language</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_hy">Հայերեն</string>
+    <string name="information">Information</string>
+    <string name="about_us">About Us / Website</string>
+    <string name="try_guest_mode">Try Guest Mode</string>
+    <string name="try_admin_mode">Try Admin Mode</string>
+    <string name="step_prefix">STEP </string>
+    <string name="final_answer">FINAL ANSWER:</string>
+
 </resources>

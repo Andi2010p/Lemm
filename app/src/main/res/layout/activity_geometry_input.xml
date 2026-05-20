@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/gradient_bg">
-
+    android:id="@+id/geometryInputRoot"
+    tools:context=".GeometryInputActivity">
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/headerCard"
         android:layout_width="match_parent"
@@ -43,7 +44,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/geometry_solver"
+                    android:text="Geometry Problem Solver"
                     android:textStyle="bold"
                     android:textColor="@color/primary_dark"
                     android:textSize="16sp" />
@@ -83,60 +84,98 @@
                 android:visibility="visible"
                 android:paddingTop="8dp">
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tlDescription"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/describe_problem"
-                    app:startIconDrawable="@android:drawable/ic_menu_edit"
-                    app:startIconTint="@color/primary"
-                    app:boxCornerRadiusBottomEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxStrokeColor="@color/primary">
+                    android:orientation="horizontal"
+                    android:gravity="top">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etDescription"
-                        android:layout_width="match_parent"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tlDescription"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:inputType="textMultiLine"
-                        android:minLines="1"
-                        android:maxLines="3"
-                        android:textColor="@color/text_main"
-                        android:textSize="14sp" />
-                </com.google.android.material.textfield.TextInputLayout>
+                        android:layout_weight="1"
+                        android:hint="Problem description"
+                        app:startIconDrawable="@android:drawable/ic_menu_edit"
+                        app:startIconTint="@color/primary"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxStrokeColor="@color/primary">
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tlExtraCommands"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDescription"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textMultiLine"
+                            android:maxLength="2500"
+                            android:minLines="1"
+                            android:maxLines="3"
+                            android:textColor="@color/text_main"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnExpandDesc"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="4dp"
+                        android:src="@android:drawable/arrow_down_float"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        app:tint="@color/primary" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:hint="@string/custom_ai_inst"
-                    app:startIconDrawable="@android:drawable/ic_menu_info_details"
-                    app:startIconTint="@color/secondary"
-                    app:endIconMode="clear_text"
-                    app:endIconTint="@color/secondary"
-                    app:boxCornerRadiusBottomEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxStrokeColor="@color/secondary"
-                    app:helperText="e.g. 'Use blue color', 'Draw a tall base'"
-                    app:helperTextEnabled="true">
+                    android:orientation="horizontal"
+                    android:gravity="top">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etExtraCommands"
-                        android:layout_width="match_parent"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tlExtraCommands"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:inputType="textMultiLine"
-                        android:minLines="1"
-                        android:maxLines="2"
-                        android:textColor="@color/text_main"
-                        android:textSize="13sp" />
-                </com.google.android.material.textfield.TextInputLayout>
+                        android:layout_weight="1"
+                        android:hint="Custom AI Instructions (Optional)"
+                        app:startIconDrawable="@android:drawable/ic_menu_info_details"
+                        app:startIconTint="@color/secondary"
+                        app:endIconMode="clear_text"
+                        app:endIconTint="@color/secondary"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxStrokeColor="@color/secondary"
+                        app:helperText="e.g. 'Use blue color', 'Draw a tall base'"
+                        app:helperTextEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etExtraCommands"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textMultiLine"
+                            android:maxLength="500"
+                            android:minLines="1"
+                            android:maxLines="2"
+                            android:textColor="@color/text_main"
+                            android:textSize="13sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnExpandExtra"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="4dp"
+                        android:src="@android:drawable/arrow_down_float"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        app:tint="@color/secondary" />
+                </LinearLayout>
 
                 <Button
                     android:id="@+id/btnSolveProblem"
@@ -144,7 +183,7 @@
                     android:layout_height="48dp"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="@color/primary"
-                    android:text="@string/analyze_visualize"
+                    android:text="Analyze &amp; Visualize"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="14sp"
@@ -165,6 +204,7 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- Canvas Area -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/canvasCard"
         android:layout_width="0dp"
@@ -190,6 +230,7 @@
                 android:layout_height="match_parent"
                 android:visibility="visible" />
 
+            <!-- Mode Toggle Control -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -197,7 +238,17 @@
                 android:layout_marginStart="12dp"
                 android:layout_marginBottom="125dp"
                 android:background="@drawable/floating_controls_bg"
+                android:orientation="horizontal"
                 android:padding="4dp">
+
+                <ImageButton
+                    android:id="@+id/btnResetView"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_reset_view_custom"
+                    android:tooltipText="Reset View"
+                    app:tint="@color/primary" />
 
                 <ImageButton
                     android:id="@+id/btnToggleMoveRotate"
@@ -209,6 +260,7 @@
                     app:tint="@color/primary" />
             </LinearLayout>
 
+            <!-- Controls for Zoom (Top End) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -243,10 +295,12 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@android:drawable/ic_menu_zoom"
+                    android:src="@drawable/ic_zoom_in_custom"
                     app:tint="@color/primary" />
+
             </LinearLayout>
 
+            <!-- Rotation Controls (Bottom-Start) -->
             <LinearLayout
                 android:id="@+id/rotationControls"
                 android:layout_width="wrap_content"
@@ -257,32 +311,99 @@
                 android:orientation="vertical"
                 android:padding="2dp">
 
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
-                    <Button android:id="@+id/btnRotXMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-X" android:textSize="10sp" />
-                    <Button android:id="@+id/btnRotXPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+X" android:textSize="10sp" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <Button
+                        android:id="@+id/btnRotXMinus"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:text="-X"
+                        android:textSize="10sp" />
+
+                    <Button
+                        android:id="@+id/btnRotXPlus"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:text="+X"
+                        android:textSize="10sp" />
                 </LinearLayout>
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
-                    <Button android:id="@+id/btnRotYMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-Y" android:textSize="10sp" />
-                    <Button android:id="@+id/btnRotYPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+Y" android:textSize="10sp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <Button
+                        android:id="@+id/btnRotYMinus"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:text="-Y"
+                        android:textSize="10sp" />
+
+                    <Button
+                        android:id="@+id/btnRotYPlus"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:text="+Y"
+                        android:textSize="10sp" />
                 </LinearLayout>
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
-                    <Button android:id="@+id/btnRotZMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-Z" android:textSize="10sp" />
-                    <Button android:id="@+id/btnRotZPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+Z" android:textSize="10sp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <Button
+                        android:id="@+id/btnRotZMinus"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:text="-Z"
+                        android:textSize="10sp" />
+
+                    <Button
+                        android:id="@+id/btnRotZPlus"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:text="+Z"
+                        android:textSize="10sp" />
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Canvas Resize Controls (Bottom-End) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
                 android:layout_margin="12dp">
-                <ImageButton android:id="@+id/btnMinimizeCanvas" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginEnd="8dp" android:background="@drawable/floating_controls_bg" android:src="@drawable/ic_minus" app:tint="@color/primary" />
-                <ImageButton android:id="@+id/btnMaximizeCanvas" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/floating_controls_bg" android:src="@drawable/ic_plus" app:tint="@color/primary" />
+
+                <ImageButton
+                    android:id="@+id/btnMinimizeCanvas"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/floating_controls_bg"
+                    android:src="@drawable/ic_minus"
+                    app:tint="@color/primary" />
+
+                <ImageButton
+                    android:id="@+id/btnMaximizeCanvas"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/floating_controls_bg"
+                    android:src="@drawable/ic_plus"
+                    app:tint="@color/primary" />
             </LinearLayout>
 
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- Results Section -->
     <LinearLayout
         android:id="@+id/resultSection"
         android:layout_width="0dp"
@@ -294,7 +415,6 @@
         app:layout_constraintTop_toBottomOf="@id/canvasCard"
         app:layout_constraintVertical_weight="0.4">
 
-        <!-- NEW SAVE / DON'T SAVE CONTROLS -->
         <LinearLayout
             android:id="@+id/solutionControls"
             android:layout_width="match_parent"
@@ -314,7 +434,7 @@
                 android:textColor="#C62828"/>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSaveSolution"
+                android:id="@+id/btnSave"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -327,6 +447,7 @@
             android:id="@+id/resultScrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
             <LinearLayout
                 android:id="@+id/stepsContainer"
                 android:layout_width="match_parent"

@@ -1,7 +1,6 @@
 package com.example.lemm;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -37,7 +36,7 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private static final int CAMERA_PERMISSION_CODE = 100;
-    private static final String TAG = "Scanner";
+    private static final String TAG = "MainActivity";
 
     private TextView tvMainWelcome;
     private ImageButton btnSettings, btnProfile;
@@ -83,20 +82,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        cardNewProblem.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, GeometryInputActivity.class)));
+        // Main Cards
+        cardNewProblem.setOnClickListener(v -> startActivity(new Intent(this, GeometryInputActivity.class)));
 
         cardScanProblem.setOnClickListener(v -> {
-            if (checkCameraPermission()) {
-                dispatchTakePictureIntent();
-            } else {
-                requestCameraPermission();
-            }
+            if (checkCameraPermission()) dispatchTakePictureIntent();
+            else requestCameraPermission();
         });
 
-        cardDrawProblem.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, DrawingActivity.class)));
-        cardHistory.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HistoryActivity.class)));
-        btnProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
+        cardDrawProblem.setOnClickListener(v -> startActivity(new Intent(this, DrawingActivity.class)));
+
+        cardHistory.setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
+
+        // Header Buttons
         btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+
+        btnProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
     }
 
     private boolean checkCameraPermission() {
@@ -110,11 +111,7 @@ public class MainActivity extends AppCompatActivity {
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         File photoFile = null;
-        try {
-            photoFile = createImageFile();
-        } catch (IOException ex) {
-            Log.e(TAG, "Error creating file", ex);
-        }
+        try { photoFile = createImageFile(); } catch (IOException ex) { Log.e(TAG, "Error creating file", ex); }
         if (photoFile != null) {
             photoUri = FileProvider.getUriForFile(this, "com.example.lemm.fileprovider", photoFile);
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
@@ -130,85 +127,56 @@ public class MainActivity extends AppCompatActivity {
         return image;
     }
 
-    // --- GEMINI AI OCR SCANNER ---
-// --- GEMINI AI OCR SCANNER ---
-// --- GEMINI AI OCR SCANNER ---
     private void processCapturedPhoto() {
         try {
             Bitmap originalBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
+            int maxDim = 1024;
+            float ratio = Math.min((float) maxDim / originalBitmap.getWidth(), (float) maxDim / originalBitmap.getHeight());
+            Bitmap safeBitmap = Bitmap.createScaledBitmap(originalBitmap, (int)(originalBitmap.getWidth()*ratio), (int)(originalBitmap.getHeight()*ratio), true);
 
-            // 1. COMPRESSION: Scaled to 1024px. 640px was too blurry for small math symbols.
-            int maxDimension = 1024;
-            int width = originalBitmap.getWidth();
-            int height = originalBitmap.getHeight();
-
-            if (width > maxDimension || height > maxDimension) {
-                float ratio = Math.min((float) maxDimension / width, (float) maxDimension / height);
-                originalBitmap = Bitmap.createScaledBitmap(originalBitmap, (int) (width * ratio), (int) (height * ratio), true);
-            }
-
-            // 2. FORMAT FIX: ARGB_8888 prevents Gemini from rejecting camera pixel formats
-            Bitmap safeBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
-
-            // Show Loading Dialog
             android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
                     .setTitle(getString(R.string.scan_dialog_title))
                     .setMessage(getString(R.string.scan_dialog_message))
-                    .setCancelable(false)
-                    .show();
+                    .setCancelable(false).show();
 
-            GeminiAI geminiAI = new GeminiAI(BuildConfig.GEMINI_API_KEY);
+            SharedPreferences apiPrefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
+            SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
-            // 3. GET APP LANGUAGE
-            SharedPreferences langPref = getSharedPreferences("Settings", MODE_PRIVATE);
-            String currentLangCode = langPref.getString("Locale.Helper.Selected.Language", "en");
+            // ADMIN LOGIC: Use local.properties key if user is Admin_Teacher
+            String apiKey;
+            if (userPrefs.getString("username", "").equals("Admin_Teacher")) {
+                apiKey = BuildConfig.GEMINI_API_KEY;
+            } else {
+                apiKey = apiPrefs.getString("user_api_key", BuildConfig.GEMINI_API_KEY);
+            }
 
-            String targetLanguage = "English";
-            if (currentLangCode.equals("ru")) targetLanguage = "Russian (Русский)";
-            if (currentLangCode.equals("hy")) targetLanguage = "Armenian (Հայերեն)";
+            GeminiAI geminiAI = new GeminiAI(apiKey);
+            String prompt = "Transcribe math in this image. If not math, output: INVALID_IMAGE.";
 
-            // 4. LANGUAGE-AWARE PROMPT
-            String prompt = "Read all the text and math equations in this image. " +
-                    "You MUST transcribe the text in " + targetLanguage + ". " +
-                    "Return ONLY the extracted text. Do not solve the problem or add any commentary.";
-
-            Futures.addCallback(
-                    geminiAI.extractTextFromImage(safeBitmap, prompt),
-                    new FutureCallback<GenerateContentResponse>() {
-                        @Override
-                        public void onSuccess(GenerateContentResponse result) {
-                            runOnUiThread(() -> {
-                                dialog.dismiss();
-                                String scannedText = result.getText();
-
-                                if (scannedText == null || scannedText.isEmpty()) {
-                                    Toast.makeText(MainActivity.this, getString(R.string.scan_error_no_text), Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-
-                                // Send the scanned text to the Input screen
-                                Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
-                                intent.putExtra("SCANNED_TEXT", scannedText.trim());
-                                startActivity(intent);
-                            });
+            Futures.addCallback(geminiAI.extractTextFromImage(safeBitmap, prompt), new FutureCallback<GenerateContentResponse>() {
+                @Override
+                public void onSuccess(GenerateContentResponse result) {
+                    runOnUiThread(() -> {
+                        dialog.dismiss();
+                        String text = result.getText();
+                        if (text == null || text.contains("INVALID_IMAGE")) {
+                            Toast.makeText(MainActivity.this, R.string.scan_error_no_text, Toast.LENGTH_LONG).show();
+                        } else {
+                            Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
+                            intent.putExtra("SCANNED_TEXT", text.trim());
+                            startActivity(intent);
                         }
+                    });
+                }
+                @Override
+                public void onFailure(Throwable t) {
+                    runOnUiThread(() -> { dialog.dismiss(); Toast.makeText(MainActivity.this, R.string.scan_error_failed, Toast.LENGTH_SHORT).show(); });
+                }
+            }, ContextCompat.getMainExecutor(this));
+        } catch (Exception e) { Toast.makeText(this, R.string.scan_error_loading_photo, Toast.LENGTH_SHORT).show(); }
+    }
 
-                        @Override
-                        public void onFailure(Throwable t) {
-                            runOnUiThread(() -> {
-                                dialog.dismiss();
-                                Log.e("ScannerError", "Failed to scan", t);
-                                Toast.makeText(MainActivity.this, getString(R.string.scan_error_failed) + t.getMessage(), Toast.LENGTH_LONG).show();
-                            });
-                        }
-                    },
-                    ContextCompat.getMainExecutor(this)
-            );
-
-        } catch (Exception e) {
-            Toast.makeText(this, getString(R.string.scan_error_loading_photo), Toast.LENGTH_SHORT).show();
-        }
-    }@Override
+    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CAMERA_PERMISSION_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -217,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void attachBaseContext(Context newBase) {
+    protected void attachBaseContext(android.content.Context newBase) {
         super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 }
