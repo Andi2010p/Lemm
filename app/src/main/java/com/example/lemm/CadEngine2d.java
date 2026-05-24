@@ -56,7 +56,11 @@ public class CadEngine2d {
         }
         rebuildPoints();
     }
-
+    public void addVisualAngle(Geometry l1, Geometry l2, double angleDegrees) {
+        if (l1 instanceof LineString && l2 instanceof LineString) {
+            angleAnnotations.add(new AngleAnnotation((LineString)l1, (LineString)l2, angleDegrees));
+        }
+    }
     public void rebuildPoints() {
         allSnapPoints.clear();
         for (Geometry g : geometries) {
@@ -236,13 +240,12 @@ public class CadEngine2d {
         namedPoints.clear(); namedPoints.addAll(keep);
         rebuildPoints();
     }
-
+    // New method: Only adds a label if we explicitly ask for it
+    public void addExplicitLabel(double x, double y, String textLabel) {
+        namedPoints.add(new NamedPoint(x, y, textLabel));
+    }
     private void assignLabels(Coordinate[] coords) {
-        for (Coordinate c : coords) {
-            boolean found = false;
-            for (NamedPoint np : namedPoints) if (Math.hypot(np.x - c.x, np.y - c.y) < 0.1) { found = true; break; }
-            if (!found) namedPoints.add(new NamedPoint(c.x, c.y, getNextLabel()));
-        }
+        // to datark lini
     }
 
     private String getNextLabel() {

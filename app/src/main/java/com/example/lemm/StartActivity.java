@@ -12,8 +12,7 @@ public class StartActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Check if user is already logged in
+
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         if (pref.contains("username")) {
             startActivity(new Intent(this, MainActivity.class));
@@ -25,29 +24,24 @@ public class StartActivity extends AppCompatActivity {
 
         Button btnLogin = findViewById(R.id.btnGoToLogin);
         if (btnLogin != null) {
-            btnLogin.setOnClickListener(v -> {
-                startActivity(new Intent(this, LoginActivity.class));
-            });
+            btnLogin.setOnClickListener(v -> startActivity(new Intent(this, LoginActivity.class)));
         }
 
         Button btnRegister = findViewById(R.id.btnGoToRegister);
         if (btnRegister != null) {
-            btnRegister.setOnClickListener(v -> {
-                startActivity(new Intent(this, RegisterActivity.class));
-            });
+            btnRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
         }
-
+/* admin mode
         Button btnQuickStart = findViewById(R.id.btnQuickStart);
         if (btnQuickStart != null) {
             btnQuickStart.setOnClickListener(v -> {
-                // Try Guest Mode
                 String uniqueGuestId = "GuestUser_" + UUID.randomUUID().toString().substring(0, 8);
                 SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                 userPrefs.edit()
-                    .putString("username", uniqueGuestId)
-                    .putBoolean("is_guest", true)
-                    .apply();
-                
+                        .putString("username", uniqueGuestId)
+                        .putBoolean("is_guest", true)
+                        .apply();
+
                 startActivity(new Intent(this, MainActivity.class));
                 finish();
             });
@@ -56,16 +50,15 @@ public class StartActivity extends AppCompatActivity {
         Button btnAdminMode = findViewById(R.id.btnAdminMode);
         if (btnAdminMode != null) {
             btnAdminMode.setOnClickListener(v -> {
-                // Try Admin Mode for teacher
                 SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                 userPrefs.edit()
-                    .putString("username", "Admin_Teacher")
-                    .putBoolean("is_guest", false)
-                    .apply();
-                
+                        .putString("username", "Admin_Teacher")
+                        .putBoolean("is_guest", false)
+                        .apply();
+
                 startActivity(new Intent(this, MainActivity.class));
                 finish();
             });
-        }
+        }*/
     }
 }

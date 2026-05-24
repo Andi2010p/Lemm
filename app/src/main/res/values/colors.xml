@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Palette - Deep Professional Blues -->
-    <color name="primary">#1A237E</color>
-    <color name="primary_light">#534BAE</color>
-    <color name="primary_dark">#000051</color>
-    
-    <!-- Secondary Palette - Modern Cyan/Teal -->
-    <color name="secondary">#00B8D4</color>
-    <color name="secondary_light">#62EFFF</color>
+    <!-- Modern Brand Palette -->
+    <color name="primary">#1E3A8A</color>
+    <color name="primary_light">#3B82F6</color>
+    <color name="primary_dark">#0F172A</color>
+
+    <color name="secondary">#06B6D4</color>
+    <color name="secondary_light">#67E8F9</color>
     <color name="secondary_dark">#0088A3</color>
 
     <!-- Backgrounds & Surfaces -->
+    <color name="bg_main">#F4F7FA</color> <!-- This is the color it was missing! -->
+    <color name="surface_white">#FFFFFF</color>
     <color name="bg_start">#F8FAFD</color>
     <color name="bg_end">#E3EEFF</color>
-    <color name="surface_white">#FFFFFF</color>
     <color name="card_bg_light">#FDFFFF</color>
 
-    <!-- Accent & Status -->
-    <color name="accent_gold">#FFD600</color>
-    <color name="error_red">#D32F2F</color>
-    <color name="success_green">#388E3C</color>
-
-    <!-- Typography -->
+    <!-- Text Colors -->
+    <color name="text_title">#0F172A</color>
+    <color name="text_subtitle">#64748B</color>
     <color name="text_main">#1C1C1E</color>
     <color name="text_sub">#636366</color>
-    
-    <!-- Compatibility -->
-    <color name="accent">#00B8D4</color>
-    <color name="background">#F8FAFD</color>
-    <color name="main_blue">#1A237E</color>
+
+    <!-- Status Colors -->
+    <color name="success_green">#10B981</color>
+    <color name="error_red">#EF4444</color>
+    <color name="warning_orange">#F59E0B</color>
+    <color name="accent_gold">#FFD600</color>
+
+    <!-- Legacy Compatibility (Prevents older screens from crashing) -->
+    <color name="accent">#06B6D4</color>
+    <color name="background">#F4F7FA</color>
+    <color name="main_blue">#1E3A8A</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
 </resources>

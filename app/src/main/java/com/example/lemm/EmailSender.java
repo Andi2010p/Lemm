@@ -12,24 +12,47 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class EmailSender {
-    // ⚠️ REPLACE THESE WITH YOUR ACTUAL DETAILS ⚠️
     private static final String SMTP_HOST = "smtp.gmail.com";
-    private static final String SMTP_PORT = "587";
+    private static final String SMTP_PORT = "465";
 
-    // Put the email address you want the app to send FROM
-    private static final String APP_EMAIL = "LemmaOfficial13@gmail.com";
+    private static final String APP_EMAIL = "lemmaofficial13@gmail.com";
+    private static final String APP_PASSWORD = "ukgf sigx fkcr glsm\n";
 
-    // Put the 16-character Google APP PASSWORD here (NOT your normal password)
-    private static final String APP_PASSWORD = "lppt xisf mobj pfhv";
+    // THE BEAUTIFUL HTML TEMPLATE
+    public static void sendOfficialEmail(String toEmail, String subject, String headline, String bodyText) {
+        String htmlBody = "<div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #E0E0E0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);\">" +
+                "<div style=\"background-color: #0C3D6A; padding: 25px; text-align: center;\">" +
+                "<h1 style=\"color: #FFFFFF; margin: 0; font-size: 28px; letter-spacing: 1px;\">Lemma</h1>" + // BRANDING FIXED
+                "<p style=\"color: #90CAF9; margin: 5px 0 0 0; font-size: 14px;\">Smart Geometry Solver</p>" +
+                "</div>" +
+                "<div style=\"padding: 30px; background-color: #FFFFFF; color: #333333; line-height: 1.6; font-size: 16px;\">" +
+                "<h2 style=\"color: #0C3D6A; margin-top: 0;\">" + headline + "</h2>" +
+                "<p>" + bodyText.replace("\n", "<br>") + "</p>" +
+                "<br>" +
+                "<hr style=\"border: none; border-top: 1px solid #EEEEEE; margin: 20px 0;\">" +
+                "<p style=\"font-size: 13px; color: #888888; margin: 0;\">This is an automated security message from Lemma. Please do not reply to this email.</p>" +
+                "</div>" +
+                "</div>";
 
-    public static void sendEmail(String toEmail, String subject, String body) {
+        executeEmail(toEmail, subject, htmlBody);
+    }
+
+    // FIX: Make the old method public again, but automatically upgrade it to HTML!
+    // Now you don't have to change the Google Login code at all!
+    public static void sendEmail(String toEmail, String subject, String bodyText) {
+        sendOfficialEmail(toEmail, subject, subject, bodyText);
+    }
+
+    // The actual background sender
+    private static void executeEmail(String toEmail, String subject, String htmlBody) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
                 Properties props = new Properties();
-                props.put("mail.smtp.auth", "true");
-                props.put("mail.smtp.starttls.enable", "true");
                 props.put("mail.smtp.host", SMTP_HOST);
+                props.put("mail.smtp.socketFactory.port", SMTP_PORT);
+                props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+                props.put("mail.smtp.auth", "true");
                 props.put("mail.smtp.port", SMTP_PORT);
 
                 Session session = Session.getInstance(props, new javax.mail.Authenticator() {
@@ -39,16 +62,17 @@ public class EmailSender {
                 });
 
                 Message message = new MimeMessage(session);
-                message.setFrom(new InternetAddress(APP_EMAIL));
+                message.setFrom(new InternetAddress(APP_EMAIL, "Lemma Support"));
                 message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
                 message.setSubject(subject);
-                message.setText(body);
+
+                message.setContent(htmlBody, "text/html; charset=utf-8");
 
                 Transport.send(message);
-                Log.d("EmailSender", "✅ Email sent successfully to " + toEmail);
+                Log.d("EmailSender", "✅ SUCCESS! HTML Email sent to " + toEmail);
+
             } catch (Exception e) {
-                Log.e("EmailSender", "❌ Failed to send email to " + toEmail, e);
-                e.printStackTrace();
+                Log.e("EmailSender", "❌ CRITICAL ERROR IN EMAILSENDER: ", e);
             }
         });
     }

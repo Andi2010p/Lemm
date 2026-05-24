@@ -37,7 +37,6 @@
                 android:textStyle="bold"
                 android:textColor="#0C3D6A" />
         </RelativeLayout>
-
         <!-- User Information Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -53,12 +52,27 @@
                 android:padding="24dp"
                 android:gravity="center">
 
-                <ImageView
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:src="@android:drawable/ic_menu_myplaces"
-                    app:tint="#0C3D6A"
-                    android:layout_marginBottom="16dp"/>
+                <!-- Clickable Circular Profile Avatar -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardProfileAvatar"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    app:cardCornerRadius="50dp"
+                    app:cardElevation="4dp"
+                    app:strokeWidth="2dp"
+                    app:strokeColor="#0C3D6A"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:id="@+id/imgProfileAvatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@android:drawable/ic_menu_camera"
+                        app:tint="#0C3D6A" />
+                </com.google.android.material.card.MaterialCardView>
 
                 <TextView
                     android:id="@+id/tvProfileUsername"
@@ -69,17 +83,41 @@
                     android:textStyle="bold"
                     android:textColor="#0C3D6A" />
 
+                <!-- NEW: Email Address -->
                 <TextView
-                    android:id="@+id/tvProfileStatus"
+                    android:id="@+id/tvProfileEmail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/online"
-                    android:textColor="#4CAF50"
-                    android:textSize="14sp"
+                    android:text="user@example.com"
+                    android:textColor="#757575"
+                    android:textSize="15sp"
                     android:layout_marginTop="4dp"/>
+
+                <!-- NEW: Account Tier Badge -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:cardCornerRadius="50dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#DDDDDD">
+
+                    <TextView
+                        android:id="@+id/tvProfileTier"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="6dp"
+                        android:text="Free Plan"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="#4CAF50"
+                        android:background="#E8F5E9"/>
+                </com.google.android.material.card.MaterialCardView>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
         <!-- Stats Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -214,6 +252,19 @@
             app:icon="@android:drawable/ic_lock_power_off"
             app:iconGravity="textStart"
             android:layout_marginBottom="16dp"/>
-
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeleteAccount"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Delete Account &amp; All Data"
+            android:textColor="#C62828"
+            app:backgroundTint="#FFEBEE"
+            app:strokeColor="#C62828"
+            app:strokeWidth="1dp"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_delete"
+            app:iconGravity="textStart"
+            app:iconTint="#C62828"
+            android:layout_marginBottom="16dp"/>
     </LinearLayout>
 </ScrollView>

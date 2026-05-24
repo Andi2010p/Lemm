@@ -20,11 +20,9 @@ import com.android.billingclient.api.QueryProductDetailsParams;
 import com.android.billingclient.api.QueryPurchasesParams;
 
 import java.util.Collections;
-import java.util.List;
 
 public class BillingManager {
     private static final String TAG = "BillingManager";
-    // IMPORTANT: This ID must exactly match the In-App Product ID you create in Google Play Console!
     public static final String PRODUCT_PRO_UNLOCK = "lemma_pro_unlock";
 
     private BillingClient billingClient;
@@ -36,6 +34,7 @@ public class BillingManager {
         void onBillingReady();
         void onPriceFetched(String price);
         void onPurchaseSuccess();
+        void onBillingError(); // ADDED: To handle missing console setup
     }
 
     public BillingManager(Activity activity, BillingListener listener) {
@@ -69,13 +68,15 @@ public class BillingManager {
                     checkPreviousPurchases();
                     fetchProductDetails();
                     if (listener != null) listener.onBillingReady();
+                } else {
+                    if (listener != null) listener.onBillingError();
                 }
             }
 
             @Override
             public void onBillingServiceDisconnected() {
                 Log.d(TAG, "Billing Disconnected");
-                // You could implement retry logic here
+                if (listener != null) listener.onBillingError();
             }
         });
     }
@@ -96,13 +97,16 @@ public class BillingManager {
                 if (listener != null) {
                     activity.runOnUiThread(() -> listener.onPriceFetched(price));
                 }
+            } else {
+                // ADDED: If product isn't found (because console isn't set up yet)
+                if (listener != null) activity.runOnUiThread(() -> listener.onBillingError());
             }
         });
     }
 
     public void initiatePurchase() {
         if (proProductDetails == null) {
-            Toast.makeText(activity, "Product details not loaded yet. Please wait.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, "Product not available yet.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -128,7 +132,6 @@ public class BillingManager {
                                 if (!purchase.isAcknowledged()) handlePurchase(purchase);
                             }
                         }
-                        // Update local save
                         saveProStatus(isPro);
                     }
                 }
@@ -159,6 +162,13 @@ public class BillingManager {
 
     private void saveProStatus(boolean isPro) {
         SharedPreferences userPrefs = activity.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+
+        // If they unlocked Pro via the 5-tap cheat code, do NOT let Google Play lock them out!
+        if (userPrefs.getBoolean("pro_bypass", false)) {
+            Log.d(TAG, "Pro Bypass Active. Keeping Pro unlocked.");
+            return;
+        }
+
         userPrefs.edit().putBoolean("is_pro_user", isPro).apply();
     }
 }

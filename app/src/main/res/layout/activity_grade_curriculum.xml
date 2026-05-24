@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F7F9">
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:elevation="2dp"
+        android:padding="12dp">
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="#0C3D6A" />
+        <TextView
+            android:id="@+id/tvGradeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Theorem Name"
+            android:textColor="#0C3D6A"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <!-- Interactive Canvas Area -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:layout_margin="12dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:strokeColor="#90A4AE"
+        app:strokeWidth="2dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.example.lemm.CadGeometryCanvas
+                android:id="@+id/curriculumCanvas"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF" />
+
+            <com.example.lemm.GeometryCanvas3D
+                android:id="@+id/curriculumCanvas3D"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF"
+                android:visibility="gone" />
+
+            <!-- Rotation Controls (For 3D Only) -->
+            <LinearLayout
+                android:id="@+id/rotationControls"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="48dp"
+                android:background="@drawable/floating_controls_bg"
+                android:orientation="vertical"
+                android:padding="2dp"
+                android:visibility="gone">
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotXMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-X" android:textSize="10sp" />
+                    <Button android:id="@+id/btnRotXPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+X" android:textSize="10sp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotYMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-Y" android:textSize="10sp" />
+                    <Button android:id="@+id/btnRotYPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+Y" android:textSize="10sp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@+id/btnRotZMinus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="-Z" android:textSize="10sp" />
+                    <Button android:id="@+id/btnRotZPlus" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="+Z" android:textSize="10sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/floating_controls_bg"
+                android:orientation="horizontal"
+                android:padding="4dp">
+                <ImageButton android:id="@+id/btnResetView" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_popup_sync" app:tint="#0C3D6A" />
+                <ImageButton android:id="@+id/btnToggleTool" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_move" app:tint="#0C3D6A" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="8dp"
+                android:background="@drawable/floating_controls_bg"
+                android:orientation="horizontal"
+                android:paddingHorizontal="4dp"
+                android:gravity="center_vertical">
+                <Button android:id="@+id/btnZoomOut" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="40dp" android:layout_height="40dp" android:insetTop="0dp" android:insetBottom="0dp" android:text="-" android:textColor="#0C3D6A" android:textSize="20sp" />
+                <TextView android:id="@+id/tvZoomPercent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8dp" android:text="100%" android:textColor="#0C3D6A" android:textSize="12sp" android:textStyle="bold" />
+                <Button android:id="@+id/btnZoomIn" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="40dp" android:layout_height="40dp" android:insetTop="0dp" android:insetBottom="0dp" android:text="+" android:textColor="#0C3D6A" android:textSize="20sp" />
+            </LinearLayout>
+
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Scrollable Content Area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="12dp"
+        android:clipToPadding="false"
+        android:paddingBottom="40dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Theorem Explanation -->
+            <TextView
+                android:id="@+id/tvTheoremExplanation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Loading proof..."
+                android:textSize="16sp"
+                android:textColor="@color/text_main"
+                android:lineSpacingExtra="6dp"
+                android:layout_marginBottom="24dp"/>
+
+            <!-- INTERACTIVE QUIZ SECTION -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/quizCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/surface_white"
+                app:strokeColor="@color/primary_light"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="24dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/knowledge_check"
+                        android:textColor="@color/primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05"
+                        android:layout_marginBottom="8dp"/>
+
+                    <TextView
+                        android:id="@+id/tvQuizQuestion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Question goes here?"
+                        android:textColor="@color/text_title"
+                        android:textSize="16sp"
+                        android:layout_marginBottom="16dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="12dp"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusBottomEnd="12dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etQuizAnswer"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/type_answer"
+                                android:inputType="numberDecimal|numberSigned"
+                                android:maxLines="1"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCheckAnswer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="55dp"
+                            android:text="@string/check_answer"
+                            app:cornerRadius="12dp"
+                            app:backgroundTint="@color/primary"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvQuizFeedback"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:visibility="gone"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

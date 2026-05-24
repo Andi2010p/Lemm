@@ -1,60 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="30dp"
-    android:background="#FFFFFF">
+    android:background="@drawable/bg_gradient_light">
 
-    <ImageView
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:src="@drawable/app_logo_noback"
-        android:layout_marginBottom="40dp"/>
-
-    <TextView
+    <!-- TOP SECTION: Branding & Logo -->
+    <LinearLayout
+        android:id="@+id/brandingSection"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/welcome_to_lemma"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#0C3D6A"
-        android:layout_marginBottom="50dp"/>
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomSection"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.45">
 
-    <Button
-        android:id="@+id/btnGoToLogin"
+        <!-- Logo wrapped in a beautiful floating card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            app:cardCornerRadius="40dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeWidth="0dp"
+            android:layout_marginBottom="24dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="12dp"
+                android:src="@drawable/app_logo_noback" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- App Name -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lemma"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#0C3D6A"
+            android:letterSpacing="0.05" />
+
+        <!-- App Subtitle -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Your AI Geometry Tutor"
+            android:textSize="16sp"
+            android:textColor="#78909C"
+            android:letterSpacing="0.02" />
+
+    </LinearLayout>
+
+    <!-- BOTTOM SECTION: Action Buttons -->
+    <LinearLayout
+        android:id="@+id/bottomSection"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="@string/login"
-        android:backgroundTint="#0C3D6A"
-        android:layout_marginBottom="15dp"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="32dp"
+        android:paddingBottom="48dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <Button
-        android:id="@+id/btnGoToRegister"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="@string/create_account"
-        android:textColor="#0C3D6A"
-        android:layout_marginBottom="15dp"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGoToLogin"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="@string/login"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#0C3D6A"
+            app:cornerRadius="16dp"
+            android:layout_marginBottom="16dp"
+            app:elevation="4dp" />
 
-    <Button
-        android:id="@+id/btnQuickStart"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="@string/try_guest_mode"
-        android:textColor="#757575"
-        android:layout_marginBottom="5dp"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGoToRegister"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="@string/create_account"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#0C3D6A"
+            app:strokeColor="#0C3D6A"
+            app:strokeWidth="2dp"
+            app:cornerRadius="16dp" />
 
-    <Button
-        android:id="@+id/btnAdminMode"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="@string/try_admin_mode"
-        android:textColor="#B71C1C"/>
+    </LinearLayout>
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

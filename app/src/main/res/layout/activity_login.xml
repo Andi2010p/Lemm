@@ -39,16 +39,26 @@
             android:inputType="textEmailAddress"
             android:layout_marginBottom="12dp"/>
 
-        <EditText
-            android:id="@+id/etPassword"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="50dp"
+            android:layout_marginBottom="8dp"
             android:background="@drawable/floating_controls_bg"
-            android:paddingHorizontal="16dp"
-            android:hint="@string/password"
-            android:inputType="textPassword"
-            android:layout_marginBottom="8dp"/>
+            app:boxBackgroundMode="none"
+            app:hintEnabled="false"
+            app:passwordToggleEnabled="true"
+            app:passwordToggleTint="#555555">
 
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/floating_controls_bg"
+                android:paddingHorizontal="16dp"
+                android:hint="@string/password"
+                android:inputType="textPassword" />
+
+        </com.google.android.material.textfield.TextInputLayout>
         <TextView
             android:id="@+id/tvForgotPassword"
             android:layout_width="wrap_content"

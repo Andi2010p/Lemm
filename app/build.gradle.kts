@@ -1,10 +1,14 @@
 // D:/codes/Homeworks.Uwc/Lemm/app/build.gradle.kts
+
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.android.application)
+    // Remove the 'id("com.android.application")' line
+    // Keep the Kotlin Android plugin
+    alias(libs.plugins.android.application) // <-- Keep this one, it uses the version catalog
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.google.services)
+    alias(libs.plugins.google.services) // <--- THIS MUST BE HERE
+    // Add the Google services Gradle plugin
 }
 
 val localProperties = Properties()
@@ -41,7 +45,14 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-
+    packaging {
+        resources {
+            excludes += "META-INF/NOTICE.md"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/NOTICE.txt"
+        }
+    }
     packaging {
         resources {
             excludes += "META-INF/INDEX.LIST"
@@ -62,29 +73,28 @@ dependencies {
 
     // SceneView (3D Engine)
     implementation("io.github.sceneview:sceneview:2.2.1")
+    // If you intend to use AR, ensure this matches the main sceneview version or is updated
     implementation("io.github.sceneview:arsceneview:0.10.0")
 
     // 🔥 FIX FOR 16 KB ERROR: Force the project to use the latest ARCore
     implementation("com.google.ar:core:1.45.0")
-
+    implementation(platform(libs.firebase.bom))
     // Geometry/CAD Engine
     implementation("org.locationtech.jts:jts-core:1.19.0")
 
-    // Firebase (Using BOM for version management)
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    // Firebase products - versions are now managed by the firebase-bom
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore-ktx")
-
+    // Removed the duplicate 'com.google.firebase:firebase-database:20.3.0'
+    // as its version is now handled by the BOM.
+    implementation("com.facebook.android:facebook-login:16.0.0")
     // Google Sign-In Library
     implementation("com.google.android.gms:play-services-auth:21.1.1")
-
     // Google Generative AI
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
-
     // ML Kit & Text Recognition
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
-    implementation("com.google.firebase:firebase-database:20.3.0")
     // Mail Sending (OTP)
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")

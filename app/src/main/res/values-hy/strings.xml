@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Lemma</string>
 
-    <!-- General -->
     <string name="welcome_to_lemma">Բարի գալուստ Lemma</string>
     <string name="welcome_back">Բարի վերադարձ</string>
     <string name="welcome">Բարի գալուստ, %1$s!</string>
@@ -11,38 +10,303 @@
     <string name="delete">Ջնջել</string>
     <string name="update">Թարմացնել</string>
     <string name="logout">Դուրս գալ</string>
+    <string name="log_out">Դուրս գալ</string>
+    <string name="logout_confirm">Դուրս գա՞լ համակարգից</string>
     <string name="settings">Կարգավորումներ</string>
     <string name="history">Պատմություն</string>
+    <string name="solutions">Լուծումներ</string>
+    <string name="drawings">Գծագրեր</string>
+    <string name="open_edit">Բացել / Խմբագրել</string>
 
-    <!-- Auth -->
     <string name="login">Մուտք</string>
     <string name="login_to_lemma">Մուտք Lemma</string>
     <string name="sign_up">Գրանցվել</string>
     <string name="create_account">Ստեղծել հաշիվ</string>
+    <string name="already_have_account">Արդեն ունե՞ք հաշիվ: Մուտք</string>
     <string name="email_username">Էլ. փոստ կամ օգտանուն</string>
+    <string name="email">Էլ. փոստ</string>
+    <string name="username">Օգտանուն</string>
     <string name="password">Գաղտնաբառ</string>
+    <string name="password_hint">Գաղտնաբառ (նվազագույնը 8 նիշ)</string>
+    <string name="repeat_password">Կրկնել գաղտնաբառը</string>
+    <string name="forgot_password">Մոռացե՞լ եք գաղտնաբառը:</string>
+    <string name="reset_password">Վերականգնել գաղտնաբառը</string>
+    <string name="change_password">Փոխել գաղտնաբառը</string>
     <string name="send_otp">Ուղարկել կոդը</string>
     <string name="enter_otp">Մուտքագրեք կոդը</string>
     <string name="otp_hint">6-նիշ կոդ</string>
     <string name="verify">Հաստատել</string>
     <string name="new_password">Նոր գաղտնաբառ</string>
-    <string name="registration_successful">Գրանցումը հաջողվեց</string>
+    <string name="current_password">Ընթացիկ գաղտնաբառ</string>
 
-    <!-- Features -->
+    <string name="enter_all_fields">Լրացրեք բոլոր դաշտերը</string>
+    <string name="invalid_credentials">Սխալ տվյալներ</string>
+    <string name="registration_successful">Գրանցումը հաջողվեց</string>
+    <string name="user_exists">Օգտատերն արդեն գոյություն ունի</string>
+    <string name="restricted_prefix">Արգելված օգտանուն</string>
+    <string name="password_short">Նվազագույնը 8 նիշ</string>
+    <string name="passwords_mismatch">Գաղտնաբառերը չեն համընկնում</string>
+    <string name="google_sign_in_failed">Google մուտքի սխալ</string>
+
+    <string name="user_profile">Անձնական Էջ</string>
+    <string name="online">Առցանց</string>
+    <string name="your_activity">Ձեր ակտիվությունը</string>
+    <string name="security">Անվտանգություն</string>
+
     <string name="new_problem">Նոր խնդիր</string>
     <string name="scan_ocr">Սկանավորել</string>
     <string name="draw_geometry">Գծել</string>
     <string name="geometry_solver">Խնդրի լուծում</string>
     <string name="describe_problem">Նկարագրեք խնդիրը...</string>
+    <string name="custom_ai_inst">ԱԲ հրահանգներ</string>
     <string name="analyze_visualize">Վերլուծել</string>
+    <string name="save_solution">Պահպանել լուծումը</string>
+    <string name="save_drawing">Պահպանել գծագիրը</string>
 
-    <!-- AI & Payments -->
     <string name="api_key_title">ԱԲ կարգավորում</string>
+    <string name="api_key_hint">Gemini API բանալի</string>
     <string name="api_key_save">Պահպանել</string>
+    <string name="api_key_info">Տեղադրեք բանալին կամ գնեք Pro:</string>
     <string name="upgrade_pro">Անցնել Pro տարբերակին</string>
     <string name="access_denied">Հասանելիությունը մերժված է</string>
+    <string name="access_denied_msg">Տեղադրեք բանալին կամ գնեք Pro տարբերակը:</string>
     <string name="error_not_geometry">Սա երկրաչափական խնդիր չէ:</string>
+
+    <string name="scan_dialog_title">Սկանավորում</string>
+    <string name="scan_dialog_message">Վերլուծություն...</string>
+    <string name="scan_error_no_text">Խնդիր չի գտնվել:</string>
+    <string name="scan_error_failed">Կապի խափանում:</string>
+    <string name="scan_error_loading_photo">Նկարի բեռնման սխալ:</string>
+    <string name="title_set_angle">Սահմանել անկյուն</string>
+    <string name="title_smart_dim">Չափսեր</string>
+    <string name="title_rename_vertex">Անվանափոխել գագաթը</string>
+    <string name="hint_angle">Անկյունը աստիճանով</string>
+    <string name="hint_exact_length">Երկարություն</string>
+    <string name="hint_exact_radius">Շառավիղ</string>
+    <string name="hint_width">Լայնություն</string>
+    <string name="hint_height">Բարձրություն</string>
+    <string name="prop_length">Երկարություն: %.1f</string>
+    <string name="prop_area">Մակերես: %.1f</string>
+    <string name="tool_ortho_on">Օրթո միացված է</string>
+    <string name="tool_ortho_off">Օրթո անջատված է</string>
     <string name="sketch_tools">Գործիքներ</string>
+    <string name="drawing_date">Ամսաթիվ: %1$s</string>
+    <string name="error_invalid_angle">Սխալ անկյուն</string>
+    <string name="error_dim_positive">Չափը պետք է լինի > 0</string>
+    <string name="msg_confirm_exit">Պահպանե՞լ գծագիրը դուրս գալուց առաջ:</string>
+    <string name="delete_item_title">Ջնջել</string>
+    <string name="delete_item_msg">Համոզվա՞ծ եք:</string>
+    <string name="deleted_toast">Ջնջվեց</string>
+    <string name="change_language">Փոխել լեզուն</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_hy">Հայերեն</string>
+    <string name="information">Տեղեկություն</string>
+    <string name="about_us">Մեր մասին</string>
+    <string name="try_guest_mode">Հյուրի ռեժիմ</string>
+    <string name="try_admin_mode">Ադմինի ռեժիմ</string>
     <string name="step_prefix">ՔԱՅԼ </string>
     <string name="final_answer">ՎԵՐՋՆԱԿԱՆ ՊԱՏԱՍԽԱՆ:</string>
+
+    <string name="default_web_client_id">481743722691-874nj07keqhs20s6bolgram4bp4ghfdr.apps.googleusercontent.com</string>
+    <string name="facebook_app_id">1234567890</string>
+    <string name="fb_login_protocol_scheme">fb1234567890</string>
+    <string name="facebook_client_token">YOUR_CLIENT_TOKEN_HERE</string>
+
+    <string name="theorems_title">Թեորեմներ և Բանաձևեր</string>
+    <string name="grade_title">%1$d-րդ դասարան</string>
+    <string name="th_header_theorem">ԹԵՈՐԵՄ:</string>
+    <string name="th_header_proof">ԱՊԱՑՈՒՅՑ:</string>
+    <string name="th_header_example">ՕՐԻՆԱԿ:</string>
+    <string name="th_header_questions">ՀԱՐՑԵՐ:</string>
+
+    <string name="knowledge_check">ԳԻՏԵԼԻՔՆԵՐԻ ՍՏՈՒԳՈՒՄ</string>
+    <string name="type_answer">Ձեր պատասխանը (թիվ)</string>
+    <string name="check_answer">Ստուգել</string>
+    <string name="correct_answer">✅ Ճիշտ է: Գերազանց է:</string>
+    <string name="incorrect_answer">❌ Սխալ է: Փորձեք կրկին:</string>
+
+    <string name="th_triangles">Եռանկյուններ</string>
+    <string name="th_triangles_desc">• Անկյունների գումարը 180° է:\n• Պյութագորասի թեորեմ՝ a² + b² = c²:\n• Մակերես՝ ½ × հիմք × բարձրություն:\n• Սինուսների թեորեմ՝ a/sinA = b/sinB = c/sinC:\n• Կոսինուսների թեորեմ՝ c² = a² + b² - 2ab·cosC:</string>
+    <string name="th_quadrilaterals">Քառանկյուններ</string>
+    <string name="th_quadrilaterals_desc">• Անկյունների գումարը 360° է:\n• Ուղղանկյան մակերես՝ a × b:\n• Զուգահեռագծի մակերես՝ a × h:\n• Սեղանի մակերես՝ ½ × (a + b) × h:\n• Շեղանկյան մակերես՝ ½ × (d1 × d2):</string>
+    <string name="th_circles">Շրջանագիծ և Շրջան</string>
+    <string name="th_circles_desc">• Շրջանագծի երկարություն՝ C = 2πr:\n• Մակերես՝ S = πr²:\n• Աղեղի երկարություն՝ (անկյուն/360) × 2πr:\n• Սեկտորի մակերես՝ (անկյուն/360) × πr²:\n• Շոշափողն ուղղահայաց է շառավղին:</string>
+    <string name="th_3d_shapes">3D Պատկերներ</string>
+    <string name="th_3d_shapes_desc">• Պրիզմայի ծավալ՝ S_հիմք × h:\n• Գլանի ծավալ՝ πr²h:\n• Բուրգի/Կոնի ծավալ՝ ⅓ × S_հիմք × h:\n• Գնդի ծավալ՝ ⁴/₃πr³:\n• Սֆերայի մակերես՝ 4πr²:</string>
+    <string name="loading_advanced">Բեռնվում են բարդ թեմաները...</string>
+
+    <!-- GRADE 7 -->
+    <string name="th_title_7_1">1. Հակադիր անկյուններ</string>
+    <string name="th_def_7_1">Եթե երկու ուղիղներ հատվում են, ապա հակադիր անկյունները հավասար են:</string>
+    <string name="th_proof_7_1">Կից անկյունների գումարը 180° է: Ուստի α + β = 180° և β + γ = 180°: Հանելով β-ն՝ ստանում ենք α = γ: ∎</string>
+    <string name="th_ex_7_1">Շինարարական X-աձև կառույցներում վերևի և ներքևի անկյունները միշտ նույնն են:</string>
+    <string name="th_q_7_1">Եթե անկյունը 45° է, որքա՞ն է հակադիր անկյունը:</string>
+    <string name="th_a_7_1">45</string>
+
+    <string name="th_title_7_2">2. Հավասարասրուն եռանկյուն</string>
+    <string name="th_def_7_2">Հավասարասրուն եռանկյան հիմքին առընթեր անկյունները հավասար են:</string>
+    <string name="th_proof_7_2">Կիսորդը կիսում է եռանկյունը երկու հավասար մասի: ∎</string>
+    <string name="th_ex_7_2">Նույնական տանիքներ կառուցելիս չափում են միայն 2 կողմ:</string>
+    <string name="th_q_7_2">Եթե գագաթի անկյունը 40° է, որքա՞ն է հիմքի ՄԵԿ անկյունը:</string>
+    <string name="th_a_7_2">70</string>
+
+    <string name="th_title_7_3">3. Եռանկյան անկյունների գումարը</string>
+    <string name="th_def_7_3">Ցանկացած եռանկյան ներքին անկյունների գումարը միշտ 180° է:</string>
+    <string name="th_proof_7_3">Գագաթով տանենք հիմքին զուգահեռ ուղիղ: Երեք անկյունները կազմում են 180°: ∎</string>
+    <string name="th_ex_7_3">Նավարկության մեջ անհայտ երրորդ անկյունը գտնելու համար՝ 180° - (α + β):</string>
+    <string name="th_q_7_3">Եթե երկու անկյունները 50° և 60° են, որքա՞ն է երրորդը:</string>
+    <string name="th_a_7_3">70</string>
+
+    <string name="th_title_7_4">4. Եռանկյան անհավասարություն</string>
+    <string name="th_def_7_4">Եռանկյան ցանկացած կողմ փոքր է մյուս երկու կողմերի գումարից (a &lt; b + c):</string>
+    <string name="th_proof_7_4">Երկու կետերի միջև ամենակարճ հեռավորությունը ուղիղ գիծն է: ∎</string>
+    <string name="th_ex_7_4">Հնարավոր չէ եռանկյուն կառուցել 2սմ, 3սմ և 10սմ երկարությամբ:</string>
+    <string name="th_q_7_4">Եթե կողմերը 5 և 7 են, ո՞րն է երրորդ կողմի ԱՌԱՎԵԼԱԳՈՒՅՆ ամբողջ արժեքը:</string>
+    <string name="th_a_7_4">11</string>
+
+    <!-- GRADE 8 -->
+    <string name="th_title_8_1">1. Զուգահեռագծի հատկություններ</string>
+    <string name="th_def_8_1">Զուգահեռագծի հանդիպակաց կողմերը և անկյունները հավասար են:</string>
+    <string name="th_proof_8_1">Անկյունագիծը բաժանում է զուգահեռագիծը երկու հավասար եռանկյունների: ∎</string>
+    <string name="th_ex_8_1">Մեխանիկական միացություններ:</string>
+    <string name="th_q_8_1">Եթե մեկ անկյունը 60° է, որքա՞ն է հարևան անկյունը:</string>
+    <string name="th_a_8_1">120</string>
+
+    <string name="th_title_8_2">2. Եռանկյան Մակերես</string>
+    <string name="th_def_8_2">S = ½ × հիմք × բարձրություն:</string>
+    <string name="th_proof_8_2">Եռանկյունը կազմում է նույն հիմքով և բարձրությամբ զուգահեռագծի ճիշտ կեսը: ∎</string>
+    <string name="th_ex_8_2">Առագաստի համար անհրաժեշտ կտորի հաշվարկ:</string>
+    <string name="th_q_8_2">Եթե հիմքը 10 է, իսկ բարձրությունը՝ 4, որքա՞ն է մակերեսը:</string>
+    <string name="th_a_8_2">20</string>
+
+    <string name="th_title_8_3">3. Պյութագորասի թեորեմ</string>
+    <string name="th_def_8_3">Ուղղանկյուն եռանկյան մեջ c² = a² + b²:</string>
+    <string name="th_proof_8_3">Ներքնաձիգի վրա կառուցված քառակուսու մակերեսը հավասար է էջերի քառակուսիների գումարին: ∎</string>
+    <string name="th_ex_8_3">Էկրանի անկյունագծի հաշվարկ:</string>
+    <string name="th_q_8_3">Եթե էջերը 3 և 4 են, որքա՞ն է ներքնաձիգը:</string>
+    <string name="th_a_8_3">5</string>
+
+    <string name="th_title_8_4">4. Եռանկյան միջին գիծ</string>
+    <string name="th_def_8_4">Միջին գիծը զուգահեռ է հիմքին և հավասար է դրա կեսին:</string>
+    <string name="th_proof_8_4">Զուգահեռագծի լրացման միջոցով: ∎</string>
+    <string name="th_ex_8_4">Գետի վրայով անհասանելի հեռավորությունների չափում:</string>
+    <string name="th_q_8_4">Եթե հիմքը 24 է, որքա՞ն է միջին գիծը:</string>
+    <string name="th_a_8_4">12</string>
+
+    <string name="th_title_8_5">5. Ուղղանկյուն եռանկյան բարձրություն</string>
+    <string name="th_def_8_5">Ներքնաձիգին տարված բարձրությունը բաժանում է այն հատվածների այնպես, որ h² = a_c × b_c:</string>
+    <string name="th_proof_8_5">Բարձրությունը ստեղծում է նման եռանկյուններ: ∎</string>
+    <string name="th_ex_8_5">Եթե հատվածները 4 և 9 են, բարձրությունը √(4×9) = 6 է:</string>
+    <string name="th_q_8_5">Եթե հատվածները 2 և 8 են, որքա՞ն է բարձրությունը (h):</string>
+    <string name="th_a_8_5">4</string>
+
+    <string name="th_title_8_6">6. Միջնագիծը ներքնաձիգին</string>
+    <string name="th_def_8_6">Ներքնաձիգին տարված միջնագիծը հավասար է դրա կեսին (m = c/2):</string>
+    <string name="th_proof_8_6">Միջնագիծը հանդիսանում է արտագծած շրջանագծի շառավիղ (R): ∎</string>
+    <string name="th_ex_8_6">Եթե ներքնաձիգը 10 է, միջնագիծը 5 է:</string>
+    <string name="th_q_8_6">Եթե ներքնաձիգը 18 է, որքա՞ն է միջնագծի երկարությունը:</string>
+    <string name="th_a_8_6">9</string>
+
+    <string name="th_title_8_7">7. Միջնագծերի հատման կետ</string>
+    <string name="th_def_8_7">Միջնագծերը հատվում են մի կետում և բաժանվում 2:1 հարաբերությամբ:</string>
+    <string name="th_proof_8_7">Նման եռանկյունների կիրառմամբ, որոնք կազմված են միջին գծերով: ∎</string>
+    <string name="th_ex_8_7">Զանգվածների կենտրոնի (ցենտրոիդի) որոշում:</string>
+    <string name="th_q_8_7">Եթե միջնագծի կարճ մասը 4 է, որքա՞ն է ամբողջ միջնագիծը:</string>
+    <string name="th_a_8_7">12</string>
+
+    <!-- GRADE 9 -->
+    <string name="th_title_9_1">1. Կոսինուսների թեորեմ</string>
+    <string name="th_def_9_1">c² = a² + b² - 2ab·cos(γ):</string>
+    <string name="th_proof_9_1">Բարձրություն իջեցնելով և կիրառելով Պյութագորասի թեորեմը երկու մասերի վրա: ∎</string>
+    <string name="th_ex_9_1">Շեղված ինքնաթիռների միջև հեռավորության հաշվարկ:</string>
+    <string name="th_q_9_1">Եթե a=3, b=4 և անկյունը 90° է, որքա՞ն է c-ն:</string>
+    <string name="th_a_9_1">5</string>
+
+    <string name="th_title_9_2">2. Սինուսների թեորեմ</string>
+    <string name="th_def_9_2">a/sin(A) = b/sin(B) = c/sin(C) = 2R:</string>
+    <string name="th_proof_9_2">Եռանկյան մակերեսի բանաձևի միջոցով: ∎</string>
+    <string name="th_ex_9_2">GPS տրիանգուլյացիա:</string>
+    <string name="th_q_9_2">Եթե a=10 և sinA=0.5, որքա՞ն է արտագծած շրջանագծի տրամագիծը (2R):</string>
+    <string name="th_a_9_2">20</string>
+
+    <string name="th_title_9_3">3. Ներգծյալ անկյուն</string>
+    <string name="th_def_9_3">Ներգծյալ անկյունը հավասար է նույն աղեղին հենված կենտրոնական անկյան կեսին:</string>
+    <string name="th_proof_9_3">Շառավիղներով կազմված հավասարասրուն եռանկյան արտաքին անկյան միջոցով: ∎</string>
+    <string name="th_ex_9_3">Թատրոնում տեսանելիության անկյուններ:</string>
+    <string name="th_q_9_3">Եթե կենտրոնական անկյունը 80° է, որքա՞ն է ներգծյալը:</string>
+    <string name="th_a_9_3">40</string>
+
+    <string name="th_title_9_4">4. Շոշափող և հատող</string>
+    <string name="th_def_9_4">Եթե արտաքին կետից տարված են շոշափող (AB) և հատող (AC), ապա AB² = BD × BC:</string>
+    <string name="th_proof_9_4">△ABD և △ABC եռանկյունների նմանության միջոցով: ∎</string>
+    <string name="th_ex_9_4">Հորիզոնի հեռավորության հաշվարկ:</string>
+    <string name="th_q_9_4">Եթե շոշափողը 6 է, իսկ հատողի արտաքին մասը՝ 4, որքա՞ն է ամբողջ հատողը:</string>
+    <string name="th_a_9_4">9</string>
+
+    <string name="th_title_9_5">5. Արտագծյալ քառանկյուն</string>
+    <string name="th_def_9_5">Քառանկյանը կարելի է ներգծել շրջանագիծ այն և միայն այն դեպքում, երբ հանդիպակաց կողմերի գումարները հավասար են (a+c=b+d):</string>
+    <string name="th_proof_9_5">Մի կետից տարված շոշափողների հատվածները հավասար են: ∎</string>
+    <string name="th_ex_9_5">Եթե կողմերը 10 և 15 են, մյուս երկուսի գումարը ևս պետք է լինի 25:</string>
+    <string name="th_q_9_5">Եթե կողմերը 5, 8, 7 և X են հերթականությամբ, որքա՞ն պետք է լինի X-ը:</string>
+    <string name="th_a_9_5">4</string>
+
+    <!-- GRADE 10 -->
+    <string name="th_title_10_1">1. Ուղղի և հարթության զուգահեռություն</string>
+    <string name="th_def_10_1">Եթե հարթությունից դուրս գտնվող ուղիղը զուգահեռ է այդ հարթության մեջ գտնվող որևէ ուղղի, ապա այն զուգահեռ է նաև հարթությանը:</string>
+    <string name="th_proof_10_1">Հակասող ենթադրության մեթոդով: Եթե հատվեին, հատման կետը կգտնվեր երկու ուղիղների վրա: ∎</string>
+    <string name="th_ex_10_1">Էլեկտրահաղորդման գծեր գետնի վրա:</string>
+    <string name="th_q_10_1">Քանի՞ ընդհանուր կետ ունեն զուգահեռ ուղիղն ու հարթությունը:</string>
+    <string name="th_a_10_1">0</string>
+
+    <string name="th_title_10_2">2. Զուգահեռ հարթություններ</string>
+    <string name="th_def_10_2">Եթե մի հարթության երկու հատվող ուղիղներ զուգահեռ են մյուս հարթության երկու հատվող ուղիղներին, ապա հարթությունները զուգահեռ են:</string>
+    <string name="th_proof_10_2">Հակասող ենթադրության մեթոդով: Եթե հատվեին, ուղիղը զուգահեռ կլիներ հատվող ուղիղներին, ինչն անհնար է: ∎</string>
+    <string name="th_ex_10_2">Շենքի հարկեր:</string>
+    <string name="th_q_10_2">Քանի՞ ընդհանուր կետ ունեն երկու զուգահեռ հարթություններ:</string>
+    <string name="th_a_10_2">0</string>
+
+    <!-- GRADE 11 -->
+    <string name="th_title_11_1">1. Երեք ուղղահայացների թեորեմ</string>
+    <string name="th_def_11_1">Հարթության մեջ թեքի պրոյեկցիային տարված ուղղահայացը ուղղահայաց է նաև բուն թեքին:</string>
+    <string name="th_proof_11_1">Ուղիղը ուղղահայաց է երկու հատվող ուղիղների (պրոյեկցիայի և բարձրության), հետևաբար՝ նաև թեքի հարթությանը: ∎</string>
+    <string name="th_ex_11_1">Տանիքի գերանների ուղիղ անկյան տակ տեղադրում:</string>
+    <string name="th_q_11_1">Եթե բարձրության և պրոյեկցիայի անկյունը 90° է, որքա՞ն է ուղղի և պրոյեկցիայի անկյունը:</string>
+    <string name="th_a_11_1">90</string>
+
+    <string name="th_title_11_2">2. Պրիզմայի ծավալ</string>
+    <string name="th_def_11_2">V = Հիմքի մակերես × Բարձրություն:</string>
+    <string name="th_proof_11_2">Կավալիերիի սկզբունքով՝ ծավալը ձևավորվում է հիմքերի միանման շերտերի գումարումից բարձրության երկայնքով: ∎</string>
+    <string name="th_ex_11_2">Լողավազանի տարողունակության հաշվարկ:</string>
+    <string name="th_q_11_2">Եթե հիմքի մակերեսը 20 է, իսկ բարձրությունը՝ 5, որքա՞ն է ծավալը:</string>
+    <string name="th_a_11_2">100</string>
+
+    <string name="th_title_11_3">3. Բուրգի ծավալ</string>
+    <string name="th_def_11_3">V = ⅓ × Հիմքի մակերես × Բարձրություն:</string>
+    <string name="th_proof_11_3">Եռանկյուն պրիզման կարելի է բաժանել ճիշտ երեք հավասարամեծ եռանկյուն բուրգերի: ∎</string>
+    <string name="th_ex_11_3">Եգիպտական բուրգի ծավալի հաշվարկ:</string>
+    <string name="th_q_11_3">Եթե հիմքի մակերեսը 30 է, բարձրությունը՝ 10, որքա՞ն է ծավալը:</string>
+    <string name="th_a_11_3">100</string>
+
+    <!-- GRADE 12 -->
+    <string name="th_title_12_1">1. Գլանի ծավալ</string>
+    <string name="th_def_12_1">V = πR²H:</string>
+    <string name="th_proof_12_1">Գլանը կլոր հիմքով պրիզմա է: Ըստ Կավալիերիի սկզբունքի V = Sh = (πR²)H: ∎</string>
+    <string name="th_ex_12_1">Ջրատար խողովակի տարողունակություն:</string>
+    <string name="th_q_12_1">Եթե R=2 և H=10, որքա՞ն է ծավալը բաժանած π-ի վրա:</string>
+    <string name="th_a_12_1">40</string>
+
+    <string name="th_title_12_2">2. Կոնի ծավալ</string>
+    <string name="th_def_12_2">V = ⅓ πR²H:</string>
+    <string name="th_proof_12_2">Կոնը կլոր հիմքով բուրգ է: Բանաձևը նույնն է՝ V = ⅓(πR²)H: ∎</string>
+    <string name="th_ex_12_2">Պաղպաղակի կոնի տարողունակություն:</string>
+    <string name="th_q_12_2">Եթե R=3 և H=10, որքա՞ն է ծավալը բաժանած π-ի վրա:</string>
+    <string name="th_a_12_2">30</string>
+
+    <string name="th_title_12_3">3. Գնդի մակերես և ծավալ</string>
+    <string name="th_def_12_3">Մակերես = 4πR²: Ծավալ = ⁴/₃πR³:</string>
+    <string name="th_proof_12_3">Արքիմեդեսի ապացույց. սֆերայի մակերեսը հավասար է արտագծած գլանի կողմնային մակերեսին: Ինտեգրումը տալիս է ծավալը: ∎</string>
+    <string name="th_ex_12_3">Ֆուտբոլի գնդակի համար անհրաժեշտ նյութի հաշվարկ:</string>
+    <string name="th_q_12_3">Եթե շառավիղը 3 է, որքա՞ն է մակերեսը բաժանած π-ի վրա:</string>
+    <string name="th_a_12_3">36</string>
 </resources>

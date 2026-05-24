@@ -13,7 +13,7 @@ generativeai = "0.9.0"
 googleServices = "4.4.2"
 playServicesMlkitText = "19.0.0"
 mlkitTextRecognition = "16.0.1"
-
+firebaseBom = "32.8.1"
 [libraries]
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
@@ -33,7 +33,12 @@ google-generativeai = { group = "com.google.ai.client.generativeai", name = "gen
 guava = { group = "com.google.guava", name = "guava", version = "31.1-android" }
 kotlin-math = { group = "dev.romainguy", name = "kotlin-math", version = "1.5.3" }
 
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+
+
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" } # This is correct for a plugin
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

@@ -1,29 +1,69 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.Lemm" parent="Theme.MaterialComponents.DayNight.NoActionBar">
 
-    <style name="Base.Theme.App1" parent="Theme.Material3.DayNight.NoActionBar">
-
+        <!-- Primary brand color (Deep Blue) -->
         <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="android:windowBackground">@color/background</item>
-        <item name="materialButtonStyle">@style/App.Button.Primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/surface_white</item>
+
+        <!-- Secondary brand color (Vibrant Cyan) -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryVariant">@color/secondary_light</item>
+        <item name="colorOnSecondary">@color/surface_white</item>
+
+        <!-- Backgrounds -->
+        <item name="android:windowBackground">@color/bg_main</item>
+
+        <!-- GLOBAL MAGIC OVERRIDES (Applies to EVERYTHING) -->
+        <item name="materialButtonStyle">@style/ModernButton</item>
+        <item name="textInputStyle">@style/ModernTextInputLayout</item>
+        <item name="materialAlertDialogTheme">@style/ModernAlertDialog</item>
+        <item name="materialCardViewStyle">@style/ModernCardView</item>
     </style>
 
-    <style name="Theme.App1" parent="Base.Theme.App1" />
-
-    <style name="App.Button.Primary" parent="Widget.Material3.Button">
-        <item name="android:layout_height">56dp</item>
+    <!-- 1. Make ALL Buttons pill-shaped and beautiful -->
+    <style name="ModernButton" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">16dp</item>
+        <item name="android:paddingVertical">12dp</item>
         <item name="android:textSize">16sp</item>
-        <item name="android:insetTop">0dp</item>
-        <item name="android:insetBottom">0dp</item>
-        <item name="cornerRadius">12dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="elevation">4dp</item>
     </style>
 
-    <style name="App.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
-        <item name="boxCornerRadiusTopStart">12dp</item>
-        <item name="boxCornerRadiusTopEnd">12dp</item>
-        <item name="boxCornerRadiusBottomStart">12dp</item>
-        <item name="boxCornerRadiusBottomEnd">12dp</item>
+    <!-- 2. Make ALL Text Inputs smooth and rounded -->
+    <style name="ModernTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">16dp</item>
+        <item name="boxCornerRadiusTopEnd">16dp</item>
+        <item name="boxCornerRadiusBottomStart">16dp</item>
+        <item name="boxCornerRadiusBottomEnd">16dp</item>
+        <item name="boxStrokeColor">@color/primary_light</item>
+        <item name="hintTextColor">@color/primary_light</item>
+        <item name="boxBackgroundColor">@color/surface_white</item>
+    </style>
+
+    <!-- 3. Make ALL Pop-up Dialogs beautiful and rounded -->
+    <style name="ModernAlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <!-- Background shape of the dialog -->
+        <item name="shapeAppearanceOverlay">@style/ModernDialogShape</item>
+        <item name="colorSurface">@color/surface_white</item>
+        <!-- Color of the Yes/No buttons inside the dialog -->
+        <item name="colorPrimary">@color/primary_light</item>
+    </style>
+
+    <!-- Defines the rounded corners for the Dialogs -->
+    <style name="ModernDialogShape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <!-- 4. Give ALL Cards a unified modern look -->
+    <style name="ModernCardView" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">4dp</item>
+        <item name="cardBackgroundColor">@color/surface_white</item>
+        <item name="strokeWidth">0dp</item>
     </style>
 
 </resources>

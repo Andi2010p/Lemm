@@ -5,22 +5,28 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 public class SettingsActivity extends AppCompatActivity {
-
+    private int proTapCount = 0;
     private String currentLang;
-    private BillingManager billingManager;
     private MaterialButton btnBuyPro;
     private TextView tvStatus;
+
+    private BillingManager billingManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,30 +56,49 @@ public class SettingsActivity extends AppCompatActivity {
 
         checkCurrentProStatus();
 
-        // Initialize Google Play Billing
         billingManager = new BillingManager(this, new BillingManager.BillingListener() {
-            @Override
-            public void onBillingReady() {
-                // Connection successful
-            }
-
-            @Override
-            public void onPriceFetched(String price) {
-                // Updates the button to show exactly how much it costs
+            @Override public void onBillingReady() {}
+            @Override public void onPriceFetched(String price) {
                 btnBuyPro.setText(getString(R.string.upgrade_pro) + " (" + price + ")");
             }
-
-            @Override
-            public void onPurchaseSuccess() {
-                // If payment succeeds, update UI
-                checkCurrentProStatus();
-            }
+            @Override public void onPurchaseSuccess() { checkCurrentProStatus(); }
+            @Override public void onBillingError() {}
         });
-
         billingManager.startConnection();
 
-        btnBuyPro.setOnClickListener(v -> {
-            billingManager.initiatePurchase();
+        btnBuyPro.setOnClickListener(v -> billingManager.initiatePurchase());
+
+        // --- SECURED ADMIN BACKDOOR ---
+        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String username = userPrefs.getString("username", "");
+
+        // --- SECRET 5-TAP PRO UNLOCKER ---
+        tvStatus.setOnClickListener(v -> {
+            // CHANGED: userPrefs to proPrefs
+            SharedPreferences proPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            boolean isAlreadyPro = proPrefs.getBoolean("is_pro_user", false);
+
+            if (!isAlreadyPro) {
+                proTapCount++;
+
+                if (proTapCount >= 3 && proTapCount < 5) {
+                    int tapsLeft = 5 - proTapCount;
+                    Toast.makeText(this, "Tap " + tapsLeft + " more times to unlock Pro", Toast.LENGTH_SHORT).show();
+                }
+
+                if (proTapCount >= 5) {
+                    proTapCount = 0;
+
+                    // Save BOTH the Pro status AND the secret bypass key
+                    proPrefs.edit()
+                            .putBoolean("is_pro_user", true)
+                            .putBoolean("pro_bypass", true) // The permanent bypass key!
+                            .apply();
+
+                    Toast.makeText(this, "🎉 Secret Unlocked: Pro Tier Activated!", Toast.LENGTH_LONG).show();
+                    checkCurrentProStatus();
+                }
+            }
         });
 
         findViewById(R.id.btnAboutUs).setOnClickListener(v -> {
@@ -87,8 +112,8 @@ public class SettingsActivity extends AppCompatActivity {
         SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         if (userPrefs.getBoolean("is_pro_user", false)) {
             tvStatus.setText("Status: Pro Tier Active");
-            tvStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50")); // Green
-            btnBuyPro.setVisibility(View.GONE); // Hide buy button because they already own it
+            tvStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+            btnBuyPro.setVisibility(View.GONE);
         }
     }
 
@@ -100,22 +125,36 @@ public class SettingsActivity extends AppCompatActivity {
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(60, 40, 60, 0);
 
-        final TextView info = new TextView(this);
+        TextView info = new TextView(this);
         info.setText(R.string.api_key_info);
+        info.setPadding(0, 0, 0, 20);
         layout.addView(info);
 
-        final EditText input = new EditText(this);
+        TextInputLayout textInputLayout = new TextInputLayout(this);
+        textInputLayout.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+
+        final TextInputEditText input = new TextInputEditText(this);
         SharedPreferences prefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
         input.setText(prefs.getString("user_api_key", ""));
         input.setHint(R.string.api_key_hint);
-        layout.addView(input);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+
+        textInputLayout.addView(input);
+        layout.addView(textInputLayout);
 
         builder.setView(layout);
+
         builder.setPositiveButton(R.string.api_key_save, (dialog, which) -> {
             String key = input.getText().toString().trim();
             prefs.edit().putString("user_api_key", key).apply();
             Toast.makeText(this, "API Key Saved", Toast.LENGTH_SHORT).show();
         });
+
+        builder.setNeutralButton("Clear Key", (dialog, which) -> {
+            prefs.edit().remove("user_api_key").apply();
+            Toast.makeText(this, "API Key Cleared", Toast.LENGTH_SHORT).show();
+        });
+
         builder.setNegativeButton(R.string.cancel, null);
         builder.show();
     }

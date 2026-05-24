@@ -15,6 +15,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.Log;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
@@ -30,9 +31,11 @@ import org.locationtech.jts.io.WKTReader;
 import org.locationtech.jts.io.WKTWriter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class DrawingActivity extends AppCompatActivity {
+    private static final String TAG = "DrawingActivity";
     private CadGeometryCanvas drawingCanvas;
     private Geometry secondSelectedGeometry = null;
     private CadEngine2d engine;
@@ -50,12 +53,12 @@ public class DrawingActivity extends AppCompatActivity {
     private List<PointF> activePolylineDraw = new ArrayList<>();
 
     private DatabaseHelper dbHelper;
-    private int editId = -1;
+    private String editId = "";
+    private String originalDate = null;
 
     private boolean isViewOnly = false;
     private View propertiesPanel;
     private TextView tvShapeInfo;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,9 +88,8 @@ public class DrawingActivity extends AppCompatActivity {
             String data = getIntent().getStringExtra("LOAD_DRAWING_DATA");
             deserializeDrawing(data);
 
-            if (getIntent().hasExtra("EDIT_ID")) {
-                editId = getIntent().getIntExtra("EDIT_ID", -1);
-            }
+            if (getIntent().hasExtra("EDIT_ID")) editId = getIntent().getStringExtra("EDIT_ID");
+            if (getIntent().hasExtra("SAVED_DATE")) originalDate = getIntent().getStringExtra("SAVED_DATE");
 
             isViewOnly = getIntent().getBooleanExtra("IS_VIEW_ONLY", false);
             if (isViewOnly) {
@@ -218,7 +220,6 @@ public class DrawingActivity extends AppCompatActivity {
                     isScaling = true;
                     break;
 
-                // --- CRITICAL ZOOM FIX: Multi-Touch Pointer Handoff ---
                 case MotionEvent.ACTION_POINTER_UP:
                     int pointerIndex = event.getActionIndex();
                     int pointerId = event.getPointerId(pointerIndex);
@@ -254,7 +255,7 @@ public class DrawingActivity extends AppCompatActivity {
 
             if (isOrthoMode && firstPoint != null && !currentTool.equals("MOVE")) {
                 Coordinate base = currentTool.equals("POLYLINE") && !activePolylinePoints.isEmpty() ? activePolylinePoints.get(activePolylinePoints.size()-1) : firstPoint;
-                if (Math.abs(x - base.x) > Math.abs(y - base.y)) y = (float) base.y; else x = (float) base.x;
+                if (Math.abs(x - base.x) > Math.abs(y - base.y)) y = (float) base.y; else x = (float) base.y;
             }
 
             drawingCanvas.setSnapIndicator(x, y);
@@ -265,9 +266,7 @@ public class DrawingActivity extends AppCompatActivity {
                 }
                 else if (currentTool.equals("SELECT")) {
                     CadEngine2d.NamedPoint np = engine.getNamedPointAt(worldPt.x, worldPt.y, threshold);
-                    if (np != null) {
-                        promptToRenamePoint(np);
-                    }
+                    if (np != null) promptToRenamePoint(np);
 
                     Geometry tapped = engine.getGeometryAt(worldPt.x, worldPt.y, threshold);
                     Geometry previouslySelected = drawingCanvas.getSelectedGeometry();
@@ -520,19 +519,33 @@ public class DrawingActivity extends AppCompatActivity {
         String serializedData = serializeDrawing();
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String currentUser = pref.getString("username", "GuestUser");
-        boolean isGuest = pref.getBoolean("is_guest", false);
 
         try {
-            if (editId != -1) dbHelper.deleteDrawing(editId);
-            dbHelper.addDrawing(currentUser, drawingName, serializedData);
+            String date = (originalDate != null) ? originalDate : FirebaseManager.getCurrentDate();
+            String cloudKey = date.replaceAll("[^a-zA-Z0-9]", "");
 
-            if (!isGuest) {
-                CloudSyncManager.syncLocalToCloud(dbHelper, currentUser);
+            // 1. Save Locally
+            if (editId != null && !editId.isEmpty()) {
+                dbHelper.updateDrawing(Integer.parseInt(editId), drawingName, serializedData);
+            } else {
+                dbHelper.addDrawingWithDate(currentUser, drawingName, serializedData, date);
             }
 
-            Toast.makeText(this, "Saved & Synced", Toast.LENGTH_SHORT).show();
+            // 2. Direct Write to Cloud Database
+            if (!currentUser.startsWith("GuestUser_")) {
+                HashMap<String, Object> map = new HashMap<>();
+                map.put("title", drawingName);
+                map.put("data", serializedData);
+                map.put("date", date);
+
+                FirebaseManager.getUserRef(currentUser).child("drawings").child(cloudKey).setValue(map)
+                        .addOnFailureListener(e -> Toast.makeText(DrawingActivity.this, "Cloud Sync Blocked: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+
+            Toast.makeText(this, "Saved successfully!", Toast.LENGTH_SHORT).show();
             finish();
         } catch (Exception e) {
+            Log.e(TAG, "Error in saveAndSync: " + e.getMessage(), e);
             Toast.makeText(this, "Save Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
@@ -559,7 +572,10 @@ public class DrawingActivity extends AppCompatActivity {
             root.put("geometries", geoArray);
             root.put("points", ptsArray);
             return root.toString();
-        } catch (Exception e) { return "{}"; }
+        } catch (Exception e) {
+            Log.e(TAG, "Error serializing drawing: " + e.getMessage(), e);
+            return "{}";
+        }
     }
 
     private void deserializeDrawing(String jsonString) {
@@ -595,7 +611,10 @@ public class DrawingActivity extends AppCompatActivity {
 
             engine.setGeometriesAndPoints(loadedGeometries, loadedPoints);
             drawingCanvas.invalidate();
-        } catch (Exception e) { Toast.makeText(this, "Error loading drawing", Toast.LENGTH_SHORT).show(); }
+        } catch (Exception e) {
+            Log.e(TAG, "Error deserializing drawing: " + e.getMessage(), e);
+            Toast.makeText(this, "Error loading drawing", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void resetPolyline() {

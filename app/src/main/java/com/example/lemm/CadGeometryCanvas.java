@@ -10,6 +10,7 @@ import java.util.List;
 
 public class CadGeometryCanvas extends View {
     private float scale = 1.0f;
+    private boolean showPointLabels = true;
     private String currentTool = "MOVE";
     private CadEngine2d engine;
     private Matrix matrix = new Matrix(), inverseMatrix = new Matrix();
@@ -43,7 +44,6 @@ public class CadGeometryCanvas extends View {
         drawGrid(canvas);
 
         if (engine != null) {
-            // Draw Snap Targets
             Paint sp = new Paint(); sp.setColor(Color.LTGRAY); sp.setStyle(Paint.Style.STROKE); sp.setStrokeWidth(1f/scale);
             for (Coordinate sc : engine.getAllSnapPoints()) canvas.drawCircle((float)sc.x, (float)sc.y, 5f/scale, sp);
 
@@ -51,7 +51,6 @@ public class CadGeometryCanvas extends View {
                 Paint p = (geo == selectedGeometry) ? selectedPaint : linePaint;
                 drawJtsGeometry(canvas, geo, p);
 
-                // Draw Dimensions based on shape type
                 if (geo instanceof Polygon) {
                     if (geo.getCoordinates().length == 5) drawRectDimensions(canvas, (Polygon) geo);
                     else drawVisualRadius(canvas, geo);
@@ -63,7 +62,11 @@ public class CadGeometryCanvas extends View {
             for (CadEngine2d.NamedPoint np : engine.getNamedPoints()) canvas.drawText(np.label, (float)np.x + 12f/scale, (float)np.y - 12f/scale, textPaint);
             for (CadEngine2d.AngleAnnotation ann : engine.getAngleAnnotations()) drawAngleArc(canvas, ann);
         }
-
+        if (showPointLabels) {
+            textPaint.setTextSize(40f/scale);
+            for (CadEngine2d.NamedPoint np : engine.getNamedPoints())
+                canvas.drawText(np.label, (float)np.x + 12f/scale, (float)np.y - 12f/scale, textPaint);
+        }
         if (!activePolyline.isEmpty()) {
             Path polyPath = new Path(); polyPath.moveTo(activePolyline.get(0).x, activePolyline.get(0).y);
             for (PointF pt : activePolyline) polyPath.lineTo(pt.x, pt.y);
@@ -89,6 +92,9 @@ public class CadGeometryCanvas extends View {
     }
 
     private void drawRectDimensions(Canvas canvas, Polygon rect) {
+        // Skip dimensions if this is labeled as workspace frame
+        if ("WORKSPACE".equals(rect.getUserData())) return;
+
         Coordinate[] c = rect.getCoordinates();
         textPaint.setTextSize(28f / scale);
         textPaint.setColor(Color.parseColor("#8E44AD"));
@@ -96,50 +102,29 @@ public class CadGeometryCanvas extends View {
         for (int i = 0; i < 4; i++) {
             double x1 = c[i].x, y1 = c[i].y;
             double x2 = c[i+1].x, y2 = c[i+1].y;
-
-            float midX = (float) ((x1 + x2) / 2);
-            float midY = (float) ((y1 + y2) / 2);
-
+            float midX = (float) ((x1 + x2) / 2); float midY = (float) ((y1 + y2) / 2);
             double dist = c[i].distance(c[i+1]);
             String label = String.format("%.1f", dist);
-
             float offset = 20f / scale;
-            if (Math.abs(x1 - x2) < 1.0) {
-                canvas.drawText(label, midX + offset, midY, textPaint);
-            } else {
-                canvas.drawText(label, midX, midY - offset, textPaint);
-            }
+            if (Math.abs(x1 - x2) < 1.0) canvas.drawText(label, midX + offset, midY, textPaint);
+            else canvas.drawText(label, midX, midY - offset, textPaint);
         }
         textPaint.setColor(Color.parseColor("#0C3D6A"));
     }
 
-    // NEW METHOD: Draws length near the midpoint of lines
     private void drawLineDimension(Canvas canvas, LineString line) {
         Coordinate[] c = line.getCoordinates();
         if (c.length < 2) return;
-
-        double x1 = c[0].x, y1 = c[0].y;
-        double x2 = c[1].x, y2 = c[1].y;
-
-        float midX = (float) ((x1 + x2) / 2);
-        float midY = (float) ((y1 + y2) / 2);
-
+        double x1 = c[0].x, y1 = c[0].y; double x2 = c[1].x, y2 = c[1].y;
+        float midX = (float) ((x1 + x2) / 2); float midY = (float) ((y1 + y2) / 2);
         double dist = c[0].distance(c[1]);
         String label = String.format("%.1f", dist);
-
         textPaint.setTextSize(28f / scale);
-        textPaint.setColor(Color.parseColor("#8E44AD")); // Purple color for clarity
-
+        textPaint.setColor(Color.parseColor("#8E44AD"));
         float offset = 20f / scale;
-        if (Math.abs(x1 - x2) < 1.0) {
-            // Vertical line
-            canvas.drawText(label, midX + offset, midY, textPaint);
-        } else {
-            // Horizontal/Diagonal line
-            canvas.drawText(label, midX, midY - offset, textPaint);
-        }
-
-        textPaint.setColor(Color.parseColor("#0C3D6A")); // Reset color back to normal
+        if (Math.abs(x1 - x2) < 1.0) canvas.drawText(label, midX + offset, midY, textPaint);
+        else canvas.drawText(label, midX, midY - offset, textPaint);
+        textPaint.setColor(Color.parseColor("#0C3D6A"));
     }
 
     private void drawAngleArc(Canvas canvas, CadEngine2d.AngleAnnotation ann) {
@@ -167,11 +152,25 @@ public class CadGeometryCanvas extends View {
     }
 
     private void drawJtsGeometry(Canvas canvas, Geometry geo, Paint p) {
+        // Hide frame lines
+        if ("WORKSPACE".equals(geo.getUserData())) return;
+
         Coordinate[] coords = geo.getCoordinates(); Path path = new Path(); path.moveTo((float)coords[0].x, (float)coords[0].y);
         for (int i=1; i<coords.length; i++) path.lineTo((float)coords[i].x, (float)coords[i].y);
         if (geo instanceof Polygon) path.close();
         canvas.drawPath(path, p);
         for (Coordinate c : coords) canvas.drawCircle((float)c.x, (float)c.y, 6f/scale, vertexPaint);
+    }
+    public void setShowPointLabels(boolean show) {
+        this.showPointLabels = show;
+        invalidate();
+    }
+    // --- NEW: TRUE RESET FUNCTION ---
+    public void resetView() {
+        matrix.reset();
+        scale = 1.0f;
+        if (zoomListener != null) zoomListener.onZoomChanged(100);
+        invalidate();
     }
 
     public void zoomIn() { applyZoom(1.2f, getWidth() / 2f, getHeight() / 2f); }

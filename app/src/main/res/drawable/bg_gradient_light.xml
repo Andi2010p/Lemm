@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Fades from pure White at the top to a very soft ice-blue at the bottom -->
+    <gradient
+        android:startColor="#FFFFFF"
+        android:endColor="#EBF4FF"
+        android:angle="270" />
+</shape>

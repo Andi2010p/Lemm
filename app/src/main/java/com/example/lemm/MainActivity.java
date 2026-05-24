@@ -40,7 +40,8 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView tvMainWelcome;
     private ImageButton btnSettings, btnProfile;
-    private MaterialCardView cardNewProblem, cardScanProblem, cardDrawProblem, cardHistory;
+
+    private MaterialCardView cardNewProblem, cardScanProblem, cardDrawProblem, cardHistory, cardTheorems;
 
     private Uri photoUri;
     private String currentPhotoPath;
@@ -73,31 +74,48 @@ public class MainActivity extends AppCompatActivity {
         cardScanProblem = findViewById(R.id.cardScanProblem);
         cardDrawProblem = findViewById(R.id.cardDrawProblem);
         cardHistory = findViewById(R.id.cardHistory);
+        cardTheorems = findViewById(R.id.cardTheorems);
     }
 
     private void setupUser() {
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String username = pref.getString("username", "User");
-        tvMainWelcome.setText(getString(R.string.welcome, username));
+        if (tvMainWelcome != null) {
+            tvMainWelcome.setText(getString(R.string.welcome, username));
+        }
     }
 
     private void setupListeners() {
-        // Main Cards
-        cardNewProblem.setOnClickListener(v -> startActivity(new Intent(this, GeometryInputActivity.class)));
+        if (cardNewProblem != null) {
+            cardNewProblem.setOnClickListener(v -> startActivity(new Intent(this, GeometryInputActivity.class)));
+        }
 
-        cardScanProblem.setOnClickListener(v -> {
-            if (checkCameraPermission()) dispatchTakePictureIntent();
-            else requestCameraPermission();
-        });
+        if (cardScanProblem != null) {
+            cardScanProblem.setOnClickListener(v -> {
+                if (checkCameraPermission()) dispatchTakePictureIntent();
+                else requestCameraPermission();
+            });
+        }
 
-        cardDrawProblem.setOnClickListener(v -> startActivity(new Intent(this, DrawingActivity.class)));
+        if (cardDrawProblem != null) {
+            cardDrawProblem.setOnClickListener(v -> startActivity(new Intent(this, DrawingActivity.class)));
+        }
 
-        cardHistory.setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
+        if (cardHistory != null) {
+            cardHistory.setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
+        }
 
-        // Header Buttons
-        btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        if (cardTheorems != null) {
+            cardTheorems.setOnClickListener(v -> startActivity(new Intent(this, TheoremsActivity.class)));
+        }
 
-        btnProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
+        if (btnSettings != null) {
+            btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        }
+
+        if (btnProfile != null) {
+            btnProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
+        }
     }
 
     private boolean checkCameraPermission() {
@@ -128,6 +146,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void processCapturedPhoto() {
+        // --- STRICT AI SECURITY CHECK ---
+        SharedPreferences apiPrefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
+        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+
+        String username = userPrefs.getString("username", "");
+        boolean isProUser = userPrefs.getBoolean("is_pro_user", false);
+        String apiKey = "";
+
+        if (username.equals("Admin_Teacher") || isProUser) {
+            apiKey = BuildConfig.GEMINI_API_KEY;
+        } else {
+            apiKey = apiPrefs.getString("user_api_key", "");
+        }
+
+        // If the user is NOT pro and has NO custom key, block them!
+        if (apiKey.isEmpty()) {
+            Toast.makeText(this, "Access Denied: Please upgrade to Lemma Pro to use the AI Scanner.", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(this, SettingsActivity.class));
+            return;
+        }
+
         try {
             Bitmap originalBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
             int maxDim = 1024;
@@ -138,17 +177,6 @@ public class MainActivity extends AppCompatActivity {
                     .setTitle(getString(R.string.scan_dialog_title))
                     .setMessage(getString(R.string.scan_dialog_message))
                     .setCancelable(false).show();
-
-            SharedPreferences apiPrefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
-            SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-
-            // ADMIN LOGIC: Use local.properties key if user is Admin_Teacher
-            String apiKey;
-            if (userPrefs.getString("username", "").equals("Admin_Teacher")) {
-                apiKey = BuildConfig.GEMINI_API_KEY;
-            } else {
-                apiKey = apiPrefs.getString("user_api_key", BuildConfig.GEMINI_API_KEY);
-            }
 
             GeminiAI geminiAI = new GeminiAI(apiKey);
             String prompt = "Transcribe math in this image. If not math, output: INVALID_IMAGE.";
@@ -170,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 @Override
                 public void onFailure(Throwable t) {
-                    runOnUiThread(() -> { dialog.dismiss(); Toast.makeText(MainActivity.this, R.string.scan_error_failed, Toast.LENGTH_SHORT).show(); });
+                    runOnUiThread(() -> { dialog.dismiss(); Toast.makeText(MainActivity.this, "Scan Failed: " + t.getMessage(), Toast.LENGTH_LONG).show(); });
                 }
             }, ContextCompat.getMainExecutor(this));
         } catch (Exception e) { Toast.makeText(this, R.string.scan_error_loading_photo, Toast.LENGTH_SHORT).show(); }

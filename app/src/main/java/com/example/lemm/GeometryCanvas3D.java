@@ -195,13 +195,15 @@ public class GeometryCanvas3D extends View {
         axesTextPaint.setColor(Color.BLUE); canvas.drawText("Z", z.sx, z.sy, axesTextPaint);
     }
 
+    // --- FIXED: Circle now draws vertically on the XY plane (facing the camera) ---
     private void drawCircle(Canvas canvas, Circle3D c, double rx, double ry, double rz, float cx, float cy, float scale) {
         int segments = 36;
         Point3D prev = null;
         Point3D first = null;
         for(int i=0; i<segments; i++) {
             double ang = 2 * Math.PI * i / segments;
-            Point3D curr = new Point3D("", c.cx + (float)Math.cos(ang)*c.r, c.cy, c.cz + (float)Math.sin(ang)*c.r);
+            // Changed: Uses c.cy + Math.sin instead of c.cz + Math.sin
+            Point3D curr = new Point3D("", c.cx + (float)Math.cos(ang)*c.r, c.cy + (float)Math.sin(ang)*c.r, c.cz);
             projectPoint(curr, rx, ry, rz, cx, cy, scale);
             if (prev != null) canvas.drawLine(prev.sx, prev.sy, curr.sx, curr.sy, linePaint);
             else first = curr;
@@ -216,6 +218,7 @@ public class GeometryCanvas3D extends View {
         canvas.drawCircle(center.sx, center.sy, s.r * scale, linePaint);
     }
 
+    // Pyramids, Cones, and Cylinders still draw flat on the XZ floor
     private void drawPyramid(Canvas canvas, Pyramid3D p, double rx, double ry, double rz, float cx, float cy, float scale) {
         float hw = p.w/2, hd = p.d/2;
         Point3D apex = new Point3D("", p.cx, p.cy + p.h, p.cz);
@@ -267,7 +270,6 @@ public class GeometryCanvas3D extends View {
         return null;
     }
 
-    // --- CRITICAL ZOOM FIX: Multi-Touch Pointer Handoff ---
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         scaleDetector.onTouchEvent(e);
@@ -281,8 +283,6 @@ public class GeometryCanvas3D extends View {
                 break;
 
             case MotionEvent.ACTION_POINTER_UP:
-                // When a finger is lifted, re-assign the active pointer to the remaining finger
-                // This prevents the camera from "jumping/teleporting"
                 int pointerIndex = e.getActionIndex();
                 int pointerId = e.getPointerId(pointerIndex);
                 if (pointerId == activePointerId) {

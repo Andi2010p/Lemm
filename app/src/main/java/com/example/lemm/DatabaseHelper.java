@@ -1,4 +1,4 @@
-package com.example.lemm;
+ package com.example.lemm;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -100,16 +100,32 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         v.put(KEY_PASSWORD, p);
         return db.insert(TABLE_USERS, null, v) != -1;
     }
-
-    public boolean syncGoogleUser(String email, String googleId) {
+    public void deleteUser(String username) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues v = new ContentValues();
-        v.put(KEY_USERNAME, email);
-        v.put(KEY_EMAIL, email);
-        v.put(KEY_GOOGLE_ID, googleId);
-        return db.insertWithOnConflict(TABLE_USERS, null, v, SQLiteDatabase.CONFLICT_REPLACE) != -1;
+        // Delete the user from the users table
+        db.delete(TABLE_USERS, KEY_USERNAME + " = ?", new String[]{username});
+    }
+    // NEW: Check if email already exists
+    public boolean checkEmailExists(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " + KEY_EMAIL + " = ?", new String[]{email});
+        boolean exists = c.getCount() > 0;
+        c.close();
+        return exists;
     }
 
+    public boolean syncGoogleUser(String username, String email, String googleId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+
+        // Save the actual username instead of forcing the email as the username
+        v.put(KEY_USERNAME, username);
+        v.put(KEY_EMAIL, email);
+        v.put(KEY_GOOGLE_ID, googleId);
+        v.put(KEY_PASSWORD, "GoogleLogin123!"); // Dummy password since Google handles auth
+
+        return db.insertWithOnConflict(TABLE_USERS, null, v, SQLiteDatabase.CONFLICT_REPLACE) != -1;
+    }
     public boolean checkUser(String u, String p) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor c = db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " + KEY_USERNAME + " = ? AND " + KEY_PASSWORD + " = ?", new String[]{u, p});
@@ -130,9 +146,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor c = db.rawQuery("SELECT " + KEY_EMAIL + " FROM " + TABLE_USERS + " WHERE " + KEY_USERNAME + " = ? OR " + KEY_EMAIL + " = ?", new String[]{identifier, identifier});
         String email = null;
-        if (c.moveToFirst()) {
-            email = c.getString(0);
-        }
+        if (c.moveToFirst()) email = c.getString(0);
         c.close();
         return email;
     }
@@ -150,6 +164,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         v.put(KEY_HIST_USERNAME, user); v.put(KEY_HIST_NAME, name);
         v.put(KEY_HIST_PROBLEM, prob); v.put(KEY_HIST_SOLUTION, sol);
         v.put(KEY_HIST_RAW_RESPONSE, raw);
+        db.insert(TABLE_HISTORY, null, v);
+    }
+
+    public void addHistoryWithDate(String user, String name, String prob, String sol, String raw, String date) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_HIST_USERNAME, user); v.put(KEY_HIST_NAME, name);
+        v.put(KEY_HIST_PROBLEM, prob); v.put(KEY_HIST_SOLUTION, sol);
+        v.put(KEY_HIST_RAW_RESPONSE, raw); v.put(KEY_HIST_DATE, date);
         db.insert(TABLE_HISTORY, null, v);
     }
 
@@ -185,6 +208,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert(TABLE_DRAWINGS, null, v);
     }
 
+    public void addDrawingWithDate(String user, String name, String data, String date) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_DRW_USERNAME, user); v.put(KEY_DRW_NAME, name);
+        v.put(KEY_DRW_DATA, data); v.put(KEY_DRW_DATE, date);
+        db.insert(TABLE_DRAWINGS, null, v);
+    }
+
     public void updateDrawing(int id, String name, String data) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();
@@ -203,6 +234,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void deleteDrawing(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_DRAWINGS, KEY_DRW_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    public String authenticateUser(String identifier, String password) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT " + KEY_USERNAME + " FROM " + TABLE_USERS +
+                        " WHERE (" + KEY_USERNAME + " = ? OR " + KEY_EMAIL + " = ?) AND " + KEY_PASSWORD + " = ?",
+                new String[]{identifier, identifier, password});
+        String username = null;
+        if (c.moveToFirst()) username = c.getString(0);
+        c.close();
+        return username;
     }
 
     public Cursor getDrawings(String user) {

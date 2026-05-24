@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Lemma</string>
 
-    <!-- General / Navigation -->
     <string name="welcome_to_lemma">Добро пожаловать в Lemma</string>
     <string name="welcome_back">С возвращением</string>
     <string name="welcome">Добро пожаловать, %1$s!</string>
@@ -19,7 +18,6 @@
     <string name="drawings">Чертежи</string>
     <string name="open_edit">Открыть / Изменить</string>
 
-    <!-- Auth & Account -->
     <string name="login">Войти</string>
     <string name="login_to_lemma">Войти в Lemma</string>
     <string name="sign_up">Регистрация</string>
@@ -41,7 +39,6 @@
     <string name="new_password">Новый пароль</string>
     <string name="current_password">Текущий пароль</string>
 
-    <!-- Messages -->
     <string name="enter_all_fields">Заполните все поля</string>
     <string name="invalid_credentials">Неверные данные</string>
     <string name="registration_successful">Регистрация успешна!</string>
@@ -51,7 +48,11 @@
     <string name="passwords_mismatch">Пароли не совпадают</string>
     <string name="google_sign_in_failed">Ошибка Google входа</string>
 
-    <!-- Features -->
+    <string name="user_profile">Профиль пользователя</string>
+    <string name="online">В сети</string>
+    <string name="your_activity">Ваша активность</string>
+    <string name="security">Безопасность</string>
+
     <string name="new_problem">Новая задача</string>
     <string name="scan_ocr">Сканировать</string>
     <string name="draw_geometry">Чертить</string>
@@ -62,35 +63,250 @@
     <string name="save_solution">Сохранить решение</string>
     <string name="save_drawing">Сохранить чертеж</string>
 
-    <!-- AI & Monetization -->
     <string name="api_key_title">Настройка ИИ</string>
     <string name="api_key_hint">Ключ Gemini API</string>
     <string name="api_key_save">Сохранить ключ</string>
-    <string name="api_key_info">Использование ИИ дорого. Укажите свой ключ или купите Pro.</string>
+    <string name="api_key_info">Укажите свой ключ или купите Pro.</string>
     <string name="upgrade_pro">Купить Pro</string>
     <string name="access_denied">Доступ ограничен</string>
     <string name="access_denied_msg">Введите ключ в настройках или купите Pro.</string>
-    <string name="error_not_geometry">Безопасность: Это не математическая задача.</string>
+    <string name="error_not_geometry">Это не математическая задача.</string>
 
-    <!-- CAD Tools -->
+    <string name="scan_dialog_title">Сканирование</string>
+    <string name="scan_dialog_message">Анализ геометрии...</string>
+    <string name="scan_error_no_text">Задача не найдена.</string>
+    <string name="scan_error_failed">Ошибка сканера: нет связи.</string>
+    <string name="scan_error_loading_photo">Ошибка загрузки фото.</string>
     <string name="title_set_angle">Установить угол</string>
     <string name="title_smart_dim">Размеры</string>
     <string name="title_rename_vertex">Имя вершины</string>
     <string name="hint_angle">Угол в градусах</string>
     <string name="hint_exact_length">Длина</string>
     <string name="hint_exact_radius">Радиус</string>
+    <string name="hint_width">Ширина</string>
+    <string name="hint_height">Высота</string>
     <string name="prop_length">Длина: %.1f</string>
     <string name="prop_area">Площадь: %.1f</string>
     <string name="tool_ortho_on">Орто режим ВКЛ</string>
     <string name="tool_ortho_off">Орто режим ВЫКЛ</string>
     <string name="sketch_tools">Инструменты</string>
+    <string name="drawing_date">Дата: %1$s</string>
     <string name="error_invalid_angle">Неверный угол</string>
+    <string name="error_dim_positive">Размер должен быть > 0</string>
     <string name="msg_confirm_exit">Сохранить чертеж перед выходом?</string>
-    <string name="deleted_toast">Удалено</string>
     <string name="delete_item_title">Удалить</string>
     <string name="delete_item_msg">Вы уверены?</string>
+    <string name="deleted_toast">Удалено</string>
+    <string name="change_language">Изменить язык</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_hy">Հայերեն</string>
+    <string name="information">Информация</string>
+    <string name="about_us">О нас</string>
     <string name="try_guest_mode">Гостевой режим</string>
     <string name="try_admin_mode">Режим админа</string>
     <string name="step_prefix">ШАГ </string>
     <string name="final_answer">ОТВЕТ:</string>
+
+    <string name="default_web_client_id">481743722691-874nj07keqhs20s6bolgram4bp4ghfdr.apps.googleusercontent.com</string>
+    <string name="facebook_app_id">1234567890</string>
+    <string name="fb_login_protocol_scheme">fb1234567890</string>
+    <string name="facebook_client_token">YOUR_CLIENT_TOKEN_HERE</string>
+
+    <string name="theorems_title">Теоремы и Формулы</string>
+    <string name="grade_title">Программа %1$d класса</string>
+    <string name="th_header_theorem">ТЕОРЕМА:</string>
+    <string name="th_header_proof">ДОКАЗАТЕЛЬСТВО:</string>
+    <string name="th_header_example">ПРИМЕР:</string>
+    <string name="th_header_questions">ВОПРОСЫ:</string>
+
+    <string name="knowledge_check">ПРОВЕРКА ЗНАНИЙ</string>
+    <string name="type_answer">Ваш ответ (число)</string>
+    <string name="check_answer">Проверить</string>
+    <string name="correct_answer">✅ Верно! Отличная работа.</string>
+    <string name="incorrect_answer">❌ Неверно. Попробуйте снова!</string>
+
+    <string name="th_triangles">Треугольники</string>
+    <string name="th_triangles_desc">• Сумма углов равна 180°.\n• Теорема Пифагора: a² + b² = c².\n• Площадь: ½ × основание × высоту.\n• Теорема синусов: a/sinA = b/sinB = c/sinC.\n• Теорема косинусов: c² = a² + b² - 2ab·cosC.</string>
+    <string name="th_quadrilaterals">Четырехугольники</string>
+    <string name="th_quadrilaterals_desc">• Сумма углов равна 360°.\n• Площадь прямоугольника: a × b.\n• Площадь параллелограмма: a × h.\n• Площадь трапеции: ½ × (a + b) × h.\n• Площадь ромба: ½ × (d1 × d2).</string>
+    <string name="th_circles">Окружность и Круг</string>
+    <string name="th_circles_desc">• Длина окружности: C = 2πr.\n• Площадь круга: S = πr².\n• Длина дуги: (угол/360) × 2πr.\n• Площадь сектора: (угол/360) × πr².\n• Касательная всегда перпендикулярна радиусу.</string>
+    <string name="th_3d_shapes">Стереометрия (3D Фигуры)</string>
+    <string name="th_3d_shapes_desc">• Объем призмы: S_основания × h.\n• Объем цилиндра: πr²h.\n• Объем пирамиды/конуса: ⅓ × S_основания × h.\n• Объем шара: ⁴/₃πr³.\n• Площадь сферы: 4πr².</string>
+    <string name="loading_advanced">Загрузка сложных тем для %1$d класса...</string>
+
+    <!-- GRADE 7 -->
+    <string name="th_title_7_1">1. Вертикальные углы</string>
+    <string name="th_def_7_1">Если две прямые пересекаются, то вертикальные углы равны.</string>
+    <string name="th_proof_7_1">Смежные углы в сумме дают 180°. Следовательно, α + β = 180° и β + γ = 180°. Вычитая β, получаем α = γ. ∎</string>
+    <string name="th_ex_7_1">Х-образные крепления в строительстве: верхний и нижний углы всегда идентичны.</string>
+    <string name="th_q_7_1">Если угол равен 45°, чему равен вертикальный угол?</string>
+    <string name="th_a_7_1">45</string>
+
+    <string name="th_title_7_2">2. Равнобедренный треугольник</string>
+    <string name="th_def_7_2">В равнобедренном треугольнике углы при основании равны.</string>
+    <string name="th_proof_7_2">Биссектриса делит треугольник на два равных по признаку СУС. ∎</string>
+    <string name="th_ex_7_2">Используется при создании одинаковых деталей крыши.</string>
+    <string name="th_q_7_2">Если угол при вершине 40°, чему равен ОДИН угол при основании?</string>
+    <string name="th_a_7_2">70</string>
+
+    <string name="th_title_7_3">3. Сумма углов треугольника</string>
+    <string name="th_def_7_3">Сумма внутренних углов любого треугольника равна 180°.</string>
+    <string name="th_proof_7_3">Проведем прямую через вершину, параллельную основанию. Углы образуют 180°. ∎</string>
+    <string name="th_ex_7_3">Нахождение третьего угла: 180° - (α + β).</string>
+    <string name="th_q_7_3">Если два угла равны 50° и 60°, чему равен третий угол?</string>
+    <string name="th_a_7_3">70</string>
+
+    <string name="th_title_7_4">4. Неравенство треугольника</string>
+    <string name="th_def_7_4">Каждая сторона меньше суммы двух других сторон (a &lt; b + c).</string>
+    <string name="th_proof_7_4">Кратчайшее расстояние — прямая линия. ∎</string>
+    <string name="th_ex_7_4">Невозможно построить треугольник 2см, 3см и 10см.</string>
+    <string name="th_q_7_4">Если стороны равны 5 и 7, какова МАКСИМАЛЬНАЯ целая длина третьей стороны?</string>
+    <string name="th_a_7_4">11</string>
+
+    <!-- GRADE 8 -->
+    <string name="th_title_8_1">1. Свойства параллелограмма</string>
+    <string name="th_def_8_1">В параллелограмме противоположные стороны и углы равны.</string>
+    <string name="th_proof_8_1">Диагональ делит параллелограмм на два равных треугольника по УСУ. ∎</string>
+    <string name="th_ex_8_1">Механические шарнирные соединения.</string>
+    <string name="th_q_8_1">Если один угол 60°, чему равен соседний угол?</string>
+    <string name="th_a_8_1">120</string>
+
+    <string name="th_title_8_2">2. Площадь треугольника</string>
+    <string name="th_def_8_2">S = ½ × основание × высоту.</string>
+    <string name="th_proof_8_2">Треугольник составляет ровно половину параллелограмма с таким же основанием и высотой. ∎</string>
+    <string name="th_ex_8_2">Расчет ткани для паруса.</string>
+    <string name="th_q_8_2">Если основание 10, а высота 4, чему равна площадь?</string>
+    <string name="th_a_8_2">20</string>
+
+    <string name="th_title_8_3">3. Теорема Пифагора</string>
+    <string name="th_def_8_3">В прямоугольном треугольнике c² = a² + b².</string>
+    <string name="th_proof_8_3">Квадрат, построенный на гипотенузе, равен сумме площадей квадратов на катетах. ∎</string>
+    <string name="th_ex_8_3">Нахождение диагонали монитора.</string>
+    <string name="th_q_8_3">Если катеты 3 и 4, чему равна гипотенуза?</string>
+    <string name="th_a_8_3">5</string>
+
+    <string name="th_title_8_4">4. Средняя линия треугольника</string>
+    <string name="th_def_8_4">Средняя линия параллельна основанию и равна его половине.</string>
+    <string name="th_proof_8_4">Через достроение до параллелограмма. ∎</string>
+    <string name="th_ex_8_4">Измерение недоступных расстояний через реку.</string>
+    <string name="th_q_8_4">Если основание 24, чему равна средняя линия?</string>
+    <string name="th_a_8_4">12</string>
+
+    <string name="th_title_8_5">5. Высота прямоугольного треугольника</string>
+    <string name="th_def_8_5">Высота, проведенная к гипотенузе, делит ее на отрезки так, что h² = a_c × b_c.</string>
+    <string name="th_proof_8_5">Высота образует подобные треугольники. Отношение сторон дает h² = a_c × b_c. ∎</string>
+    <string name="th_ex_8_5">Если отрезки 4 и 9, высота равна √(4×9) = 6.</string>
+    <string name="th_q_8_5">Если отрезки 2 и 8, чему равна высота?</string>
+    <string name="th_a_8_5">4</string>
+
+    <string name="th_title_8_6">6. Медиана к гипотенузе</string>
+    <string name="th_def_8_6">Медиана, проведенная к гипотенузе, равна ее половине.</string>
+    <string name="th_proof_8_6">Медиана является радиусом описанной окружности. ∎</string>
+    <string name="th_ex_8_6">Если гипотенуза 10, медиана равна 5.</string>
+    <string name="th_q_8_6">Если гипотенуза 18, чему равна медиана?</string>
+    <string name="th_a_8_6">9</string>
+
+    <string name="th_title_8_7">7. Точка пересечения медиан</string>
+    <string name="th_def_8_7">Медианы пересекаются в одной точке и делятся в отношении 2:1.</string>
+    <string name="th_proof_8_7">Используя подобие треугольников, образованных средними линиями. ∎</string>
+    <string name="th_ex_8_7">Нахождение центра масс (центроида).</string>
+    <string name="th_q_8_7">Если короткая часть медианы 4, какова длина всей медианы?</string>
+    <string name="th_a_8_7">12</string>
+
+    <!-- GRADE 9 -->
+    <string name="th_title_9_1">1. Теорема косинусов</string>
+    <string name="th_def_9_1">c² = a² + b² - 2ab·cos(γ).</string>
+    <string name="th_proof_9_1">Опускаем высоту и применяем теорему Пифагора к двум частям. ∎</string>
+    <string name="th_ex_9_1">Расчет расстояния между отклонившимися самолетами.</string>
+    <string name="th_q_9_1">Если a=3, b=4 и угол 90°, чему равно c?</string>
+    <string name="th_a_9_1">5</string>
+
+    <string name="th_title_9_2">2. Теорема синусов</string>
+    <string name="th_def_9_2">a/sin(A) = b/sin(B) = c/sin(C) = 2R.</string>
+    <string name="th_proof_9_2">Через формулу площади треугольника. ∎</string>
+    <string name="th_ex_9_2">Триангуляция в GPS.</string>
+    <string name="th_q_9_2">Если a=10 и sinA=0.5, чему равен диаметр (2R)?</string>
+    <string name="th_a_9_2">20</string>
+
+    <string name="th_title_9_3">3. Вписанный угол</string>
+    <string name="th_def_9_3">Вписанный угол равен половине центрального угла, опирающегося на ту же дугу.</string>
+    <string name="th_proof_9_3">Через внешний угол равнобедренного треугольника, образованного радиусами. ∎</string>
+    <string name="th_ex_9_3">Углы обзора в театре.</string>
+    <string name="th_q_9_3">Если центральный угол 80°, чему равен вписанный?</string>
+    <string name="th_a_9_3">40</string>
+
+    <string name="th_title_9_4">4. Касательная и секущая</string>
+    <string name="th_def_9_4">Если из внешней точки проведены касательная (AB) и секущая (AC), то AB² = BD × BC.</string>
+    <string name="th_proof_9_4">Подобие треугольников △ABD и △ABC. ∎</string>
+    <string name="th_ex_9_4">Нахождение дистанции до горизонта.</string>
+    <string name="th_q_9_4">Если касательная=6, а внешняя часть секущей=4, чему равна вся секущая?</string>
+    <string name="th_a_9_4">9</string>
+
+    <string name="th_title_9_5">5. Описанный четырехугольник</string>
+    <string name="th_def_9_5">Окружность можно вписать в четырехугольник тогда и только тогда, когда суммы противоположных сторон равны (a+c=b+d).</string>
+    <string name="th_proof_9_5">Отрезки касательных из одной точки равны. Сложение частей дает равенство сумм. ∎</string>
+    <string name="th_ex_9_5">Если стороны 10 и 15, другие две тоже должны давать 25.</string>
+    <string name="th_q_9_5">Если стороны 5, 8, 7 и X, чему должен быть равен X?</string>
+    <string name="th_a_9_5">4</string>
+
+    <!-- GRADE 10 -->
+    <string name="th_title_10_1">1. Параллельность прямой и плоскости</string>
+    <string name="th_def_10_1">Если прямая вне плоскости параллельна прямой в этой плоскости, она параллельна самой плоскости.</string>
+    <string name="th_proof_10_1">Доказательство от противного. Если бы они пересекались, точка пересечения лежала бы на обеих прямых. ∎</string>
+    <string name="th_ex_10_1">Линии электропередач над землей.</string>
+    <string name="th_q_10_1">Сколько общих точек у параллельной прямой и плоскости?</string>
+    <string name="th_a_10_1">0</string>
+
+    <string name="th_title_10_2">2. Параллельные плоскости</string>
+    <string name="th_def_10_2">Если две пересекающиеся прямые одной плоскости параллельны двум прямым другой плоскости, то плоскости параллельны.</string>
+    <string name="th_proof_10_2">От противного. Если бы они пересекались по прямой, эта прямая была бы параллельна пересекающимся прямым, что невозможно. ∎</string>
+    <string name="th_ex_10_2">Этажи в здании.</string>
+    <string name="th_q_10_2">Сколько общих точек у двух параллельных плоскостей?</string>
+    <string name="th_a_10_2">0</string>
+
+    <!-- GRADE 11 -->
+    <string name="th_title_11_1">1. Теорема о трех перпендикулярах</string>
+    <string name="th_def_11_1">Прямая, проведенная в плоскости через основание наклонной перпендикулярно к ее проекции, перпендикулярна и к самой наклонной.</string>
+    <string name="th_proof_11_1">Прямая перпендикулярна двум пересекающимся прямым (проекции и высоте), значит, перпендикулярна всей наклонной плоскости. ∎</string>
+    <string name="th_ex_11_1">Установка стропил крыши под прямым углом.</string>
+    <string name="th_q_11_1">Если угол между высотой и проекцией 90°, какой угол между прямой и проекцией?</string>
+    <string name="th_a_11_1">90</string>
+
+    <string name="th_title_11_2">2. Объем призмы</string>
+    <string name="th_def_11_2">V = Площадь основания × Высоту.</string>
+    <string name="th_proof_11_2">Принцип Кавальери: объем образуется суммированием одинаковых слоев-оснований вдоль высоты. ∎</string>
+    <string name="th_ex_11_2">Вместимость бассейна.</string>
+    <string name="th_q_11_2">Если площадь основания 20, а высота 5, каков объем?</string>
+    <string name="th_a_11_2">100</string>
+
+    <string name="th_title_11_3">3. Объем пирамиды</string>
+    <string name="th_def_11_3">V = ⅓ × Площадь основания × Высоту.</string>
+    <string name="th_proof_11_3">Треугольную призму можно разрезать ровно на три равновеликие треугольные пирамиды. ∎</string>
+    <string name="th_ex_11_3">Объем египетской пирамиды.</string>
+    <string name="th_q_11_3">Если площадь основания 30, а высота 10, каков объем?</string>
+    <string name="th_a_11_3">100</string>
+
+    <!-- GRADE 12 -->
+    <string name="th_title_12_1">1. Объем цилиндра</string>
+    <string name="th_def_12_1">V = πR²H.</string>
+    <string name="th_proof_12_1">Цилиндр — это призма с круглым основанием. По принципу Кавальери V = Sh = (πR²)H. ∎</string>
+    <string name="th_ex_12_1">Объем воды в трубе.</string>
+    <string name="th_q_12_1">Если R=2 и H=10, каков объем, деленный на π?</string>
+    <string name="th_a_12_1">40</string>
+
+    <string name="th_title_12_2">2. Объем конуса</string>
+    <string name="th_def_12_2">V = ⅓ πR²H.</string>
+    <string name="th_proof_12_2">Конус — это пирамида с круглым основанием. Формула аналогична: V = ⅓(πR²)H. ∎</string>
+    <string name="th_ex_12_2">Вместимость рожка для мороженого.</string>
+    <string name="th_q_12_2">Если R=3 и H=10, каков объем, деленный на π?</string>
+    <string name="th_a_12_2">30</string>
+
+    <string name="th_title_12_3">3. Площадь и Объем шара</string>
+    <string name="th_def_12_3">Площадь = 4πR². Объем = ⁴/₃πR³.</string>
+    <string name="th_proof_12_3">Доказательство Архимеда: площадь сферы равна боковой площади описанного цилиндра. Интегрирование площади дает объем. ∎</string>
+    <string name="th_ex_12_3">Материал для футбольного мяча.</string>
+    <string name="th_q_12_3">Если радиус 3, какова площадь поверхности, деленная на π?</string>
+    <string name="th_a_12_3">36</string>
 </resources>

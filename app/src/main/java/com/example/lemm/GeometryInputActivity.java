@@ -1,5 +1,6 @@
 package com.example.lemm;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -25,7 +26,9 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class GeometryInputActivity extends AppCompatActivity {
 
@@ -41,14 +44,18 @@ public class GeometryInputActivity extends AppCompatActivity {
 
     private String lastSolutionText = "";
     private String lastAIResponse = "";
-    private int editId = -1;
+    private String editId = "";
+    private String originalDate = null;
     private boolean isFromHistory = false;
-    private boolean isSaved = true; // THIS WAS THE MISSING VARIABLE
+    private boolean isSaved = true;
+    private String currentLangCode = "en";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_geometry_input);
+
+        currentLangCode = Locale.getDefault().getLanguage();
 
         dbHelper = new DatabaseHelper(this);
         canvas3D = findViewById(R.id.geometryCanvas3D);
@@ -64,8 +71,6 @@ public class GeometryInputActivity extends AppCompatActivity {
         btnExpandDesc = findViewById(R.id.btnExpandDesc);
         btnExpandExtra = findViewById(R.id.btnExpandExtra);
         btnHistory = findViewById(R.id.btnHistory);
-
-        // --- BUTTON LISTENERS ---
 
         btnHistory.setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
 
@@ -138,7 +143,6 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         canvas3D.setOnZoomChangeListener(pct -> tvZoom.setText(pct + "%"));
 
-        // EXIT HANDLING
         findViewById(R.id.btnBack).setOnClickListener(v -> confirmExit());
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -182,25 +186,24 @@ public class GeometryInputActivity extends AppCompatActivity {
         switch (langCode) {
             case "ru":
                 langName = "Russian (Русский)";
-                instructions = "Вы — ИИ-репетитор по геометрии. Отвечайте строго на РУССКОМ языке.";
+                instructions = "Вы — ИИ-репетитор по геометрии. Отвечайте строго на РУССКОМ языке.(Вместо Given пиши Дано)";
                 break;
             case "hy":
                 langName = "Armenian (Հայերեն)";
-                instructions = "Դուք երկրաչափության փորձագետ եք: Պատասխանեք բացառապես ՀԱՅԵՐԵՆՈՎ:";
+                instructions = "Դուք երկրաչափության փորձագետ եք: Պատասխանեք բացառապես ՀԱՅԵՐԵՆՈՎ:(Given-ի փոխարեն գրիր Տրված է)";
                 break;
             default:
                 langName = "English";
                 instructions = "You are a Geometry Tutor. Answer strictly in ENGLISH.";
                 break;
         }
-
         return "SYSTEM: " + instructions + "\n" +
                 "CORE RULES:\n" +
                 "1. Output drawing commands first: DRAW3D, LINE3D, PLANE3D.\n" +
                 "2. Always use PLANE3D for faces of 3D shapes (Pyramids, Cubes).\n" +
                 "3. The step-by-step explanation MUST be in " + langName + ".\n" +
                 "4. Structure your explanation EXACTLY like this:\n" +
-                "   GIVEN:\n" +
+                "   GIVEN:(if in other language translate to that language)\n" +
                 "   (Write what is known, which letter is what, etc. Do NOT use the word 'STEP' here.)\n" +
                 "   STEP 1: Title\n" +
                 "   (Explanation)\n" +
@@ -277,9 +280,6 @@ public class GeometryInputActivity extends AppCompatActivity {
     }
 
     private void solveWithAI(String problem) {
-        SharedPreferences langPrefs = getSharedPreferences("Settings", MODE_PRIVATE);
-        String currentLangCode = langPrefs.getString("Locale.Helper.Selected.Language", "en");
-
         SharedPreferences apiPrefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
         SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
@@ -289,7 +289,6 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         String keyToUse = "";
 
-        // --- PRO ACCESS LOGIC ---
         if (username.equals("Admin_Teacher") || isProUser) {
             keyToUse = BuildConfig.GEMINI_API_KEY;
         }
@@ -399,51 +398,32 @@ public class GeometryInputActivity extends AppCompatActivity {
 
             switch (commandName) {
                 case "DRAW3D":
-                    if (args.length >= 4) {
-                        canvas3D.addPoint(args[0].trim(), f(args[1]), f(args[2]), f(args[3]));
-                    }
+                    if (args.length >= 4) canvas3D.addPoint(args[0].trim(), f(args[1]), f(args[2]), f(args[3]));
                     break;
                 case "LINE3D":
-                    if (args.length >= 2) {
-                        canvas3D.addLine(args[0].trim(), args[1].trim());
-                    }
+                    if (args.length >= 2) canvas3D.addLine(args[0].trim(), args[1].trim());
                     break;
                 case "PLANE3D":
                     if (args.length >= 2) {
                         List<String> vertices = new ArrayList<>();
-                        for (int i = 1; i < args.length; i++) {
-                            vertices.add(args[i].trim());
-                        }
+                        for (int i = 1; i < args.length; i++) vertices.add(args[i].trim());
                         canvas3D.addPlane(vertices);
                     }
                     break;
                 case "CONE3D":
-                    if (args.length >= 7) {
-                        canvas3D.addCone(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]), f(args[5]), f(args[6]));
-                    }
+                    if (args.length >= 7) canvas3D.addCone(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]), f(args[5]), f(args[6]));
                     break;
                 case "PYRAMID3D":
-                    if (args.length >= 7) {
-                        canvas3D.addPyramid(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]), f(args[5]), f(args[6]));
-                    }
+                    if (args.length >= 7) canvas3D.addPyramid(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]), f(args[5]), f(args[6]));
                     break;
                 case "CYLINDER3D":
-                    if (args.length >= 6) {
-                        canvas3D.addCylinder(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]), f(args[5]));
-                    }
+                    if (args.length >= 6) canvas3D.addCylinder(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]), f(args[5]));
                     break;
                 case "SPHERE3D":
-                    if (args.length >= 5) {
-                        canvas3D.addSphere(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]));
-                    }
+                    if (args.length >= 5) canvas3D.addSphere(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]));
                     break;
                 case "CIRCLE3D":
-                    if (args.length >= 5) {
-                        canvas3D.addCircle(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]));
-                    }
-                    break;
-                default:
-                    Log.w(TAG, "Unknown CAD command ignored: " + cleanLine);
+                    if (args.length >= 5) canvas3D.addCircle(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]));
                     break;
             }
         } catch (Exception e) {
@@ -465,14 +445,20 @@ public class GeometryInputActivity extends AppCompatActivity {
         tv.setTextColor(Color.parseColor("#333333"));
         tv.setTextSize(14f);
 
-        SpannableStringBuilder ssb = new SpannableStringBuilder(text);
-        int firstNewline = text.indexOf('\n');
-        if (firstNewline == -1) firstNewline = text.length();
+        // AUTO-BOLD: Find "Տրված է:" or "GIVEN:" and wrap it in bold tags automatically
+        if (text.contains("Տրված է:")) {
+            text = text.replace("Տրված է:", "<b>Տրված է:</b>");
+        } else if (text.contains("GIVEN:")) {
+            text = text.replace("GIVEN:", "<b>GIVEN:</b>");
+        }
 
-        ssb.setSpan(new StyleSpan(Typeface.BOLD), 0, firstNewline, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        ssb.setSpan(new ForegroundColorSpan(Color.parseColor("#424242")), 0, firstNewline, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        // Render as HTML (Allows bolding, italics, and custom symbols)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            tv.setText(android.text.Html.fromHtml(text, android.text.Html.FROM_HTML_MODE_COMPACT));
+        } else {
+            tv.setText(android.text.Html.fromHtml(text));
+        }
 
-        tv.setText(ssb);
         card.addView(tv);
         stepsContainer.addView(card);
     }
@@ -491,18 +477,15 @@ public class GeometryInputActivity extends AppCompatActivity {
         tv.setTextColor(Color.parseColor("#333333"));
         tv.setTextSize(14f);
 
-        String locStep = getString(R.string.step_prefix);
-        String processedText = locStep + sectionText;
+        // AUTO-BOLD: Auto-bold the "STEP X:" header at the beginning of each card
+        String processedText = "<b>" + getString(R.string.step_prefix) + "</b>" + sectionText;
 
-        SpannableStringBuilder ssb = new SpannableStringBuilder(processedText);
-        int firstNewline = processedText.indexOf('\n');
-        if (firstNewline == -1) firstNewline = processedText.length();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            tv.setText(android.text.Html.fromHtml(processedText, android.text.Html.FROM_HTML_MODE_COMPACT));
+        } else {
+            tv.setText(android.text.Html.fromHtml(processedText));
+        }
 
-        ssb.setSpan(new StyleSpan(Typeface.BOLD), 0, firstNewline, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        ssb.setSpan(new RelativeSizeSpan(1.2f), 0, firstNewline, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        ssb.setSpan(new ForegroundColorSpan(Color.parseColor("#0C3D6A")), 0, firstNewline, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        tv.setText(ssb);
         card.addView(tv);
         stepsContainer.addView(card);
     }
@@ -523,15 +506,15 @@ public class GeometryInputActivity extends AppCompatActivity {
         tv.setTextColor(Color.parseColor("#1B5E20"));
         tv.setTextSize(16f);
 
-        String locFinal = getString(R.string.final_answer);
-        String fullText = locFinal + " " + answerText;
+        // AUTO-BOLD: Auto-bold the "FINAL ANSWER:" text
+        String fullText = "<b>" + getString(R.string.final_answer) + "</b> " + answerText;
 
-        SpannableStringBuilder ssb = new SpannableStringBuilder(fullText);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            tv.setText(android.text.Html.fromHtml(fullText, android.text.Html.FROM_HTML_MODE_COMPACT));
+        } else {
+            tv.setText(android.text.Html.fromHtml(fullText));
+        }
 
-        ssb.setSpan(new StyleSpan(Typeface.BOLD), 0, locFinal.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        ssb.setSpan(new RelativeSizeSpan(1.1f), 0, locFinal.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        tv.setText(ssb);
         card.addView(tv);
         stepsContainer.addView(card);
     }
@@ -558,7 +541,7 @@ public class GeometryInputActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void showSaveDialog (boolean exitAfter) {
+    private void showSaveDialog(boolean exitAfter) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Save Solution");
         final EditText input = new EditText(this);
@@ -567,32 +550,50 @@ public class GeometryInputActivity extends AppCompatActivity {
         input.setText(defaultName);
         input.setSelectAllOnFocus(true);
 
-        builder.setView(input);
+        LinearLayout layout = new LinearLayout(this);
+        layout.setPadding(50, 20, 50, 0);
+        layout.addView(input);
+        builder.setView(layout);
+
         builder.setPositiveButton("Save", (dialog, which) -> {
-            String user = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("username", "Guest");
             String title = input.getText().toString().trim();
-            if(title.isEmpty()) title = "Unnamed Solution";
+            if (title.isEmpty()) title = "Unnamed Solution";
 
-            if (editId != -1) {
-                dbHelper.updateHistory(editId, title, etDescription.getText().toString(), "", lastAIResponse);
-            } else {
-                dbHelper.addHistory(user, title, etDescription.getText().toString(), "", lastAIResponse);
-            }
+            String user = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("username", "GuestUser");
+            String prob = etDescription.getText().toString();
 
-            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            boolean isGuest = pref.getBoolean("is_guest", false);
-            if (!isGuest) {
-                CloudSyncManager.syncLocalToCloud(dbHelper, user);
-                Toast.makeText(this, "Saved & Synced to Cloud", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Saved Locally", Toast.LENGTH_SHORT).show();
-            }
+            try {
+                // Determine the correct date so duplicates aren't created across devices
+                String date = (originalDate != null) ? originalDate : FirebaseManager.getCurrentDate();
+                String cloudKey = date.replaceAll("[^a-zA-Z0-9]", "");
 
-            isSaved = true;
-            solutionControls.setVisibility(View.GONE);
+                // 1. Save Locally
+                if (editId != null && !editId.isEmpty()) {
+                    dbHelper.updateHistory(Integer.parseInt(editId), title, prob, "", lastAIResponse);
+                } else {
+                    dbHelper.addHistoryWithDate(user, title, prob, "", lastAIResponse, date);
+                }
 
-            if (exitAfter) {
-                finish();
+                // 2. Direct Write to Cloud Database
+                if (!user.startsWith("GuestUser_")) {
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("title", title);
+                    map.put("problem", prob);
+                    map.put("raw_response", lastAIResponse);
+                    map.put("date", date);
+
+                    FirebaseManager.getUserRef(user).child("history").child(cloudKey).setValue(map)
+                            .addOnFailureListener(e -> Toast.makeText(GeometryInputActivity.this, "Cloud Sync Blocked: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                }
+
+                Toast.makeText(this, "Saved successfully!", Toast.LENGTH_SHORT).show();
+                isSaved = true;
+                solutionControls.setVisibility(View.GONE);
+
+                if (exitAfter) finish();
+            } catch (Exception e) {
+                Log.e(TAG, "Error initiating save: " + e.getMessage(), e);
+                Toast.makeText(this, "Save Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
         builder.setNegativeButton("Cancel", null).show();
@@ -626,9 +627,8 @@ public class GeometryInputActivity extends AppCompatActivity {
             etDescription.setText(savedProblem);
             lastAIResponse = savedRaw;
 
-            if (intent.hasExtra("EDIT_ID")) {
-                editId = intent.getIntExtra("EDIT_ID", -1);
-            }
+            if (intent.hasExtra("EDIT_ID")) editId = intent.getStringExtra("EDIT_ID");
+            if (intent.hasExtra("SAVED_DATE")) originalDate = intent.getStringExtra("SAVED_DATE");
 
             if (savedRaw != null && !savedRaw.isEmpty()) {
                 processAIResult(savedRaw);

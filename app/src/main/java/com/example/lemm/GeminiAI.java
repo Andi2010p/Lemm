@@ -2,17 +2,35 @@ package com.example.lemm;
 
 import com.google.ai.client.generativeai.GenerativeModel;
 import com.google.ai.client.generativeai.java.GenerativeModelFutures;
+import com.google.ai.client.generativeai.type.BlockThreshold;
 import com.google.ai.client.generativeai.type.Content;
 import com.google.ai.client.generativeai.type.GenerateContentResponse;
+import com.google.ai.client.generativeai.type.HarmCategory;
+import com.google.ai.client.generativeai.type.SafetySetting;
 import com.google.common.util.concurrent.ListenableFuture;
 import android.graphics.Bitmap;
+import java.util.Arrays;
 
 public class GeminiAI {
     private GenerativeModelFutures textModel;
     private GenerativeModelFutures visionModel;
 
     public GeminiAI(String apiKey) {
-        GenerativeModel gm = new GenerativeModel("gemini-3-flash-preview", apiKey);
+        // 1. Lower safety thresholds so math words (like "cut", "strike") don't trigger false errors
+        SafetySetting harass = new SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.ONLY_HIGH);
+        SafetySetting hate = new SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.ONLY_HIGH);
+        SafetySetting sex = new SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH);
+        SafetySetting danger = new SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH);
+
+        // 2. Using the requested gemini-3-flash-preview model.
+        // We pass "null" for the generation config to avoid any Builder errors.
+        GenerativeModel gm = new GenerativeModel(
+                "gemini-3-flash-preview",
+                apiKey,
+                null,
+                Arrays.asList(harass, hate, sex, danger)
+        );
+
         this.textModel = GenerativeModelFutures.from(gm);
         this.visionModel = GenerativeModelFutures.from(gm);
     }

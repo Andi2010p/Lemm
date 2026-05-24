@@ -1,26 +1,45 @@
 {
   "project_info": {
-    "project_number": "481743722691",
-    "project_id": "app1-9b74272b",
-    "storage_bucket": "app1-9b74272b.firebasestorage.app"
+    "project_number": "459186735300",
+    "firebase_url": "https://lemma-37061-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "lemma-37061",
+    "storage_bucket": "lemma-37061.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:481743722691:android:d92bd5098b208b65886a76",
+        "mobilesdk_app_id": "1:459186735300:android:68cc8eb5015f1c4aaca191",
         "android_client_info": {
           "package_name": "com.example.lemm"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "459186735300-3vulcoh9ga3djvg4t1lgmg4u1ej6fq2v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.lemm",
+            "certificate_hash": "ba244c2315b42908add1c7b9e47ac9640a606181"
+          }
+        },
+        {
+          "client_id": "459186735300-ut2lle6b02lehp6lr1t7lnbvh3hup7ke.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyD1qUC2rV52FbVmroDxwHjxVgzdHI--xyY"
+          "current_key": "AIzaSyD0bs_88DiXelOpUlCZyaff41wL5AMsh0k"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "459186735300-ut2lle6b02lehp6lr1t7lnbvh3hup7ke.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
