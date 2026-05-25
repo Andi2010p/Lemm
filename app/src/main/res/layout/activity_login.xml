@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:fillViewport="true"
-    android:background="#FFFFFF">
+    android:background="@drawable/bg_gradient_light">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             android:text="@string/login_to_lemma"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="#0C3D6A"
+            android:textColor="@color/main_blue"
             android:layout_marginBottom="24dp"/>
 
         <EditText
@@ -47,7 +47,7 @@
             app:boxBackgroundMode="none"
             app:hintEnabled="false"
             app:passwordToggleEnabled="true"
-            app:passwordToggleTint="#555555">
+            app:passwordToggleTint="@color/text_subtitle">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etPassword"
@@ -66,7 +66,7 @@
             android:layout_gravity="end"
             android:padding="4dp"
             android:text="@string/forgot_password"
-            android:textColor="#0C3D6A"
+            android:textColor="@color/main_blue"
             android:textSize="14sp"
             android:layout_marginBottom="16dp"
             android:clickable="true"
@@ -77,7 +77,7 @@
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:text="@string/login"
-            android:backgroundTint="#0C3D6A"
+            android:backgroundTint="@color/main_blue"
             android:textColor="#FFFFFF" />
 
         <!-- "OR" Divider -->
@@ -89,7 +89,7 @@
             android:layout_marginVertical="20dp">
 
             <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="#DDDDDD"/>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="OR" android:textColor="#888888" android:paddingHorizontal="12dp" android:textStyle="bold"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="OR" android:textColor="@color/text_subtitle" android:paddingHorizontal="12dp" android:textStyle="bold"/>
             <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="#DDDDDD"/>
         </LinearLayout>
 
@@ -128,7 +128,7 @@
             android:focusable="true"
             android:padding="10dp"
             android:text="@string/sign_up"
-            android:textColor="#0C3D6A"
+            android:textColor="@color/main_blue"
             android:textSize="16sp"
             android:textStyle="bold"
             android:layout_marginBottom="20dp"/>

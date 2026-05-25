@@ -10,6 +10,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import com.google.android.material.card.MaterialCardView;
 
 public class TheoremListActivity extends AppCompatActivity {
@@ -49,7 +50,7 @@ public class TheoremListActivity extends AppCompatActivity {
                 TextView emptyText = new TextView(this);
                 emptyText.setText(getString(R.string.loading_advanced, grade));
                 emptyText.setPadding(16, 32, 16, 32);
-                emptyText.setTextColor(Color.parseColor("#78909C"));
+                emptyText.setTextColor(ContextCompat.getColor(this, R.color.text_subtitle));
                 theoremListContainer.addView(emptyText);
             }
         } catch (Exception e) {
@@ -67,7 +68,7 @@ public class TheoremListActivity extends AppCompatActivity {
         card.setLayoutParams(params);
         card.setRadius(16f);
         card.setCardElevation(4f);
-        card.setCardBackgroundColor(Color.WHITE);
+        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.surface_white));
         card.setClickable(true);
         card.setFocusable(true);
 
@@ -79,14 +80,14 @@ public class TheoremListActivity extends AppCompatActivity {
         // Icon
         ImageView icon = new ImageView(this);
         icon.setImageResource(android.R.drawable.ic_menu_agenda);
-        icon.setColorFilter(Color.parseColor("#0C3D6A"));
+        icon.setColorFilter(ContextCompat.getColor(this, R.color.main_blue));
         icon.setLayoutParams(new LinearLayout.LayoutParams(64, 64));
 
         // Text
         TextView tvTitle = new TextView(this);
         tvTitle.setText(title);
         tvTitle.setTextSize(18f);
-        tvTitle.setTextColor(Color.parseColor("#333333"));
+        tvTitle.setTextColor(ContextCompat.getColor(this, R.color.text_title));
         tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
         tvTitle.setPadding(32, 0, 0, 0);
 

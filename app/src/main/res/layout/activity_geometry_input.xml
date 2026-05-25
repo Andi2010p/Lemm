@@ -223,7 +223,7 @@
             android:id="@+id/canvasContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#FFFFFF">
+            android:background="@color/canvas_bg">
 
             <com.example.lemm.GeometryCanvas3D
                 android:id="@+id/geometryCanvas3D"
@@ -438,7 +438,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDontSave"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"

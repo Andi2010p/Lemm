@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -48,6 +49,8 @@ public class SettingsActivity extends AppCompatActivity {
                 if (!selectedLang.equals(currentLang)) updateLocale(selectedLang);
             }
         });
+
+        setupThemeToggle();
 
         findViewById(R.id.btnApiKeyConfig).setOnClickListener(v -> openApiKeyDialog());
 
@@ -106,6 +109,31 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+    }
+
+    private void setupThemeToggle() {
+        MaterialButtonToggleGroup toggleTheme = findViewById(R.id.toggleTheme);
+        if (toggleTheme == null) return;
+
+        int mode = getSharedPreferences("Settings", MODE_PRIVATE)
+                .getInt("night_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        if (mode == AppCompatDelegate.MODE_NIGHT_NO) toggleTheme.check(R.id.btnThemeLight);
+        else if (mode == AppCompatDelegate.MODE_NIGHT_YES) toggleTheme.check(R.id.btnThemeDark);
+        else toggleTheme.check(R.id.btnThemeSystem);
+
+        toggleTheme.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            int newMode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
+            if (checkedId == R.id.btnThemeLight) newMode = AppCompatDelegate.MODE_NIGHT_NO;
+            else if (checkedId == R.id.btnThemeDark) newMode = AppCompatDelegate.MODE_NIGHT_YES;
+
+            int current = getSharedPreferences("Settings", MODE_PRIVATE)
+                    .getInt("night_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+            if (newMode == current) return;
+
+            getSharedPreferences("Settings", MODE_PRIVATE).edit().putInt("night_mode", newMode).apply();
+            AppCompatDelegate.setDefaultNightMode(newMode); // recreates activities to apply instantly
+        });
     }
 
     private void checkCurrentProStatus() {

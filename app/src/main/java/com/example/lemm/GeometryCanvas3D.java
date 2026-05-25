@@ -16,6 +16,7 @@ import java.util.List;
 public class GeometryCanvas3D extends View {
     private Paint linePaint, pointPaint, planePaint, textPaint;
     private Paint xAxisPaint, yAxisPaint, zAxisPaint, axesTextPaint;
+    private int colBg3d, colLine3d, colText3d;
 
     private List<Point3D> points = new ArrayList<>();
     private List<Line3D> lines = new ArrayList<>();
@@ -55,10 +56,15 @@ public class GeometryCanvas3D extends View {
     public GeometryCanvas3D(Context context, AttributeSet attrs) { super(context, attrs); init(context); }
 
     private void init(Context context) {
-        linePaint = new Paint(Paint.ANTI_ALIAS_FLAG); linePaint.setColor(Color.BLACK); linePaint.setStrokeWidth(2f); linePaint.setStyle(Paint.Style.STROKE);
+        // Theme-aware colors: dark "paper" + light lines/text in dark mode.
+        colBg3d = androidx.core.content.ContextCompat.getColor(context, R.color.canvas_3d_bg);
+        colLine3d = androidx.core.content.ContextCompat.getColor(context, R.color.canvas_3d_line);
+        colText3d = androidx.core.content.ContextCompat.getColor(context, R.color.canvas_3d_text);
+
+        linePaint = new Paint(Paint.ANTI_ALIAS_FLAG); linePaint.setColor(colLine3d); linePaint.setStrokeWidth(2f); linePaint.setStyle(Paint.Style.STROKE);
         pointPaint = new Paint(Paint.ANTI_ALIAS_FLAG); pointPaint.setColor(Color.RED);
         planePaint = new Paint(Paint.ANTI_ALIAS_FLAG); planePaint.setStyle(Paint.Style.FILL);
-        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG); textPaint.setTextSize(28f); textPaint.setColor(Color.parseColor("#0C3D6A")); textPaint.setTypeface(Typeface.DEFAULT_BOLD);
+        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG); textPaint.setTextSize(28f); textPaint.setColor(colText3d); textPaint.setTypeface(Typeface.DEFAULT_BOLD);
         xAxisPaint = new Paint(); xAxisPaint.setColor(Color.RED); xAxisPaint.setStrokeWidth(4f);
         yAxisPaint = new Paint(); yAxisPaint.setColor(Color.GREEN); yAxisPaint.setStrokeWidth(4f);
         zAxisPaint = new Paint(); zAxisPaint.setColor(Color.BLUE); zAxisPaint.setStrokeWidth(4f);
@@ -106,7 +112,7 @@ public class GeometryCanvas3D extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawColor(Color.WHITE);
+        canvas.drawColor(colBg3d);
 
         float centerX = getWidth() / 2f + translateX;
         float centerY = getHeight() / 2f + translateY;
@@ -142,7 +148,7 @@ public class GeometryCanvas3D extends View {
                 planePaint.setColor(Color.argb(120, 180, 210, 255));
                 canvas.drawPath(path, planePaint);
                 planePaint.setStyle(Paint.Style.STROKE);
-                planePaint.setColor(Color.BLACK);
+                planePaint.setColor(colLine3d);
                 canvas.drawPath(path, planePaint);
             }
         }

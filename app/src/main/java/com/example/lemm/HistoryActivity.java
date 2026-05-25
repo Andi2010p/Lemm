@@ -5,7 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Build;
@@ -27,8 +31,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -38,6 +46,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -63,9 +72,17 @@ public class HistoryActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         currentUsername = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("username", "GuestUser");
 
+        // Push local history up to the cloud (real accounts only; guests don't sync).
+        if (!currentUsername.startsWith("GuestUser")) {
+            CloudSyncManager.syncLocalToCloud(dbHelper, currentUsername);
+        }
+
         rvHistory = findViewById(R.id.rvHistory);
         btnShowSolutions = findViewById(R.id.btnShowSolutions);
         btnShowDrawings = findViewById(R.id.btnShowDrawings);
+
+        View backBtn = findViewById(R.id.btnBack);
+        if (backBtn != null) backBtn.setOnClickListener(v -> finish());
 
         rvHistory.setLayoutManager(new LinearLayoutManager(this));
 
@@ -80,6 +97,9 @@ public class HistoryActivity extends AppCompatActivity {
         });
 
         rvHistory.setAdapter(adapter);
+
+        attachSwipeToDelete();
+        maybeShowSwipeHint();
 
         btnShowSolutions.setOnClickListener(v -> {
             showingSolutions = true;
@@ -146,7 +166,7 @@ public class HistoryActivity extends AppCompatActivity {
         }
 
         // Guests don't use cloud sync
-        if (currentUsername.startsWith("GuestUser_")) {
+        if (currentUsername.startsWith("GuestUser")) {
             loadLocalHistoryOnly();
             return;
         }
@@ -173,48 +193,56 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void mergeData(DataSnapshot cloudSnapshot) {
-        HashSet<String> localDates = new HashSet<>();
+        try {
+            android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-        // 1. Map everything we already have locally
-        Cursor cursor = showingSolutions ? dbHelper.getHistory(currentUsername) : dbHelper.getDrawings(currentUsername);
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                localDates.add(cursor.getString(cursor.getColumnIndexOrThrow("date")));
-            } while (cursor.moveToNext());
-            cursor.close();
-        }
+            // Mirror the cloud into local additively. We never blanket-delete here: with Firebase
+            // offline persistence the first snapshot can arrive empty/cached, and a blanket delete
+            // would then wipe good local rows. Each cloud item replaces its local namesake below.
+            if (cloudSnapshot != null && cloudSnapshot.exists()) {
+                for (DataSnapshot child : cloudSnapshot.getChildren()) {
+                    String date = child.child("date").getValue(String.class);
+                    String title = child.child("title").getValue(String.class);
+                    if (title == null) title = "Synced Item";
+                    if (date == null) continue;
 
-        boolean downloadedNewData = false;
+                    if (showingSolutions) {
+                        String prob = child.child("problem").getValue(String.class);
+                        String raw = child.child("raw_response").getValue(String.class);
 
-        // 2. Download anything from cloud that we are missing locally
-        if (cloudSnapshot != null) {
-            for (DataSnapshot child : cloudSnapshot.getChildren()) {
-                String date = child.child("date").getValue(String.class);
+                        ContentValues v = new ContentValues();
+                        v.put("username", currentUsername);
+                        v.put("name", title);
+                        v.put("problem", prob != null ? prob : "");
+                        v.put("solution", "");
+                        v.put("raw_response", raw != null ? raw : "");
+                        v.put("date", date);
+                        v.put("synced", 1); // mirrored from cloud => already synced
+                        // Remove any local copy of this same item (incl. an unsynced one just saved) to avoid duplicates
+                        db.delete("history", "username = ? AND date = ?", new String[]{currentUsername, date});
+                        db.insert("history", null, v);
+                    } else {
+                        String data = child.child("data").getValue(String.class);
 
-                // If it lacks a date or we already have it locally, ignore it
-                if (date == null || localDates.contains(date)) continue;
-
-                String title = child.child("title").getValue(String.class);
-                if (title == null) title = "Synced Item";
-
-                if (showingSolutions) {
-                    String prob = child.child("problem").getValue(String.class);
-                    String raw = child.child("raw_response").getValue(String.class);
-                    dbHelper.addHistoryWithDate(currentUsername, title, prob == null ? "" : prob, "", raw == null ? "" : raw, date);
-                } else {
-                    String data = child.child("data").getValue(String.class);
-                    dbHelper.addDrawingWithDate(currentUsername, title, data == null ? "{}" : data, date);
+                        ContentValues v = new ContentValues();
+                        v.put("username", currentUsername);
+                        v.put("name", title);
+                        v.put("data", data != null ? data : "{}");
+                        v.put("date", date);
+                        v.put("synced", 1); // mirrored from cloud => already synced
+                        // Remove any local copy of this same item (incl. an unsynced one just saved) to avoid duplicates
+                        db.delete("drawings", "username = ? AND date = ?", new String[]{currentUsername, date});
+                        db.insert("drawings", null, v);
+                    }
                 }
-                downloadedNewData = true;
             }
+        } catch (Exception e) {
+            Log.e("HistorySync", "Error mirroring data: " + e.getMessage());
         }
 
-        // 3. If we downloaded things from the cloud, reload our list so they appear!
-        if (downloadedNewData) {
-            loadLocalHistoryOnly();
-        }
+        // 3. Refresh the UI list instantly
+        loadLocalHistoryOnly();
     }
-
     private void showRenameDialog(GenericItem item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Rename Item");
@@ -235,7 +263,7 @@ public class HistoryActivity extends AppCompatActivity {
                 else dbHelper.renameDrawing(id, newName);
 
                 // Push rename to cloud immediately
-                if (!currentUsername.startsWith("GuestUser_")) {
+                if (!currentUsername.startsWith("GuestUser")) {
                     String cloudKey = item.date.replaceAll("[^a-zA-Z0-9]", "");
                     FirebaseManager.getUserRef(currentUsername)
                             .child(showingSolutions ? "history" : "drawings")
@@ -259,7 +287,7 @@ public class HistoryActivity extends AppCompatActivity {
                     else dbHelper.deleteDrawing(id);
 
                     // Push deletion to cloud immediately
-                    if (!currentUsername.startsWith("GuestUser_")) {
+                    if (!currentUsername.startsWith("GuestUser")) {
                         String cloudKey = item.date.replaceAll("[^a-zA-Z0-9]", "");
                         FirebaseManager.getUserRef(currentUsername).child(showingSolutions ? "history" : "drawings").child(cloudKey).removeValue();
                     }
@@ -268,6 +296,103 @@ public class HistoryActivity extends AppCompatActivity {
                     loadLocalHistoryOnly(); // Refresh screen
                 })
                 .setNegativeButton(getString(R.string.cancel), null).show();
+    }
+
+    private void attachSwipeToDelete() {
+        ItemTouchHelper.SimpleCallback cb = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            private final ColorDrawable background = new ColorDrawable(Color.parseColor("#D32F2F"));
+            private final Drawable icon = ContextCompat.getDrawable(HistoryActivity.this, android.R.drawable.ic_menu_delete);
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder a, @NonNull RecyclerView.ViewHolder b) { return false; }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder vh, int direction) {
+                int pos = vh.getAdapterPosition();
+                if (pos == RecyclerView.NO_POSITION || pos >= displayList.size()) { adapter.notifyDataSetChanged(); return; }
+
+                final GenericItem item = displayList.get(pos);
+                final boolean wasSolutions = showingSolutions;
+
+                // Remove from the list and the stores right away so a cloud refresh can't resurrect it,
+                // then offer UNDO (Gmail-style) to restore everything if it was a mistake.
+                displayList.remove(pos);
+                adapter.notifyItemRemoved(pos);
+                deleteItemFromStores(item, wasSolutions);
+
+                Snackbar.make(rvHistory, getString(R.string.deleted_toast), Snackbar.LENGTH_LONG)
+                        .setAction("UNDO", v -> restoreItemToStores(item, wasSolutions))
+                        .show();
+            }
+
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh,
+                                    float dX, float dY, int actionState, boolean isCurrentlyActive) {
+                View row = vh.itemView;
+                if (dX > 0) {
+                    background.setBounds(row.getLeft(), row.getTop(), row.getLeft() + (int) dX, row.getBottom());
+                } else if (dX < 0) {
+                    background.setBounds(row.getRight() + (int) dX, row.getTop(), row.getRight(), row.getBottom());
+                } else {
+                    background.setBounds(0, 0, 0, 0);
+                }
+                background.draw(c);
+
+                if (icon != null && dX != 0) {
+                    int iw = icon.getIntrinsicWidth(), ih = icon.getIntrinsicHeight();
+                    int margin = (row.getHeight() - ih) / 2;
+                    int top = row.getTop() + margin, bottom = top + ih;
+                    if (dX > 0) {
+                        int left = row.getLeft() + margin;
+                        icon.setBounds(left, top, left + iw, bottom);
+                    } else {
+                        int right = row.getRight() - margin;
+                        icon.setBounds(right - iw, top, right, bottom);
+                    }
+                    icon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                    icon.draw(c);
+                }
+                super.onChildDraw(c, rv, vh, dX, dY, actionState, isCurrentlyActive);
+            }
+        };
+        new ItemTouchHelper(cb).attachToRecyclerView(rvHistory);
+    }
+
+    private void maybeShowSwipeHint() {
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        if (!pref.getBoolean("swipe_hint_shown", false)) {
+            Toast.makeText(this, "Tip: swipe a card left or right to delete", Toast.LENGTH_LONG).show();
+            pref.edit().putBoolean("swipe_hint_shown", true).apply();
+        }
+    }
+
+    private void deleteItemFromStores(GenericItem item, boolean solutions) {
+        try {
+            int id = Integer.parseInt(item.id);
+            if (solutions) dbHelper.deleteHistory(id); else dbHelper.deleteDrawing(id);
+        } catch (Exception ignored) {}
+        if (!currentUsername.startsWith("GuestUser") && item.date != null) {
+            String cloudKey = item.date.replaceAll("[^a-zA-Z0-9]", "");
+            FirebaseManager.getUserRef(currentUsername).child(solutions ? "history" : "drawings").child(cloudKey).removeValue();
+        }
+    }
+
+    private void restoreItemToStores(GenericItem item, boolean solutions) {
+        if (solutions) {
+            dbHelper.addHistoryWithDate(currentUsername, item.title, item.subtext, "", item.data, item.date);
+        } else {
+            dbHelper.addDrawingWithDate(currentUsername, item.title, item.data, item.date);
+        }
+        if (!currentUsername.startsWith("GuestUser") && item.date != null) {
+            HashMap<String, Object> map = new HashMap<>();
+            map.put("title", item.title);
+            map.put("date", item.date);
+            if (solutions) { map.put("problem", item.subtext); map.put("raw_response", item.data); }
+            else { map.put("data", item.data); }
+            String cloudKey = item.date.replaceAll("[^a-zA-Z0-9]", "");
+            FirebaseManager.getUserRef(currentUsername).child(solutions ? "history" : "drawings").child(cloudKey).setValue(map);
+        }
+        loadLocalHistoryOnly();
     }
 
     private void openItem(GenericItem item) {
@@ -372,8 +497,11 @@ public class HistoryActivity extends AppCompatActivity {
         int size = 2000;
         Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
+
+        // 1. Draw a clean engineering-white paper background
         canvas.drawColor(Color.WHITE);
 
+        // 2. Deserialize the CAD data
         CadEngine2d tempEngine = new CadEngine2d();
         org.locationtech.jts.io.WKTReader reader = new org.locationtech.jts.io.WKTReader();
         List<org.locationtech.jts.geom.Geometry> geometries = new ArrayList<>();
@@ -403,15 +531,100 @@ public class HistoryActivity extends AppCompatActivity {
             }
         }
         tempEngine.setGeometriesAndPoints(geometries, points);
-        CadGeometryCanvas tempView = new CadGeometryCanvas(this, null);
-        tempView.setEngine(tempEngine);
-        tempView.measure(View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY));
-        tempView.layout(0, 0, size, size);
-        tempView.pan(size/2f, size/2f);
-        tempView.draw(canvas);
+
+        // 3. AUTO-ZOOM-TO-FIT: Find boundaries of the drawing
+        double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+        double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+
+        for (org.locationtech.jts.geom.Geometry g : geometries) {
+            for (org.locationtech.jts.geom.Coordinate c : g.getCoordinates()) {
+                if (c.x < minX) minX = c.x; if (c.x > maxX) maxX = c.x;
+                if (c.y < minY) minY = c.y; if (c.y > maxY) maxY = c.y;
+            }
+        }
+
+        // Handle empty drawings gracefully
+        if (geometries.isEmpty()) return bitmap;
+
+        double drawW = maxX - minX;
+        double drawH = maxY - minY;
+        if (drawW <= 0) drawW = 100; if (drawH <= 0) drawH = 100;
+
+        // Apply a safe padding around the drawings (250 pixels)
+        float padding = 250f;
+        float scale = (float) Math.min((size - 2 * padding) / drawW, (size - 2 * padding) / drawH);
+
+        // Center the scaled drawing on the canvas
+        float offsetX = (float) (padding + (size - 2 * padding - drawW * scale) / 2 - minX * scale);
+        float offsetY = (float) (padding + (size - 2 * padding - drawH * scale) / 2 - minY * scale);
+
+        // 4. Setup high-contrast paints
+        android.graphics.Paint linePaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        linePaint.setColor(Color.parseColor("#1A237E")); // Deep blueprints blue
+        linePaint.setStyle(android.graphics.Paint.Style.STROKE);
+        linePaint.setStrokeWidth(8f);
+
+        android.graphics.Paint vertexPaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        vertexPaint.setColor(Color.parseColor("#D32F2F")); // Bright red vertex dots
+        vertexPaint.setStyle(android.graphics.Paint.Style.FILL);
+
+        android.graphics.Paint textPaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.parseColor("#0C3D6A"));
+        textPaint.setTextSize(48f);
+        textPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        textPaint.setTextAlign(android.graphics.Paint.Align.CENTER);
+
+        // 5. Draw the vectors directly on the high-res Canvas
+        for (org.locationtech.jts.geom.Geometry geo : geometries) {
+            org.locationtech.jts.geom.Coordinate[] coords = geo.getCoordinates();
+            android.graphics.Path path = new android.graphics.Path();
+
+            float startX = (float) (coords[0].x * scale + offsetX);
+            float startY = (float) (coords[0].y * scale + offsetY);
+            path.moveTo(startX, startY);
+
+            for (int i = 1; i < coords.length; i++) {
+                float px = (float) (coords[i].x * scale + offsetX);
+                float py = (float) (coords[i].y * scale + offsetY);
+                path.lineTo(px, py);
+            }
+            if (geo instanceof org.locationtech.jts.geom.Polygon) {
+                path.close();
+            }
+            canvas.drawPath(path, linePaint);
+
+            // Draw vertex points
+            for (org.locationtech.jts.geom.Coordinate c : coords) {
+                float vx = (float) (c.x * scale + offsetX);
+                float vy = (float) (c.y * scale + offsetY);
+                canvas.drawCircle(vx, vy, 12f, vertexPaint);
+            }
+
+            // Draw Dimension labels
+            if (geo.getUserData() != null) {
+                String label = geo.getUserData().toString();
+                org.locationtech.jts.geom.Coordinate centroid = geo.getCentroid().getCoordinate();
+                float cx = (float) (centroid.x * scale + offsetX);
+                float cy = (float) (centroid.y * scale + offsetY);
+
+                // Add a small background highlight behind text for readability
+                android.graphics.Paint bgPaint = new android.graphics.Paint();
+                bgPaint.setColor(Color.WHITE);
+                canvas.drawRect(cx - 120, cy - 35, cx + 120, cy + 20, bgPaint);
+
+                canvas.drawText(label, cx, cy, textPaint);
+            }
+        }
+
+        // 6. Draw point labels (A, B, C...)
+        for (CadEngine2d.NamedPoint np : points) {
+            float px = (float) (np.x * scale + offsetX);
+            float py = (float) (np.y * scale + offsetY);
+            canvas.drawText(np.label, px + 20, py - 20, textPaint);
+        }
+
         return bitmap;
     }
-
     private static class GenericItem {
         String id;
         String title, subtext, data, date;
@@ -440,7 +653,7 @@ public class HistoryActivity extends AppCompatActivity {
             holder.tvTitle.setText(item.title); holder.tvSub.setText(item.subtext); holder.tvDate.setText(item.date);
 
             holder.itemView.setOnClickListener(v -> listener.onItemClick(item));
-            holder.btnDelete.setOnClickListener(v -> listener.onDeleteClick(item));
+            holder.btnDelete.setVisibility(View.GONE); // deletion is now done by swiping the card
             holder.btnRename.setOnClickListener(v -> listener.onRenameClick(item));
             holder.btnDownload.setOnClickListener(v -> listener.onDownloadClick(item));
             holder.btnEdit.setOnClickListener(v -> listener.onEditClick(item));

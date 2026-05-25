@@ -77,6 +77,12 @@
     <string name="scan_error_no_text">Խնդիր չի գտնվել:</string>
     <string name="scan_error_failed">Կապի խափանում:</string>
     <string name="scan_error_loading_photo">Նկարի բեռնման սխալ:</string>
+    <string name="scan_not_geometry_title">Սա երկրաչափական խնդիր չէ</string>
+    <string name="scan_not_geometry_msg">Պատկերը երկրաչափական խնդրի նման չէ: Խնդրում ենք սկանավորել հստակ երկրաչափական խնդիր (պատկերներով, անկյուններով կամ գծագրով):</string>
+    <string name="notif_solution_ready_title">Լուծումը պատրաստ է</string>
+    <string name="notif_solution_ready_body">Ձեր երկրաչափության լուծումը պատրաստ է: Սեղմեք՝ դիտելու համար:</string>
+    <string name="notif_solution_failed_title">Լուծման սխալ</string>
+    <string name="notif_solution_failed_body">Չհաջողվեց ստեղծել լուծումը: Ստուգեք կապը կամ API բանալին:</string>
     <string name="title_set_angle">Սահմանել անկյուն</string>
     <string name="title_smart_dim">Չափսեր</string>
     <string name="title_rename_vertex">Անվանափոխել գագաթը</string>

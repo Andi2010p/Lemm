@@ -4,13 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F7F9">
+    android:background="@drawable/bg_gradient_light">
 
     <!-- Header -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
+        android:background="@color/surface_white"
         android:elevation="2dp"
         android:padding="12dp">
         <ImageButton
@@ -19,14 +19,14 @@
             android:layout_height="32dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_revert"
-            app:tint="#0C3D6A" />
+            app:tint="@color/main_blue" />
         <TextView
             android:id="@+id/tvGradeTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="Theorem Name"
-            android:textColor="#0C3D6A"
+            android:textColor="@color/main_blue"
             android:textSize="18sp"
             android:textStyle="bold" />
     </RelativeLayout>
@@ -49,13 +49,13 @@
                 android:id="@+id/curriculumCanvas"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#FFFFFF" />
+                android:background="@color/canvas_bg" />
 
             <com.example.lemm.GeometryCanvas3D
                 android:id="@+id/curriculumCanvas3D"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#FFFFFF"
+                android:background="@color/canvas_bg"
                 android:visibility="gone" />
 
             <!-- Rotation Controls (For 3D Only) -->
@@ -93,8 +93,8 @@
                 android:background="@drawable/floating_controls_bg"
                 android:orientation="horizontal"
                 android:padding="4dp">
-                <ImageButton android:id="@+id/btnResetView" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_popup_sync" app:tint="#0C3D6A" />
-                <ImageButton android:id="@+id/btnToggleTool" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_move" app:tint="#0C3D6A" />
+                <ImageButton android:id="@+id/btnResetView" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_popup_sync" app:tint="@color/main_blue" />
+                <ImageButton android:id="@+id/btnToggleTool" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_move" app:tint="@color/main_blue" />
             </LinearLayout>
 
             <LinearLayout
@@ -106,9 +106,9 @@
                 android:orientation="horizontal"
                 android:paddingHorizontal="4dp"
                 android:gravity="center_vertical">
-                <Button android:id="@+id/btnZoomOut" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="40dp" android:layout_height="40dp" android:insetTop="0dp" android:insetBottom="0dp" android:text="-" android:textColor="#0C3D6A" android:textSize="20sp" />
-                <TextView android:id="@+id/tvZoomPercent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8dp" android:text="100%" android:textColor="#0C3D6A" android:textSize="12sp" android:textStyle="bold" />
-                <Button android:id="@+id/btnZoomIn" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="40dp" android:layout_height="40dp" android:insetTop="0dp" android:insetBottom="0dp" android:text="+" android:textColor="#0C3D6A" android:textSize="20sp" />
+                <Button android:id="@+id/btnZoomOut" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="40dp" android:layout_height="40dp" android:insetTop="0dp" android:insetBottom="0dp" android:text="-" android:textColor="@color/main_blue" android:textSize="20sp" />
+                <TextView android:id="@+id/tvZoomPercent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8dp" android:text="100%" android:textColor="@color/main_blue" android:textSize="12sp" android:textStyle="bold" />
+                <Button android:id="@+id/btnZoomIn" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="40dp" android:layout_height="40dp" android:insetTop="0dp" android:insetBottom="0dp" android:text="+" android:textColor="@color/main_blue" android:textSize="20sp" />
             </LinearLayout>
 
         </FrameLayout>

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Fades from pure White at the top to a very soft ice-blue at the bottom -->
+    <!-- Top -> bottom gradient. Colors adapt automatically: soft ice-blue in light mode,
+         near-black navy in dark mode (see values/ and values-night/ colors.xml). -->
     <gradient
-        android:startColor="#FFFFFF"
-        android:endColor="#EBF4FF"
+        android:startColor="@color/grad_top"
+        android:endColor="@color/grad_bottom"
         android:angle="270" />
 </shape>

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:background="#F5F5F5"
+    android:background="@drawable/bg_gradient_light"
     android:fillViewport="true">
 
     <LinearLayout
@@ -26,7 +26,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_selection"
                 android:rotation="180"
-                app:tint="#0C3D6A" />
+                app:tint="@color/main_blue" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -35,7 +35,7 @@
                 android:text="@string/user_profile"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#0C3D6A" />
+                android:textColor="@color/main_blue" />
         </RelativeLayout>
         <!-- User Information Card -->
         <com.google.android.material.card.MaterialCardView
@@ -60,7 +60,7 @@
                     app:cardCornerRadius="50dp"
                     app:cardElevation="4dp"
                     app:strokeWidth="2dp"
-                    app:strokeColor="#0C3D6A"
+                    app:strokeColor="@color/main_blue"
                     android:clickable="true"
                     android:focusable="true"
                     android:layout_marginBottom="16dp">
@@ -71,7 +71,7 @@
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"
                         android:src="@android:drawable/ic_menu_camera"
-                        app:tint="#0C3D6A" />
+                        app:tint="@color/main_blue" />
                 </com.google.android.material.card.MaterialCardView>
 
                 <TextView
@@ -81,7 +81,7 @@
                     android:text="@string/username"
                     android:textSize="22sp"
                     android:textStyle="bold"
-                    android:textColor="#0C3D6A" />
+                    android:textColor="@color/main_blue" />
 
                 <!-- NEW: Email Address -->
                 <TextView
@@ -89,7 +89,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="user@example.com"
-                    android:textColor="#757575"
+                    android:textColor="@color/text_subtitle"
                     android:textSize="15sp"
                     android:layout_marginTop="4dp"/>
 
@@ -137,7 +137,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/your_activity"
                     android:textStyle="bold"
-                    android:textColor="#555555"
+                    android:textColor="@color/text_subtitle"
                     android:layout_marginBottom="12dp"/>
 
                 <LinearLayout
@@ -159,13 +159,13 @@
                             android:text="0"
                             android:textSize="20sp"
                             android:textStyle="bold"
-                            android:textColor="#0C3D6A"/>
+                            android:textColor="@color/main_blue"/>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/solutions"
                             android:textSize="12sp"
-                            android:textColor="#888888"/>
+                            android:textColor="@color/text_subtitle"/>
                     </LinearLayout>
 
                     <View
@@ -186,13 +186,13 @@
                             android:text="0"
                             android:textSize="20sp"
                             android:textStyle="bold"
-                            android:textColor="#0C3D6A"/>
+                            android:textColor="@color/main_blue"/>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/drawings"
                             android:textSize="12sp"
-                            android:textColor="#888888"/>
+                            android:textColor="@color/text_subtitle"/>
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -217,7 +217,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/security"
                     android:textStyle="bold"
-                    android:textColor="#555555"
+                    android:textColor="@color/text_subtitle"
                     android:layout_marginBottom="12dp"/>
 
                 <com.google.android.material.button.MaterialButton
@@ -226,7 +226,7 @@
                     android:layout_height="52dp"
                     android:text="@string/change_password"
                     android:textColor="@color/white"
-                    app:backgroundTint="#0C3D6A"
+                    app:backgroundTint="@color/main_blue"
                     app:cornerRadius="12dp"
                     app:icon="@android:drawable/ic_secure"
                     app:iconGravity="textStart"

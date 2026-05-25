@@ -90,7 +90,7 @@ public class RegisterActivity extends AppCompatActivity {
                                     String uid = task.getResult().getUser().getUid();
 
                                     // 2. SAVE USERNAME TO FIREBASE REALTIME DATABASE
-                                    com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
+                                    FirebaseManager.getDatabase().getReference("users_info")
                                             .child(uid).child("username").setValue(user);
 
                                     // 3. SAVE TO LOCAL SQLITE
@@ -150,7 +150,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                                 // Save Cloud mapping and Local DB
                                 com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                                com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
+                                FirebaseManager.getDatabase().getReference("users_info")
                                         .child(user.getUid()).child("username").setValue(safeUsername);
 
                                 dbHelper.syncGoogleUser(safeUsername, email, account.getId());

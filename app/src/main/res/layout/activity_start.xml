@@ -26,7 +26,7 @@
             android:layout_height="150dp"
             app:cardCornerRadius="40dp"
             app:cardElevation="8dp"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/surface_white"
             app:strokeWidth="0dp"
             android:layout_marginBottom="24dp">
 
@@ -44,7 +44,7 @@
             android:text="Lemma"
             android:textSize="36sp"
             android:textStyle="bold"
-            android:textColor="#0C3D6A"
+            android:textColor="@color/main_blue"
             android:letterSpacing="0.05" />
 
         <!-- App Subtitle -->
@@ -54,7 +54,7 @@
             android:layout_marginTop="6dp"
             android:text="Your AI Geometry Tutor"
             android:textSize="16sp"
-            android:textColor="#78909C"
+            android:textColor="@color/text_subtitle"
             android:letterSpacing="0.02" />
 
     </LinearLayout>
@@ -79,7 +79,7 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
-            app:backgroundTint="#0C3D6A"
+            app:backgroundTint="@color/main_blue"
             app:cornerRadius="16dp"
             android:layout_marginBottom="16dp"
             app:elevation="4dp" />
@@ -92,8 +92,8 @@
             android:text="@string/create_account"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#0C3D6A"
-            app:strokeColor="#0C3D6A"
+            android:textColor="@color/main_blue"
+            app:strokeColor="@color/main_blue"
             app:strokeWidth="2dp"
             app:cornerRadius="16dp" />
 

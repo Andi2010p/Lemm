@@ -77,6 +77,12 @@
     <string name="scan_error_no_text">Задача не найдена.</string>
     <string name="scan_error_failed">Ошибка сканера: нет связи.</string>
     <string name="scan_error_loading_photo">Ошибка загрузки фото.</string>
+    <string name="scan_not_geometry_title">Это не геометрическая задача</string>
+    <string name="scan_not_geometry_msg">Изображение не похоже на геометрическую задачу. Пожалуйста, отсканируйте чёткую геометрическую задачу (с фигурами, углами или чертежом).</string>
+    <string name="notif_solution_ready_title">Решение готово</string>
+    <string name="notif_solution_ready_body">Ваше решение по геометрии готово. Нажмите, чтобы посмотреть.</string>
+    <string name="notif_solution_failed_title">Ошибка решения</string>
+    <string name="notif_solution_failed_body">Не удалось получить решение. Проверьте подключение или ключ API.</string>
     <string name="title_set_angle">Установить угол</string>
     <string name="title_smart_dim">Размеры</string>
     <string name="title_rename_vertex">Имя вершины</string>

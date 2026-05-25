@@ -37,6 +37,7 @@ import java.util.List;
 public class DrawingActivity extends AppCompatActivity {
     private static final String TAG = "DrawingActivity";
     private CadGeometryCanvas drawingCanvas;
+    private org.locationtech.jts.geom.GeometryFactory jtsFactory = new org.locationtech.jts.geom.GeometryFactory();
     private Geometry secondSelectedGeometry = null;
     private CadEngine2d engine;
 
@@ -131,7 +132,6 @@ public class DrawingActivity extends AppCompatActivity {
         findViewById(R.id.btnToolMove).setOnClickListener(v -> selectTool("MOVE"));
         findViewById(R.id.btnToolSelect).setOnClickListener(v -> selectTool("SELECT"));
         findViewById(R.id.btnToolLine).setOnClickListener(v -> selectTool("LINE"));
-        findViewById(R.id.btnToolPoly).setOnClickListener(v -> selectTool("POLYLINE"));
         findViewById(R.id.btnToolRect).setOnClickListener(v -> selectTool("RECT"));
         findViewById(R.id.btnToolCircle).setOnClickListener(v -> selectTool("CIRCLE"));
 
@@ -144,6 +144,7 @@ public class DrawingActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnUndo).setOnClickListener(v -> { engine.undo(); resetPolyline(); drawingCanvas.invalidate(); });
+        findViewById(R.id.btnRedo).setOnClickListener(v -> { engine.redo(); resetPolyline(); drawingCanvas.invalidate(); });
         findViewById(R.id.btnToolClear).setOnClickListener(v -> { engine.clear(); resetPolyline(); drawingCanvas.invalidate(); });
 
         ImageButton btnToolSaveTop = findViewById(R.id.btnToolSaveTop);
@@ -165,13 +166,37 @@ public class DrawingActivity extends AppCompatActivity {
 
         findViewById(R.id.btnZoomIn).setOnClickListener(v -> drawingCanvas.zoomIn());
         findViewById(R.id.btnZoomOut).setOnClickListener(v -> drawingCanvas.zoomOut());
+
         findViewById(R.id.btnDeleteShape).setOnClickListener(v -> {
             Geometry selected = drawingCanvas.getSelectedGeometry();
+            int selectedEdge = drawingCanvas.getSelectedSegmentIndex();
+
             if (selected != null) {
-                engine.deleteGeometry(selected);
-                drawingCanvas.setSelectedGeometry(null);
-                propertiesPanel.setVisibility(View.GONE);
-                drawingCanvas.invalidate();
+                if (selected instanceof Polygon && selectedEdge != -1) {
+                    String[] options = {"Delete Selected Edge Only", "Delete Entire Shape"};
+                    new AlertDialog.Builder(this)
+                            .setTitle("Delete Options")
+                            .setItems(options, (dialog, which) -> {
+                                if (which == 0) {
+                                    Geometry openLine = engine.deletePolygonSegment(selected, selectedEdge);
+                                    drawingCanvas.setSelectedGeometry(openLine);
+                                    drawingCanvas.setSelectedSegmentIndex(-1);
+                                    tvShapeInfo.setText(engine.getPropertiesText(this, openLine));
+                                } else {
+                                    engine.deleteGeometry(selected);
+                                    drawingCanvas.setSelectedGeometry(null);
+                                    drawingCanvas.setSelectedSegmentIndex(-1);
+                                    propertiesPanel.setVisibility(View.GONE);
+                                }
+                                drawingCanvas.invalidate();
+                            }).show();
+                } else {
+                    engine.deleteGeometry(selected);
+                    drawingCanvas.setSelectedGeometry(null);
+                    drawingCanvas.setSelectedSegmentIndex(-1);
+                    propertiesPanel.setVisibility(View.GONE);
+                    drawingCanvas.invalidate();
+                }
             }
         });
 
@@ -190,6 +215,7 @@ public class DrawingActivity extends AppCompatActivity {
     private void selectTool(String tool) {
         this.currentTool = tool;
         drawingCanvas.setCurrentTool(tool);
+        drawingCanvas.setSelectedSegmentIndex(-1); // FIX: Always reset selection index when switching tools!
         firstPoint = null;
         propertiesPanel.setVisibility(View.GONE);
         resetPolyline();
@@ -255,7 +281,7 @@ public class DrawingActivity extends AppCompatActivity {
 
             if (isOrthoMode && firstPoint != null && !currentTool.equals("MOVE")) {
                 Coordinate base = currentTool.equals("POLYLINE") && !activePolylinePoints.isEmpty() ? activePolylinePoints.get(activePolylinePoints.size()-1) : firstPoint;
-                if (Math.abs(x - base.x) > Math.abs(y - base.y)) y = (float) base.y; else x = (float) base.y;
+                if (Math.abs(x - base.x) > Math.abs(y - base.y)) y = (float) base.y; else x = (float) base.x;
             }
 
             drawingCanvas.setSnapIndicator(x, y);
@@ -272,20 +298,34 @@ public class DrawingActivity extends AppCompatActivity {
                     Geometry previouslySelected = drawingCanvas.getSelectedGeometry();
 
                     if (tapped != null) {
-                        if (tapped instanceof LineString && previouslySelected instanceof LineString && previouslySelected != tapped) {
-                            referenceLine = previouslySelected;
+                        drawingCanvas.setSelectedGeometry(tapped);
+
+                        int newSegIdx = -1;
+                        if (tapped instanceof Polygon) {
+                            newSegIdx = engine.getClosestSegmentIndex(tapped, worldPt.x, worldPt.y, threshold);
+                            drawingCanvas.setSelectedSegmentIndex(newSegIdx);
+                        } else {
+                            drawingCanvas.setSelectedSegmentIndex(-1);
+                        }
+
+                        // NEW: Extract temporary lines to allow setting angles on rectangle/polygon edges!
+                        LineString line1 = getLineFromSelection(previouslySelected, drawingCanvas.getSelectedSegmentIndex());
+                        LineString line2 = getLineFromSelection(tapped, newSegIdx);
+
+                        if (line1 != null && line2 != null && previouslySelected != tapped) {
+                            referenceLine = line1; // Set the highlighted edge as the reference line
                             findViewById(R.id.btnSetAngleAction).setVisibility(View.VISIBLE);
                         } else {
                             findViewById(R.id.btnSetAngleAction).setVisibility(View.GONE);
                             referenceLine = null;
                         }
 
-                        drawingCanvas.setSelectedGeometry(tapped);
                         tvShapeInfo.setText(engine.getPropertiesText(this, tapped));
                         propertiesPanel.setVisibility(View.VISIBLE);
                     } else {
                         propertiesPanel.setVisibility(View.GONE);
                         drawingCanvas.setSelectedGeometry(null);
+                        drawingCanvas.setSelectedSegmentIndex(-1);
                         referenceLine = null;
                         findViewById(R.id.btnSetAngleAction).setVisibility(View.GONE);
                     }
@@ -396,12 +436,32 @@ public class DrawingActivity extends AppCompatActivity {
     private String identifyGeometryType(Geometry g) {
         if (g instanceof LineString) return "LINE";
         if (g instanceof Polygon) {
-            if (g.getCoordinates().length == 5) return "RECT";
-            return "CIRCLE";
+            if (g.getCoordinates().length > 15) {
+                return "CIRCLE";
+            }
+            if (g.getCoordinates().length == 5) {
+                // FIX: If a specific edge of the rectangle is selected,
+                // treat it as a Polygon edge, so we can resize just that side!
+                if (drawingCanvas != null && drawingCanvas.getSelectedSegmentIndex() != -1) {
+                    return "POLYGON";
+                }
+                return "RECT";
+            }
+            return "POLYGON";
         }
         return "UNKNOWN";
     }
-
+    private LineString getLineFromSelection(Geometry g, int segIdx) {
+        if (g == null) return null;
+        if (g instanceof LineString) return (LineString) g;
+        if (g instanceof Polygon && segIdx != -1) {
+            Coordinate[] coords = g.getCoordinates();
+            if (segIdx < coords.length - 1) {
+                return jtsFactory.createLineString(new Coordinate[]{coords[segIdx], coords[segIdx + 1]});
+            }
+        }
+        return null;
+    }
     private void promptToRenamePoint(CadEngine2d.NamedPoint pt) {
         if (isViewOnly) return;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -454,6 +514,9 @@ public class DrawingActivity extends AppCompatActivity {
             input2.setHint(getString(R.string.hint_height));
             layout.addView(input1);
             layout.addView(input2);
+        } else if (type.equals("POLYGON")) {
+            input1.setHint(getString(R.string.hint_exact_length));
+            layout.addView(input1);
         } else return;
 
         builder.setView(layout);
@@ -472,6 +535,14 @@ public class DrawingActivity extends AppCompatActivity {
                     double val2 = Double.parseDouble(input2.getText().toString());
                     if (val2 <= 0.1) throw new NumberFormatException();
                     updatedGeo = engine.resizeRect(geo, val1, val2);
+                } else if (type.equals("POLYGON")) {
+                    int segIdx = drawingCanvas.getSelectedSegmentIndex();
+                    if (segIdx != -1) {
+                        updatedGeo = engine.resizePolygonSegment(geo, segIdx, val1);
+                    } else {
+                        Toast.makeText(this, "Select an edge first to set its dimension", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                 }
 
                 if (updatedGeo != null) {
@@ -532,17 +603,25 @@ public class DrawingActivity extends AppCompatActivity {
             }
 
             // 2. Direct Write to Cloud Database
-            if (!currentUser.startsWith("GuestUser_")) {
+            if (!currentUser.startsWith("GuestUser")) {
                 HashMap<String, Object> map = new HashMap<>();
                 map.put("title", drawingName);
                 map.put("data", serializedData);
                 map.put("date", date);
 
                 FirebaseManager.getUserRef(currentUser).child("drawings").child(cloudKey).setValue(map)
-                        .addOnFailureListener(e -> Toast.makeText(DrawingActivity.this, "Cloud Sync Blocked: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                        .addOnSuccessListener(x -> dbHelper.markDrawingSynced(currentUser, date))
+                        .addOnFailureListener(e -> Toast.makeText(getApplicationContext(),
+                                "Saved locally. Couldn't sync to cloud — please check your Wi-Fi connection.",
+                                Toast.LENGTH_LONG).show());
             }
 
-            Toast.makeText(this, "Saved successfully!", Toast.LENGTH_SHORT).show();
+            if (NetworkUtil.isOnline(this)) {
+                Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Saved locally — you appear to be offline. Check your Wi-Fi; it will sync when you reconnect.", Toast.LENGTH_LONG).show();
+            }
+
             finish();
         } catch (Exception e) {
             Log.e(TAG, "Error in saveAndSync: " + e.getMessage(), e);

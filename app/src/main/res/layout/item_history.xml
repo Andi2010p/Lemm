@@ -28,7 +28,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Unnamed(1)"
-                android:textColor="#0C3D6A"
+                android:textColor="@color/main_blue"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -67,7 +67,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="Problem description..."
-            android:textColor="#666666"
+            android:textColor="@color/text_subtitle"
             android:textSize="14sp" />
 
         <LinearLayout
@@ -83,7 +83,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="2023-10-27 10:00"
-                android:textColor="#999999"
+                android:textColor="@color/text_subtitle"
                 android:textSize="12sp" />
 
             <Button
@@ -92,7 +92,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/open_edit"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:textColor="#0C3D6A"
+                android:textColor="@color/main_blue"
                 android:padding="0dp"/>
         </LinearLayout>
 

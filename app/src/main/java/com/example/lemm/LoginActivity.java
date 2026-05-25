@@ -75,13 +75,16 @@ public class LoginActivity extends AppCompatActivity {
                                 if (task.isSuccessful()) {
                                     String uid = task.getResult().getUser().getUid();
 
-                                    // CHECK LOCAL DB FIRST
+                                    // CHECK LOCAL DB FIRST (Prevents "Welcome [email]" bug)
                                     String localUsername = dbHelper.authenticateUser(identifier, pass);
                                     if (localUsername != null && !localUsername.contains("@")) {
                                         try {
-                                            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
+                                            FirebaseManager.getDatabase().getReference("users_info")
                                                     .child(uid).child("username").setValue(localUsername);
                                         } catch (Exception ignored) {}
+
+                                        // Sync offline local data to cloud on login
+                                        CloudSyncManager.syncLocalToCloud(dbHelper, localUsername);
 
                                         sendLoginAlert(identifier, localUsername);
                                         Toast.makeText(LoginActivity.this, "Welcome " + localUsername + "!", Toast.LENGTH_SHORT).show();
@@ -97,13 +100,16 @@ public class LoginActivity extends AppCompatActivity {
                                                 String fallback = identifier.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "_");
                                                 try { dbHelper.addUser(fallback, identifier, pass); } catch (Exception ignored) {}
 
+                                                // Sync offline data using fallback name
+                                                CloudSyncManager.syncLocalToCloud(dbHelper, fallback);
+
                                                 Toast.makeText(LoginActivity.this, "Network slow. Logged in offline!", Toast.LENGTH_SHORT).show();
                                                 saveSessionAndGoMain(fallback, false);
                                             }
-                                        }, 7000); // 7 seconds
+                                        }, 4000); // fallback after 4s if the cloud username is slow
 
                                         // Ask the Cloud
-                                        com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
+                                        FirebaseManager.getDatabase().getReference("users_info")
                                                 .child(uid).child("username")
                                                 .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
                                                     @Override
@@ -115,12 +121,16 @@ public class LoginActivity extends AppCompatActivity {
                                                         if (cloudUsername == null || cloudUsername.isEmpty() || cloudUsername.contains("@")) {
                                                             cloudUsername = identifier.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "_");
                                                             try {
-                                                                com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
+                                                                FirebaseManager.getDatabase().getReference("users_info")
                                                                         .child(uid).child("username").setValue(cloudUsername);
                                                             } catch (Exception ignored) {}
                                                         }
 
                                                         try { dbHelper.addUser(cloudUsername, identifier, pass); } catch (Exception ignored) {}
+
+                                                        // Sync offline data using correct cloud name
+                                                        CloudSyncManager.syncLocalToCloud(dbHelper, cloudUsername);
+
                                                         sendLoginAlert(identifier, cloudUsername);
                                                         Toast.makeText(LoginActivity.this, "Welcome " + cloudUsername + "!", Toast.LENGTH_SHORT).show();
                                                         saveSessionAndGoMain(cloudUsername, false);
@@ -131,6 +141,10 @@ public class LoginActivity extends AppCompatActivity {
                                                         if (hasResponded[0]) return;
                                                         hasResponded[0] = true;
                                                         String fallback = identifier.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "_");
+
+                                                        // Sync offline data using fallback name
+                                                        CloudSyncManager.syncLocalToCloud(dbHelper, fallback);
+
                                                         saveSessionAndGoMain(fallback, false);
                                                     }
                                                 });
@@ -147,6 +161,8 @@ public class LoginActivity extends AppCompatActivity {
                     // USERNAME LOGIN
                     String localUsername = dbHelper.authenticateUser(identifier, pass);
                     if (localUsername != null) {
+                        // Sync offline local data to cloud on login
+                        CloudSyncManager.syncLocalToCloud(dbHelper, localUsername);
                         saveSessionAndGoMain(localUsername, false);
                     } else {
                         String linkedEmail = dbHelper.getUserEmail(identifier);
@@ -154,6 +170,10 @@ public class LoginActivity extends AppCompatActivity {
                             mAuth.signInWithEmailAndPassword(linkedEmail, pass).addOnCompleteListener(task -> {
                                 if (task.isSuccessful()) {
                                     dbHelper.updatePassword(identifier, pass);
+
+                                    // Sync offline local data to cloud on login
+                                    CloudSyncManager.syncLocalToCloud(dbHelper, identifier);
+
                                     sendLoginAlert(linkedEmail, identifier);
                                     Toast.makeText(LoginActivity.this, "Password synced! Welcome back.", Toast.LENGTH_SHORT).show();
                                     saveSessionAndGoMain(identifier, false);
@@ -303,17 +323,35 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         String email = (user.getEmail() != null) ? user.getEmail() : user.getUid() + "@facebook.com";
-                        String rawName = (user.getDisplayName() != null) ? user.getDisplayName() : "FB_User";
-                        String safeUsername = rawName.replaceAll("[^a-zA-Z0-9_]", "_");
 
-                        try {
-                            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
-                                    .child(user.getUid()).child("username").setValue(safeUsername);
-                            dbHelper.syncGoogleUser(safeUsername, email, user.getUid());
-                        } catch (Exception ignored) {}
+                        // FIX: Check if they already have an established username in users_info first!
+                        FirebaseManager.getDatabase().getReference("users_info")
+                                .child(user.getUid()).child("username")
+                                .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(com.google.firebase.database.DataSnapshot snapshot) {
+                                        String finalUsername = snapshot.getValue(String.class);
+                                        if (finalUsername == null || finalUsername.isEmpty()) {
+                                            String rawName = (user.getDisplayName() != null) ? user.getDisplayName() : "FB_User";
+                                            finalUsername = rawName.replaceAll("[^a-zA-Z0-9_]", "_");
+                                            FirebaseManager.getDatabase().getReference("users_info")
+                                                    .child(user.getUid()).child("username").setValue(finalUsername);
+                                        }
 
-                        Toast.makeText(this, getString(R.string.welcome, safeUsername), Toast.LENGTH_SHORT).show();
-                        saveSessionAndGoMain(safeUsername, false);
+                                        try {
+                                            dbHelper.syncGoogleUser(finalUsername, email, user.getUid());
+                                            CloudSyncManager.syncLocalToCloud(dbHelper, finalUsername);
+                                        } catch (Exception ignored) {}
+
+                                        Toast.makeText(LoginActivity.this, getString(R.string.welcome, finalUsername), Toast.LENGTH_SHORT).show();
+                                        saveSessionAndGoMain(finalUsername, false);
+                                    }
+
+                                    @Override
+                                    public void onCancelled(com.google.firebase.database.DatabaseError error) {
+                                        Toast.makeText(LoginActivity.this, "FB Login Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                     } else {
                         Toast.makeText(this, "Firebase Facebook Auth Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                     }
@@ -327,29 +365,48 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         String email = account.getEmail();
-                        String rawName = (account.getDisplayName() != null) ? account.getDisplayName() : email.split("@")[0];
-                        String safeUsername = rawName.replaceAll("[^a-zA-Z0-9_]", "_");
+                        String uid = task.getResult().getUser().getUid();
 
-                        try {
-                            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
-                                    .child(task.getResult().getUser().getUid()).child("username").setValue(safeUsername);
-                            dbHelper.syncGoogleUser(safeUsername, email, account.getId());
-                        } catch (Exception ignored) {}
+                        // FIX: Check if they already have an established username in users_info first!
+                        FirebaseManager.getDatabase().getReference("users_info")
+                                .child(uid).child("username")
+                                .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(com.google.firebase.database.DataSnapshot snapshot) {
+                                        String finalUsername = snapshot.getValue(String.class);
+                                        if (finalUsername == null || finalUsername.isEmpty()) {
+                                            String rawName = (account.getDisplayName() != null) ? account.getDisplayName() : email.split("@")[0];
+                                            finalUsername = rawName.replaceAll("[^a-zA-Z0-9_]", "_");
+                                            FirebaseManager.getDatabase().getReference("users_info")
+                                                    .child(uid).child("username").setValue(finalUsername);
+                                        }
 
-                        if (email != null && !email.isEmpty()) {
-                            String subject = "Welcome to Lemma!";
-                            String headline = "Account Linked Successfully";
-                            String body = "Hello <b>" + safeUsername + "</b>,\n\n" +
-                                    "Your account via Google Sign-In has been successfully registered!\n\n" +
-                                    "<b>Your Account Details:</b>\n" +
-                                    "Username: " + safeUsername + "\n" +
-                                    "Email: " + email + "\n\n" +
-                                    "You can now scan math problems, draw 3D shapes, and sync your solutions securely to the cloud.";
-                            EmailSender.sendOfficialEmail(email, subject, headline, body);
-                        }
+                                        try {
+                                            dbHelper.syncGoogleUser(finalUsername, email, account.getId());
+                                            CloudSyncManager.syncLocalToCloud(dbHelper, finalUsername);
+                                        } catch (Exception ignored) {}
 
-                        Toast.makeText(this, getString(R.string.welcome, safeUsername), Toast.LENGTH_SHORT).show();
-                        saveSessionAndGoMain(safeUsername, false);
+                                        if (email != null && !email.isEmpty()) {
+                                            String subject = "Welcome to Lemma!";
+                                            String headline = "Account Linked Successfully";
+                                            String body = "Hello <b>" + finalUsername + "</b>,\n\n" +
+                                                    "Your account via Google Sign-In has been successfully registered!\n\n" +
+                                                    "<b>Your Account Details:</b>\n" +
+                                                    "Username: " + finalUsername + "\n" +
+                                                    "Email: " + email + "\n\n" +
+                                                    "You can now scan math problems, draw 2D shapes, and sync your solutions securely to the cloud.";
+                                            EmailSender.sendOfficialEmail(email, subject, headline, body);
+                                        }
+
+                                        Toast.makeText(LoginActivity.this, getString(R.string.welcome, finalUsername), Toast.LENGTH_SHORT).show();
+                                        saveSessionAndGoMain(finalUsername, false);
+                                    }
+
+                                    @Override
+                                    public void onCancelled(com.google.firebase.database.DatabaseError error) {
+                                        Toast.makeText(LoginActivity.this, "Google Login Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                     } else {
                         Toast.makeText(LoginActivity.this, "Firebase Authentication Failed.", Toast.LENGTH_SHORT).show();
                     }

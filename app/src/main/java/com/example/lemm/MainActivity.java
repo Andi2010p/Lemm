@@ -179,16 +179,27 @@ public class MainActivity extends AppCompatActivity {
                     .setCancelable(false).show();
 
             GeminiAI geminiAI = new GeminiAI(apiKey);
-            String prompt = "Transcribe math in this image. If not math, output: INVALID_IMAGE.";
+            String prompt = "You are a strict classifier for a GEOMETRY tutoring app. Examine the image. "
+                    + "If it clearly contains a GEOMETRY problem (triangles, circles, polygons, angles, areas, perimeters, "
+                    + "volumes, coordinates, geometric proofs or constructions), transcribe the FULL problem text EXACTLY as "
+                    + "written and output ONLY that text. "
+                    + "If the image is NOT a geometry problem (for example: plain text, pure arithmetic/algebra/calculus with no "
+                    + "figure, a photo of a person/object/scene, a screenshot, or anything unreadable), output EXACTLY this single "
+                    + "token and nothing else: INVALID_IMAGE";
 
             Futures.addCallback(geminiAI.extractTextFromImage(safeBitmap, prompt), new FutureCallback<GenerateContentResponse>() {
                 @Override
                 public void onSuccess(GenerateContentResponse result) {
                     runOnUiThread(() -> {
                         dialog.dismiss();
-                        String text = result.getText();
-                        if (text == null || text.contains("INVALID_IMAGE")) {
-                            Toast.makeText(MainActivity.this, R.string.scan_error_no_text, Toast.LENGTH_LONG).show();
+                        String text = (result != null) ? result.getText() : null;
+                        if (text == null || text.trim().isEmpty() || text.contains("INVALID_IMAGE")) {
+                            // Not a geometry problem: clearly notify the user instead of opening the solver.
+                            new android.app.AlertDialog.Builder(MainActivity.this)
+                                    .setTitle(R.string.scan_not_geometry_title)
+                                    .setMessage(R.string.scan_not_geometry_msg)
+                                    .setPositiveButton(android.R.string.ok, null)
+                                    .show();
                         } else {
                             Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
                             intent.putExtra("SCANNED_TEXT", text.trim());

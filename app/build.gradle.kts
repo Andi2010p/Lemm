@@ -71,13 +71,6 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.cardview:cardview:1.0.0")
 
-    // SceneView (3D Engine)
-    implementation("io.github.sceneview:sceneview:2.2.1")
-    // If you intend to use AR, ensure this matches the main sceneview version or is updated
-    implementation("io.github.sceneview:arsceneview:0.10.0")
-
-    // 🔥 FIX FOR 16 KB ERROR: Force the project to use the latest ARCore
-    implementation("com.google.ar:core:1.45.0")
     implementation(platform(libs.firebase.bom))
     // Geometry/CAD Engine
     implementation("org.locationtech.jts:jts-core:1.19.0")
@@ -85,9 +78,6 @@ dependencies {
     // Firebase products - versions are now managed by the firebase-bom
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore-ktx")
-    // Removed the duplicate 'com.google.firebase:firebase-database:20.3.0'
-    // as its version is now handled by the BOM.
     implementation("com.facebook.android:facebook-login:16.0.0")
     // Google Sign-In Library
     implementation("com.google.android.gms:play-services-auth:21.1.1")
@@ -101,10 +91,7 @@ dependencies {
     implementation("com.android.billingclient:billing:6.1.0")
     // Utilities
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("io.noties.markwon:core:4.6.2")
-    implementation("io.noties.markwon:ext-latex:4.6.2")
     implementation("com.google.guava:guava:33.0.0-android")
-    implementation("dev.romainguy:kotlin-math:1.5.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 
     // Testing

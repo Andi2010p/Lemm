@@ -16,6 +16,29 @@
     <color name="bg_end">#E3EEFF</color>
     <color name="card_bg_light">#FDFFFF</color>
 
+    <!-- Screen gradient (top -> bottom). Dark variants are in values-night/colors.xml -->
+    <color name="grad_top">#FFFFFF</color>
+    <color name="grad_bottom">#EBF4FF</color>
+    <!-- Soft tinted circle behind icons -->
+    <color name="icon_bg_blue">#EBF4FF</color>
+    <!-- PRO highlight card -->
+    <color name="pro_card_bg">#FFFDE7</color>
+    <!-- Input fields / floating control panels -->
+    <color name="field_bg">#CCFFFFFF</color>
+    <!-- AI solver "final answer" card -->
+    <color name="answer_card_bg">#E8F5E9</color>
+    <color name="answer_text">#1B5E20</color>
+
+    <!-- Drawing / geometry canvas (dark variants in values-night) -->
+    <color name="canvas_bg">#FDFEFE</color>
+    <color name="canvas_grid">#D5D8DC</color>
+    <color name="canvas_line">#2C3E50</color>
+    <color name="canvas_text">#0C3D6A</color>
+    <color name="canvas_dimension">#8E44AD</color>
+    <color name="canvas_3d_bg">#FFFFFF</color>
+    <color name="canvas_3d_line">#000000</color>
+    <color name="canvas_3d_text">#0C3D6A</color>
+
     <!-- Text Colors -->
     <color name="text_title">#0F172A</color>
     <color name="text_subtitle">#64748B</color>

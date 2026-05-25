@@ -64,7 +64,7 @@
                 android:id="@+id/btnProfile"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#FFFFFF"
+                android:background="@color/surface_white"
                 android:src="@android:drawable/ic_menu_myplaces"
                 app:tint="@color/primary" />
         </com.google.android.material.card.MaterialCardView>
@@ -94,7 +94,7 @@
                 android:layout_margin="8dp"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="6dp"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/surface_white"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -107,7 +107,7 @@
                         android:layout_width="56dp"
                         android:layout_height="56dp"
                         app:cardCornerRadius="28dp"
-                        app:cardBackgroundColor="#EBF4FF"
+                        app:cardBackgroundColor="@color/icon_bg_blue"
                         app:strokeWidth="0dp"
                         android:layout_centerVertical="true">
                         <ImageView

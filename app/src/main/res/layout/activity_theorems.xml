@@ -55,7 +55,7 @@
                 android:layout_margin="8dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/surface_white"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -79,7 +79,7 @@
                 android:layout_margin="8dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/surface_white"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -103,7 +103,7 @@
                 android:layout_margin="8dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/surface_white"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -127,7 +127,7 @@
                 android:layout_margin="8dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/surface_white"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -151,7 +151,7 @@
                 android:layout_margin="8dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/surface_white"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -175,7 +175,7 @@
                 android:layout_margin="8dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/surface_white"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -185,7 +185,7 @@
                     android:orientation="vertical"
                     android:gravity="center"
                     android:padding="12dp">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="12" android:textSize="32sp" android:textStyle="bold" android:textColor="#455A64"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="12" android:textSize="32sp" android:textStyle="bold" android:textColor="@color/main_blue"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/th_3d_shapes" android:gravity="center" android:textColor="@color/text_subtitle" android:textSize="14sp" android:layout_marginTop="4dp"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

@@ -3,13 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F7F9"
+    android:background="@drawable/bg_gradient_light"
     android:orientation="vertical">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
+        android:background="@color/surface_white"
         android:elevation="4dp"
         android:padding="16dp">
 
@@ -19,7 +19,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_revert"
-            app:tint="#0C3D6A" />
+            app:tint="@color/main_blue" />
 
         <TextView
             android:id="@+id/tvListTitle"
@@ -27,7 +27,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="Theorems"
-            android:textColor="#0C3D6A"
+            android:textColor="@color/main_blue"
             android:textSize="20sp"
             android:textStyle="bold" />
     </RelativeLayout>

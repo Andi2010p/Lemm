@@ -8,7 +8,10 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "UserDatabase.db";
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7;
+
+    // 1 = confirmed pushed to cloud, 0 = local-only (created offline, not yet synced)
+    private static final String KEY_SYNCED = "synced";
 
     private static final String TABLE_USERS = "users";
     private static final String KEY_ID = "id";
@@ -56,7 +59,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_HIST_PROBLEM + " TEXT,"
                 + KEY_HIST_SOLUTION + " TEXT,"
                 + KEY_HIST_RAW_RESPONSE + " TEXT,"
-                + KEY_HIST_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")";
+                + KEY_HIST_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                + KEY_SYNCED + " INTEGER DEFAULT 0" + ")";
         db.execSQL(CREATE_HISTORY_TABLE);
 
         String CREATE_DRAWINGS_TABLE = "CREATE TABLE " + TABLE_DRAWINGS + "("
@@ -64,7 +68,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_DRW_USERNAME + " TEXT,"
                 + KEY_DRW_NAME + " TEXT,"
                 + KEY_DRW_DATA + " TEXT,"
-                + KEY_DRW_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")";
+                + KEY_DRW_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                + KEY_SYNCED + " INTEGER DEFAULT 0" + ")";
         db.execSQL(CREATE_DRAWINGS_TABLE);
     }
 
@@ -72,7 +77,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion < 2) db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + KEY_GOOGLE_ID + " TEXT");
         if (oldVersion < 3) {
-            db.execSQL("CREATE TABLE " + TABLE_HISTORY + "("
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_HISTORY + "("
                     + KEY_HIST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                     + KEY_HIST_USERNAME + " TEXT,"
                     + KEY_HIST_PROBLEM + " TEXT,"
@@ -82,7 +87,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         if (oldVersion < 4) db.execSQL("ALTER TABLE " + TABLE_HISTORY + " ADD COLUMN " + KEY_HIST_NAME + " TEXT DEFAULT 'unnamed'");
         if (oldVersion < 5) {
-            db.execSQL("CREATE TABLE " + TABLE_DRAWINGS + "("
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_DRAWINGS + "("
                     + KEY_DRW_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                     + KEY_DRW_USERNAME + " TEXT,"
                     + KEY_DRW_NAME + " TEXT,"
@@ -90,6 +95,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     + KEY_DRW_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP" + ")");
         }
         if (oldVersion < 6) db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + KEY_EMAIL + " TEXT");
+        if (oldVersion < 7) {
+            // Existing rows default to 1 (treated as already-synced, same as old behavior).
+            db.execSQL("ALTER TABLE " + TABLE_HISTORY + " ADD COLUMN " + KEY_SYNCED + " INTEGER DEFAULT 1");
+            db.execSQL("ALTER TABLE " + TABLE_DRAWINGS + " ADD COLUMN " + KEY_SYNCED + " INTEGER DEFAULT 1");
+        }
     }
 
     public boolean addUser(String u, String email, String p) {
@@ -167,13 +177,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert(TABLE_HISTORY, null, v);
     }
 
-    public void addHistoryWithDate(String user, String name, String prob, String sol, String raw, String date) {
+    public long addHistoryWithDate(String user, String name, String prob, String sol, String raw, String date) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();
         v.put(KEY_HIST_USERNAME, user); v.put(KEY_HIST_NAME, name);
         v.put(KEY_HIST_PROBLEM, prob); v.put(KEY_HIST_SOLUTION, sol);
         v.put(KEY_HIST_RAW_RESPONSE, raw); v.put(KEY_HIST_DATE, date);
-        db.insert(TABLE_HISTORY, null, v);
+        v.put(KEY_SYNCED, 0); // local-only until the cloud write confirms
+        return db.insert(TABLE_HISTORY, null, v);
+    }
+
+    public void markHistorySynced(String user, String date) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_SYNCED, 1);
+        db.update(TABLE_HISTORY, v, KEY_HIST_USERNAME + " = ? AND " + KEY_HIST_DATE + " = ?", new String[]{user, date});
     }
 
     public void updateHistory(int id, String name, String prob, String sol, String raw) {
@@ -213,7 +231,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues v = new ContentValues();
         v.put(KEY_DRW_USERNAME, user); v.put(KEY_DRW_NAME, name);
         v.put(KEY_DRW_DATA, data); v.put(KEY_DRW_DATE, date);
+        v.put(KEY_SYNCED, 0); // local-only until the cloud write confirms
         db.insert(TABLE_DRAWINGS, null, v);
+    }
+
+    public void markDrawingSynced(String user, String date) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(KEY_SYNCED, 1);
+        db.update(TABLE_DRAWINGS, v, KEY_DRW_USERNAME + " = ? AND " + KEY_DRW_DATE + " = ?", new String[]{user, date});
     }
 
     public void updateDrawing(int id, String name, String data) {

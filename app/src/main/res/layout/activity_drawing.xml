@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:background="#E1E5E8">
+    android:background="@color/bg_main">
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/toolbarCard"
@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="#FFFFFF">
+            android:background="@color/surface_white">
 
             <TextView
                 android:layout_width="match_parent"
@@ -53,15 +53,21 @@
                     <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
 
                     <ImageButton android:id="@+id/btnToolLine" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_line" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Line"/>
-                    <ImageButton android:id="@+id/btnToolPoly" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_edit" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Polyline"/>
-                    <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Rectangle"/>
+                    <ImageButton android:id="@+id/btnToolPoly"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:src="@android:drawable/ic_menu_edit"
+                        android:background="?attr/selectableItemBackground"
+                        app:tint="#27AE60"
+                        android:tooltipText="Polyline"
+                        android:visibility="gone"/> <!-- Hides the button safely -->                    <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Rectangle"/>
                     <ImageButton android:id="@+id/btnToolCircle" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_circle" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Circle"/>
 
                     <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
 
                     <ImageButton android:id="@+id/btnUndo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_undo" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Undo"/>
+                    <ImageButton android:id="@+id/btnRedo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_redo" android:background="?attr/selectableItemBackground" app:tint="#0C3D6A" android:tooltipText="Redo"/>
                     <ImageButton android:id="@+id/btnToolClear" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_delete" android:background="?attr/selectableItemBackground" app:tint="#C62828" android:tooltipText="Clear Canvas"/>
-
                     <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
                     <ImageButton android:id="@+id/btnToolSaveTop" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_save" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Save Drawing"/>
 
@@ -88,7 +94,7 @@
                 android:id="@+id/drawingCanvas"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#FFFFFF" />
+                android:background="@color/canvas_bg" />
 
             <!-- PROPERTIES PANEL -->
             <com.google.android.material.card.MaterialCardView
@@ -105,7 +111,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:background="#FAFAFA"
+                    android:background="@color/surface_white"
                     android:padding="8dp">
 
                     <TextView
@@ -113,7 +119,7 @@
                         android:layout_height="wrap_content"
                         android:text="Properties"
                         android:textStyle="bold"
-                        android:textColor="#2C3E50"
+                        android:textColor="@color/text_title"
                         android:textSize="12sp"
                         android:paddingBottom="4dp"/>
 
@@ -122,7 +128,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Area: 0\nLength: 0"
-                        android:textColor="#34495E"
+                        android:textColor="@color/text_subtitle"
                         android:textSize="11sp"/>
 
                     <!-- Action Buttons Row -->
@@ -229,7 +235,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDontSave"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"

@@ -77,6 +77,12 @@
     <string name="scan_error_no_text">No geometry problem found.</string>
     <string name="scan_error_failed">Scanner Error: Connection lost.</string>
     <string name="scan_error_loading_photo">Error: Could not load photo.</string>
+    <string name="scan_not_geometry_title">Not a Geometry Problem</string>
+    <string name="scan_not_geometry_msg">This image doesn\'t look like a geometry problem. Please scan a clear geometry problem (with shapes, angles, or figures).</string>
+    <string name="notif_solution_ready_title">Solution Ready</string>
+    <string name="notif_solution_ready_body">Your geometry solution is ready. Tap to view.</string>
+    <string name="notif_solution_failed_title">Solution Failed</string>
+    <string name="notif_solution_failed_body">Couldn\'t generate the solution. Check your connection or API key.</string>
     <string name="title_set_angle">Set Angle Between Lines</string>
     <string name="title_smart_dim">Smart Dimension</string>
     <string name="title_rename_vertex">Rename Vertex</string>

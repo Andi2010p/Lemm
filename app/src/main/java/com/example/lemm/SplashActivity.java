@@ -34,7 +34,7 @@ public class SplashActivity extends AppCompatActivity {
                 
                 startActivity(intent);
                 finish();
-            }, 2000);
+            }, 800);
 
             DatabaseHelper db = new DatabaseHelper(this);
             SQLiteDatabase sqlDb = db.getWritableDatabase();

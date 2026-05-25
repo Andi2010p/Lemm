@@ -7,17 +7,23 @@ import java.util.Date;
 import java.util.Locale;
 
 public class FirebaseManager {
-    // Sanitizes emails/usernames so they are valid Firebase paths
+
+    // The Realtime Database lives in europe-west1. getInstance() without this explicit URL can
+    // silently fail to reach a non-us-central1 database, so writes queue forever and never commit.
+    private static final String DB_URL = "https://lemma-37061-default-rtdb.europe-west1.firebasedatabase.app";
+
+    public static FirebaseDatabase getDatabase() {
+        return FirebaseDatabase.getInstance(DB_URL);
+    }
+
+    // Forces lowercase so "Andi" and "andi" always match the exact same database folder!
     public static String sanitizeUser(String user) {
-        if (user == null) return "GuestUser";
-        return user.replaceAll("[.#$\\[\\]]", "_");
+        if (user == null) return "guestuser";
+        return user.replaceAll("[.#$\\[\\]]", "_").toLowerCase();
     }
 
     public static DatabaseReference getUserRef(String username) {
-        // TODO: IF YOUR DATABASE IS REGIONAL, REPLACE THE URL BELOW WITH YOUR ACTUAL FIREBASE DATABASE URL
-        // Example: return FirebaseDatabase.getInstance("https://your-project.europe-west1.firebasedatabase.app").getReference("users").child(sanitizeUser(username));
-
-        return FirebaseDatabase.getInstance().getReference("users").child(sanitizeUser(username));
+        return getDatabase().getReference("users").child(sanitizeUser(username));
     }
 
     public static String getCurrentDate() {

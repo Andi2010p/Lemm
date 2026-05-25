@@ -64,7 +64,8 @@ public class ProfileActivity extends AppCompatActivity {
         cardProfileAvatar = findViewById(R.id.cardProfileAvatar);
 
         setupImagePickers();
-        setupUserData();
+
+        // NOTE: setupUserData() is no longer here! It is now inside onResume below.
 
         btnBack.setOnClickListener(v -> finish());
 
@@ -104,7 +105,6 @@ public class ProfileActivity extends AppCompatActivity {
                     return;
                 }
 
-                // --- NEW PROFESSIONAL VERIFICATION DIALOG ---
                 com.google.android.material.dialog.MaterialAlertDialogBuilder builder =
                         new com.google.android.material.dialog.MaterialAlertDialogBuilder(this);
                 builder.setTitle("Delete Account");
@@ -120,21 +120,19 @@ public class ProfileActivity extends AppCompatActivity {
                 layout.addView(inputVerify);
                 builder.setView(layout);
 
-                builder.setPositiveButton("Delete Forever", null); // Set to null first so we can override the click
+                builder.setPositiveButton("Delete Forever", null);
                 builder.setNegativeButton("Cancel", null);
 
                 androidx.appcompat.app.AlertDialog dialog = builder.create();
                 dialog.show();
 
-                // Make the Delete button Red so it looks dangerous
                 dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(android.graphics.Color.parseColor("#D32F2F"));
 
-                // Override the "Positive" button so it doesn't close the dialog if they typed it wrong
                 dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
                     String verification = inputVerify.getText().toString().trim();
 
                     if (verification.equals("DELETE")) {
-                        dialog.dismiss(); // Close dialog
+                        dialog.dismiss();
                         Toast.makeText(this, "Deleting account...", Toast.LENGTH_SHORT).show();
                         performAccountDeletion(username);
                     } else {
@@ -143,6 +141,15 @@ public class ProfileActivity extends AppCompatActivity {
                 });
             });
         }
+    }
+
+    // --- HERE IS ONRESUME! ---
+    // It sits perfectly between the closing of onCreate and the rest of the class.
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh all user data, avatar, and PRO status every time you look at the screen!
+        setupUserData();
     }
 
     // --- AVATAR LOGIC ---
@@ -179,9 +186,8 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void showImageSourceDialog() {
-        // Fetch translated strings instead of hardcoded English
         String[] options = {
-                getString(R.string.scan_ocr), // Repurposing "Scan" text to mean "Use Camera"
+                getString(R.string.scan_ocr),
                 "Gallery",
                 getString(R.string.delete)
         };
@@ -199,52 +205,43 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 }).show();
     }
+
     private void saveAndSetAvatar(Bitmap bitmap) {
         if (bitmap == null) return;
 
-        // Compress and scale the image
         Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 300, 300, true);
-
-        // FIX: Remove the XML blue tint so the real photo shows up properly
         imgProfileAvatar.setImageTintList(null);
         imgProfileAvatar.setImageBitmap(scaled);
 
-        // Convert to Base64
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos);
         byte[] b = baos.toByteArray();
         String encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
 
-        // Save to Phone
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String username = pref.getString("username", "");
         pref.edit().putString("avatar_" + username, encodedImage).apply();
 
-        // Sync to Cloud
         com.google.firebase.auth.FirebaseUser fbUser = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
         if (fbUser != null) {
-            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
+            FirebaseManager.getDatabase().getReference("users_info")
                     .child(fbUser.getUid()).child("avatar").setValue(encodedImage);
             Toast.makeText(this, "Profile picture updated!", Toast.LENGTH_SHORT).show();
         }
     }
 
-    // NEW: Logic to remove photo and return to default state
     private void removeAvatar() {
-        // Reset UI to default camera icon and re-apply the blue tint
         imgProfileAvatar.setImageResource(android.R.drawable.ic_menu_camera);
         imgProfileAvatar.setImageTintList(ColorStateList.valueOf(Color.parseColor("#0C3D6A")));
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String username = pref.getString("username", "");
 
-        // Delete from Phone
         pref.edit().remove("avatar_" + username).apply();
 
-        // Delete from Cloud
         com.google.firebase.auth.FirebaseUser fbUser = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
         if (fbUser != null) {
-            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
+            FirebaseManager.getDatabase().getReference("users_info")
                     .child(fbUser.getUid()).child("avatar").removeValue();
             Toast.makeText(this, "Profile picture removed", Toast.LENGTH_SHORT).show();
         }
@@ -289,16 +286,15 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }
 
-        // LOAD AVATAR (Fixes the tint issue when opening the page)
+        // LOAD AVATAR
         String encodedImage = pref.getString("avatar_" + username, "");
         if (!encodedImage.isEmpty()) {
             byte[] b = Base64.decode(encodedImage, Base64.DEFAULT);
             Bitmap bmp = BitmapFactory.decodeByteArray(b, 0, b.length);
-            imgProfileAvatar.setImageTintList(null); // Remove tint
+            imgProfileAvatar.setImageTintList(null);
             imgProfileAvatar.setImageBitmap(bmp);
         } else if (fbUser != null) {
-            // Check cloud if missing locally
-            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users_info")
+            FirebaseManager.getDatabase().getReference("users_info")
                     .child(fbUser.getUid()).child("avatar").addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot snap) {
@@ -307,7 +303,7 @@ public class ProfileActivity extends AppCompatActivity {
                                 pref.edit().putString("avatar_" + username, cloudAvatar).apply();
                                 byte[] b = Base64.decode(cloudAvatar, Base64.DEFAULT);
                                 Bitmap bmp = BitmapFactory.decodeByteArray(b, 0, b.length);
-                                imgProfileAvatar.setImageTintList(null); // Remove tint
+                                imgProfileAvatar.setImageTintList(null);
                                 imgProfileAvatar.setImageBitmap(bmp);
                             }
                         }
@@ -316,13 +312,15 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         // Load Counts
+        // Single-value events: setupUserData() runs on every onResume, so persistent
+        // listeners would accumulate (leak). One-shot reads refresh the counts each time.
         com.google.firebase.database.DatabaseReference userRef = FirebaseManager.getUserRef(username);
-        userRef.child("history").addValueEventListener(new ValueEventListener() {
+        userRef.child("history").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot snapshot) { tvHistoryCount.setText(String.valueOf(snapshot.getChildrenCount())); }
             @Override public void onCancelled(DatabaseError error) {}
         });
 
-        userRef.child("drawings").addValueEventListener(new ValueEventListener() {
+        userRef.child("drawings").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot snapshot) { tvDrawingCount.setText(String.valueOf(snapshot.getChildrenCount())); }
             @Override public void onCancelled(DatabaseError error) {}
         });
@@ -396,7 +394,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void performAccountDeletion(String username) {
         com.google.firebase.auth.FirebaseUser currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-        com.google.firebase.database.DatabaseReference dbRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference();
+        com.google.firebase.database.DatabaseReference dbRef = FirebaseManager.getDatabase().getReference();
 
         if (currentUser != null) {
             dbRef.child("users").child(FirebaseManager.sanitizeUser(username)).removeValue();
