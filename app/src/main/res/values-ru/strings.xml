@@ -52,6 +52,11 @@
     <string name="online">В сети</string>
     <string name="your_activity">Ваша активность</string>
     <string name="security">Безопасность</string>
+    <string name="change_username">Изменить имя пользователя</string>
+    <string name="enter_new_username">Введите новое имя пользователя</string>
+    <string name="username_updated">Имя пользователя обновлено</string>
+    <string name="username_taken">Это имя пользователя уже занято.</string>
+    <string name="username_invalid">Используйте 3–20 букв, цифр или подчёркиваний.</string>
 
     <string name="new_problem">Новая задача</string>
     <string name="scan_ocr">Сканировать</string>
@@ -67,7 +72,26 @@
     <string name="api_key_hint">Ключ Gemini API</string>
     <string name="api_key_save">Сохранить ключ</string>
     <string name="api_key_info">Укажите свой ключ или купите Pro.</string>
+    <string name="api_key_use_personal">Использовать свои API-ключи</string>
+    <string name="api_key_your_keys">Ваши API-ключи</string>
+    <string name="api_key_add_another">Добавить ещё ключ</string>
+    <string name="api_key_remove">Удалить ключ</string>
+    <string name="api_key_use_this">Использовать этот ключ</string>
+    <string name="api_key_saved">Ключи сохранены</string>
     <string name="upgrade_pro">Купить Pro</string>
+
+    <!-- Settings screen labels -->
+    <string name="settings_ai_access">Настройка доступа к ИИ</string>
+    <string name="set_personal_api_key">Указать свой API-ключ</string>
+    <string name="api_key_subtitle">Используйте свой ключ, чтобы пользоваться приложением бесплатно.</string>
+    <string name="pro_tier_title">Lemma Pro</string>
+    <string name="pro_status_free">Статус: Бесплатный тариф</string>
+    <string name="pro_status_active">Статус: Pro активен</string>
+    <string name="unlock_unlimited_ai">Открыть безлимитный ИИ</string>
+    <string name="appearance">Оформление</string>
+    <string name="theme_system">Система</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
     <string name="access_denied">Доступ ограничен</string>
     <string name="access_denied_msg">Введите ключ в настройках или купите Pro.</string>
     <string name="error_not_geometry">Это не математическая задача.</string>
@@ -78,11 +102,26 @@
     <string name="scan_error_failed">Ошибка сканера: нет связи.</string>
     <string name="scan_error_loading_photo">Ошибка загрузки фото.</string>
     <string name="scan_not_geometry_title">Это не геометрическая задача</string>
+    <string name="solve_not_geometry_msg">Это не похоже на геометрическую задачу. Введите геометрическую задачу — фигуры, углы, площади, объёмы или доказательства.</string>
+    <string name="add_image">Добавить фото</string>
+    <string name="remove_image">Удалить фото</string>
+    <string name="enter_problem_or_image">Введите задачу или добавьте фото.</string>
+    <string name="speak_problem">Произнести задачу</string>
+    <string name="voice_prompt">Опишите геометрическую задачу…</string>
+    <string name="voice_unavailable">Голосовой ввод недоступен на этом устройстве.</string>
     <string name="scan_not_geometry_msg">Изображение не похоже на геометрическую задачу. Пожалуйста, отсканируйте чёткую геометрическую задачу (с фигурами, углами или чертежом).</string>
     <string name="notif_solution_ready_title">Решение готово</string>
     <string name="notif_solution_ready_body">Ваше решение по геометрии готово. Нажмите, чтобы посмотреть.</string>
     <string name="notif_solution_failed_title">Ошибка решения</string>
     <string name="notif_solution_failed_body">Не удалось получить решение. Проверьте подключение или ключ API.</string>
+    <string name="notif_quota_body">Лимит ИИ исчерпан. Откройте Lemma, чтобы добавить или обновить ключ API.</string>
+    <string name="switching_to_user_key">Лимит подписки исчерпан — переключаемся на ваш ключ API…</string>
+    <string name="switching_backup_key">Переключение на резервный ключ ИИ…</string>
+    <string name="quota_expired_title">Лимит ИИ исчерпан</string>
+    <string name="quota_expired_both">Лимит ИИ по подписке исчерпан, и ваши собственные ключи API тоже исчерпаны или недействительны.\n\nДобавьте или обновите ключ в настройках либо повторите попытку позже.</string>
+    <string name="quota_expired_sub">Лимит ИИ по подписке временно исчерпан.\n\nВы можете добавить свой ключ API в настройках, чтобы продолжить, либо повторить попытку позже.</string>
+    <string name="quota_expired_user">Ваши ключи API исчерпаны или недействительны.\n\nПожалуйста, добавьте или обновите ключ в настройках.</string>
+    <string name="open_settings">Открыть настройки</string>
     <string name="title_set_angle">Установить угол</string>
     <string name="title_smart_dim">Размеры</string>
     <string name="title_rename_vertex">Имя вершины</string>
@@ -114,10 +153,6 @@
     <string name="step_prefix">ШАГ </string>
     <string name="final_answer">ОТВЕТ:</string>
 
-    <string name="default_web_client_id">481743722691-874nj07keqhs20s6bolgram4bp4ghfdr.apps.googleusercontent.com</string>
-    <string name="facebook_app_id">1234567890</string>
-    <string name="fb_login_protocol_scheme">fb1234567890</string>
-    <string name="facebook_client_token">YOUR_CLIENT_TOKEN_HERE</string>
 
     <string name="theorems_title">Теоремы и Формулы</string>
     <string name="grade_title">Программа %1$d класса</string>

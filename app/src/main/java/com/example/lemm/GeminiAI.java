@@ -40,6 +40,18 @@ public class GeminiAI {
         return textModel.generateContent(content);
     }
 
+    /** Multimodal solve: one or more images (problem text and/or figures) plus the prompt. */
+    public ListenableFuture<GenerateContentResponse> getSolutionWithImages(java.util.List<Bitmap> images, String prompt) {
+        Content.Builder builder = new Content.Builder();
+        if (images != null) {
+            for (Bitmap bmp : images) {
+                if (bmp != null) builder.addImage(bmp);
+            }
+        }
+        builder.addText(prompt);
+        return visionModel.generateContent(builder.build());
+    }
+
     public ListenableFuture<GenerateContentResponse> extractTextFromImage(Bitmap bitmap, String prompt) {
         Content content = new Content.Builder()
                 .addImage(bitmap)

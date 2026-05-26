@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- DARK MODE: near-black backgrounds, dark elevated surfaces (no white), lighter blue accents.
+         Only colors with ONE consistent meaning are overridden so text-on-color stays correct. -->
+
+    <!-- Screen gradient: near-black navy -> slightly bluer black -->
+    <color name="grad_top">#0A0F1C</color>
+    <color name="grad_bottom">#0E1B30</color>
+
+    <!-- Flat backgrounds -->
+    <color name="bg_main">#0A0F1C</color>
+    <color name="background">#0A0F1C</color>
+    <color name="bg_start">#0A0F1C</color>
+    <color name="bg_end">#0E1B30</color>
+
+    <!-- Cards / surfaces: dark, slightly elevated (NOT white) -->
+    <color name="surface_white">#161F30</color>
+    <color name="card_bg_light">#161F30</color>
+    <color name="icon_bg_blue">#14233B</color>
+    <color name="pro_card_bg">#241F0E</color>
+    <color name="field_bg">#22324D</color>
+    <color name="answer_card_bg">#102A1A</color>
+    <color name="answer_text">#A5D6A7</color>
+
+    <!-- Text -->
+    <color name="text_title">#F4F8FC</color>
+    <color name="text_main">#F8FAFD</color>
+    <color name="text_subtitle">#C2D0E2</color>
+    <color name="text_sub">#C2D0E2</color>
+
+    <!-- Brighter blues so accents/contrast pop on the dark background -->
+    <color name="main_blue">#7DB3FF</color>
+    <color name="primary">#2563EB</color>
+    <color name="primary_light">#60A5FA</color>
+
+    <!-- Drawing / geometry canvas: dark "paper" with light lines for contrast -->
+    <color name="canvas_bg">#0E1A2E</color>
+    <color name="canvas_grid">#26324B</color>
+    <color name="canvas_line">#AFC2E0</color>
+    <color name="canvas_text">#BBDEFB</color>
+    <color name="canvas_dimension">#D9A7E8</color>
+    <color name="canvas_3d_bg">#0E1A2E</color>
+    <color name="canvas_3d_line">#D6E2F5</color>
+    <color name="canvas_3d_text">#BBDEFB</color>
+</resources>

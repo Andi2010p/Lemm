@@ -52,6 +52,11 @@
     <string name="online">Առցանց</string>
     <string name="your_activity">Ձեր ակտիվությունը</string>
     <string name="security">Անվտանգություն</string>
+    <string name="change_username">Փոխել օգտանունը</string>
+    <string name="enter_new_username">Մուտքագրեք նոր օգտանուն</string>
+    <string name="username_updated">Օգտանունը թարմացվեց</string>
+    <string name="username_taken">Այս օգտանունն արդեն զբաղված է:</string>
+    <string name="username_invalid">Օգտագործեք 3–20 տառ, թիվ կամ ընդգծում:</string>
 
     <string name="new_problem">Նոր խնդիր</string>
     <string name="scan_ocr">Սկանավորել</string>
@@ -67,7 +72,26 @@
     <string name="api_key_hint">Gemini API բանալի</string>
     <string name="api_key_save">Պահպանել</string>
     <string name="api_key_info">Տեղադրեք բանալին կամ գնեք Pro:</string>
+    <string name="api_key_use_personal">Օգտագործել իմ API բանալիները</string>
+    <string name="api_key_your_keys">Ձեր API բանալիները</string>
+    <string name="api_key_add_another">Ավելացնել ևս մեկ բանալի</string>
+    <string name="api_key_remove">Հեռացնել բանալին</string>
+    <string name="api_key_use_this">Օգտագործել այս բանալին</string>
+    <string name="api_key_saved">Բանալիները պահպանվեցին</string>
     <string name="upgrade_pro">Անցնել Pro տարբերակին</string>
+
+    <!-- Settings screen labels -->
+    <string name="settings_ai_access">ԱԲ հասանելիության կարգավորում</string>
+    <string name="set_personal_api_key">Նշել անձնական API բանալի</string>
+    <string name="api_key_subtitle">Օգտագործեք ձեր բանալին՝ հավելվածն անվճար օգտագործելու համար:</string>
+    <string name="pro_tier_title">Lemma Pro</string>
+    <string name="pro_status_free">Կարգավիճակ՝ Անվճար</string>
+    <string name="pro_status_active">Կարգավիճակ՝ Pro ակտիվ է</string>
+    <string name="unlock_unlimited_ai">Բացել անսահմանափակ ԱԲ-ն</string>
+    <string name="appearance">Տեսք</string>
+    <string name="theme_system">Համակարգ</string>
+    <string name="theme_light">Լուսավոր</string>
+    <string name="theme_dark">Մուգ</string>
     <string name="access_denied">Հասանելիությունը մերժված է</string>
     <string name="access_denied_msg">Տեղադրեք բանալին կամ գնեք Pro տարբերակը:</string>
     <string name="error_not_geometry">Սա երկրաչափական խնդիր չէ:</string>
@@ -78,11 +102,26 @@
     <string name="scan_error_failed">Կապի խափանում:</string>
     <string name="scan_error_loading_photo">Նկարի բեռնման սխալ:</string>
     <string name="scan_not_geometry_title">Սա երկրաչափական խնդիր չէ</string>
+    <string name="solve_not_geometry_msg">Սա երկրաչափական խնդրի նման չէ: Մուտքագրեք երկրաչափական խնդիր — պատկերներ, անկյուններ, մակերեսներ, ծավալներ կամ ապացույցներ:</string>
+    <string name="add_image">Ավելացնել նկար</string>
+    <string name="remove_image">Հեռացնել նկարը</string>
+    <string name="enter_problem_or_image">Մուտքագրեք խնդիր կամ ավելացրեք նկար:</string>
+    <string name="speak_problem">Արտասանեք խնդիրը</string>
+    <string name="voice_prompt">Նկարագրեք երկրաչափական խնդիրը…</string>
+    <string name="voice_unavailable">Ձայնային մուտքը հասանելի չէ այս սարքում:</string>
     <string name="scan_not_geometry_msg">Պատկերը երկրաչափական խնդրի նման չէ: Խնդրում ենք սկանավորել հստակ երկրաչափական խնդիր (պատկերներով, անկյուններով կամ գծագրով):</string>
     <string name="notif_solution_ready_title">Լուծումը պատրաստ է</string>
     <string name="notif_solution_ready_body">Ձեր երկրաչափության լուծումը պատրաստ է: Սեղմեք՝ դիտելու համար:</string>
     <string name="notif_solution_failed_title">Լուծման սխալ</string>
     <string name="notif_solution_failed_body">Չհաջողվեց ստեղծել լուծումը: Ստուգեք կապը կամ API բանալին:</string>
+    <string name="notif_quota_body">ԱԲ-ի սահմանաչափը սպառվել է: Բացեք Lemma-ն՝ API բանալի ավելացնելու կամ թարմացնելու համար:</string>
+    <string name="switching_to_user_key">Բաժանորդագրության սահմանաչափը սպառվել է — անցում ձեր API բանալուն…</string>
+    <string name="switching_backup_key">Անցում պահեստային ԱԲ բանալուն…</string>
+    <string name="quota_expired_title">ԱԲ-ի սահմանաչափը սպառվել է</string>
+    <string name="quota_expired_both">Ձեր բաժանորդագրության ԱԲ սահմանաչափը սպառվել է, և ձեր սեփական API բանալիները նույնպես սպառվել են կամ ժամկետանց են:\n\nԱվելացրեք կամ թարմացրեք բանալին կարգավորումներում կամ փորձեք ավելի ուշ:</string>
+    <string name="quota_expired_sub">Ձեր բաժանորդագրության ԱԲ սահմանաչափը ժամանակավորապես սպառվել է:\n\nԿարող եք ավելացնել ձեր API բանալին կարգավորումներում՝ շարունակելու համար, կամ փորձել ավելի ուշ:</string>
+    <string name="quota_expired_user">Ձեր API բանալիները սպառվել են կամ ժամկետանց են:\n\nԽնդրում ենք ավելացնել կամ թարմացնել բանալին կարգավորումներում:</string>
+    <string name="open_settings">Բացել կարգավորումները</string>
     <string name="title_set_angle">Սահմանել անկյուն</string>
     <string name="title_smart_dim">Չափսեր</string>
     <string name="title_rename_vertex">Անվանափոխել գագաթը</string>
@@ -114,10 +153,6 @@
     <string name="step_prefix">ՔԱՅԼ </string>
     <string name="final_answer">ՎԵՐՋՆԱԿԱՆ ՊԱՏԱՍԽԱՆ:</string>
 
-    <string name="default_web_client_id">481743722691-874nj07keqhs20s6bolgram4bp4ghfdr.apps.googleusercontent.com</string>
-    <string name="facebook_app_id">1234567890</string>
-    <string name="fb_login_protocol_scheme">fb1234567890</string>
-    <string name="facebook_client_token">YOUR_CLIENT_TOKEN_HERE</string>
 
     <string name="theorems_title">Թեորեմներ և Բանաձևեր</string>
     <string name="grade_title">%1$d-րդ դասարան</string>

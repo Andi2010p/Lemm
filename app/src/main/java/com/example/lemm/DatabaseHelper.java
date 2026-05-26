@@ -168,6 +168,32 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.update(TABLE_USERS, v, KEY_USERNAME + " = ? OR " + KEY_EMAIL + " = ?", new String[]{identifier, identifier}) > 0;
     }
 
+    /** Renames a user everywhere it's used locally: the users row plus all history/drawing rows. */
+    public boolean renameUser(String oldName, String newName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            ContentValues u = new ContentValues();
+            u.put(KEY_USERNAME, newName);
+            db.update(TABLE_USERS, u, KEY_USERNAME + " = ?", new String[]{oldName});
+
+            ContentValues h = new ContentValues();
+            h.put(KEY_HIST_USERNAME, newName);
+            db.update(TABLE_HISTORY, h, KEY_HIST_USERNAME + " = ?", new String[]{oldName});
+
+            ContentValues d = new ContentValues();
+            d.put(KEY_DRW_USERNAME, newName);
+            db.update(TABLE_DRAWINGS, d, KEY_DRW_USERNAME + " = ?", new String[]{oldName});
+
+            db.setTransactionSuccessful();
+            return true;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            db.endTransaction();
+        }
+    }
+
     public void addHistory(String user, String name, String prob, String sol, String raw) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();

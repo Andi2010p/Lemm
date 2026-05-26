@@ -60,6 +60,25 @@ public class GeometryInputActivity extends AppCompatActivity {
     private static final String SOLUTION_CHANNEL_ID = "ai_solution_channel";
     private static final int SOLUTION_NOTIF_ID = 4101;
 
+    // API-key rotation: when one key is out of quota, the next is tried automatically.
+    private List<String> solveKeys;
+    // Parallel to solveKeys: what each key is, so we can explain fallbacks/exhaustion to the user.
+    private List<String> solveKeyKinds;
+    private static final String KIND_SUB = "sub";       // built-in subscription/Pro key
+    private static final String KIND_USER = "user";     // the user's own personal key
+    private static final String KIND_BACKUP = "backup"; // app backup key (last resort)
+    private String solvePrompt, solveProblemText;
+    private String nReadyTitle, nReadyBody, nFailTitle, nFailBody, nNotGeoTitle, nNotGeoMsg, nQuotaBody;
+
+    // Attached images (problem text and/or figure photos) sent with the solve.
+    private final List<android.graphics.Bitmap> selectedImages = new ArrayList<>();
+    private List<android.graphics.Bitmap> solveImages;
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private ActivityResultLauncher<Intent> voiceLauncher;
+    private EditText voiceTarget;
+    private LinearLayout imageStrip;
+    private View imageScroll, btnAddImage;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,6 +107,46 @@ public class GeometryInputActivity extends AppCompatActivity {
         btnExpandDesc = findViewById(R.id.btnExpandDesc);
         btnExpandExtra = findViewById(R.id.btnExpandExtra);
         btnHistory = findViewById(R.id.btnHistory);
+        imageStrip = findViewById(R.id.imageStrip);
+        imageScroll = findViewById(R.id.imageScroll);
+        btnAddImage = findViewById(R.id.btnAddImage);
+
+        // Pick one or more images from the gallery (problem text and/or figures).
+        imagePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                List<android.net.Uri> uris = new ArrayList<>();
+                android.content.ClipData clip = result.getData().getClipData();
+                if (clip != null) {
+                    for (int i = 0; i < clip.getItemCount(); i++) uris.add(clip.getItemAt(i).getUri());
+                } else if (result.getData().getData() != null) {
+                    uris.add(result.getData().getData());
+                }
+                if (!uris.isEmpty()) addImagesFromUris(uris);
+            }
+        });
+        btnAddImage.setOnClickListener(v -> {
+            Intent pick = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            pick.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            try { imagePickerLauncher.launch(pick); }
+            catch (Exception e) { imagePickerLauncher.launch(new Intent(Intent.ACTION_GET_CONTENT).setType("image/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)); }
+        });
+
+        // Voice input: spoken text is appended into whichever field requested it.
+        voiceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                java.util.ArrayList<String> matches =
+                        result.getData().getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS);
+                if (matches != null && !matches.isEmpty()) {
+                    EditText target = (voiceTarget != null) ? voiceTarget : etDescription;
+                    String spoken = matches.get(0);
+                    String existing = target.getText().toString();
+                    target.setText(existing.trim().isEmpty() ? spoken : existing + " " + spoken);
+                    target.setSelection(target.getText().length());
+                }
+            }
+        });
+        findViewById(R.id.btnVoiceInput).setOnClickListener(v -> { voiceTarget = etDescription; startVoiceInput(); });
+        findViewById(R.id.btnVoiceExtra).setOnClickListener(v -> { voiceTarget = etExtra; startVoiceInput(); });
 
         btnHistory.setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
 
@@ -146,7 +205,8 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         findViewById(R.id.btnSolveProblem).setOnClickListener(v -> {
             String prob = etDescription.getText().toString().trim();
-            if (!prob.isEmpty()) solveWithAI(prob);
+            if (!prob.isEmpty() || !selectedImages.isEmpty()) solveWithAI(prob);
+            else Toast.makeText(this, getString(R.string.enter_problem_or_image), Toast.LENGTH_SHORT).show();
         });
 
         btnStopAI.setOnClickListener(v -> resetAll());
@@ -215,6 +275,11 @@ public class GeometryInputActivity extends AppCompatActivity {
                 break;
         }
         return "SYSTEM: " + instructions + "\n" +
+                "GEOMETRY GATE (CHECK FIRST): Decide whether the PROBLEM below is a GEOMETRY problem " +
+                "(triangles, circles, polygons, angles, areas, perimeters, volumes, coordinates, solids, " +
+                "geometric proofs or constructions). If it is NOT a geometry problem — e.g. plain text, a question, " +
+                "pure arithmetic/algebra/calculus with no figure, or any non-geometry topic — output EXACTLY this " +
+                "single token and NOTHING else (no steps, no drawing commands): NOT_GEOMETRY\n" +
                 "CORE RULES:\n" +
                 "1. Output drawing commands first: DRAW3D, LINE3D, PLANE3D.\n" +
                 "2. Always use PLANE3D for faces of 3D shapes (Pyramids, Cubes).\n" +
@@ -299,76 +364,186 @@ public class GeometryInputActivity extends AppCompatActivity {
     }
 
     private void solveWithAI(String problem) {
-        SharedPreferences apiPrefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
         SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
         String username = userPrefs.getString("username", "");
-        String userKey = apiPrefs.getString("user_api_key", "");
         boolean isProUser = userPrefs.getBoolean("is_pro_user", false);
+        boolean privileged = username.equals("Admin_Teacher") || isProUser;
 
-        String keyToUse = "";
+        // Build the ordered rotation list (the gate is "do we have any primary key?").
+        // Subscribers start on the built-in subscription key; if it's out of quota the solver
+        // automatically falls through to the user's own personal key(s), then app backups.
+        // Free users use their personal key(s) directly (gated by the "use my own keys" toggle).
+        solveKeys = new ArrayList<>();
+        solveKeyKinds = new ArrayList<>();
 
-        if (username.equals("Admin_Teacher") || isProUser) {
-            keyToUse = BuildConfig.GEMINI_API_KEY;
+        if (privileged && !BuildConfig.GEMINI_API_KEY.isEmpty()) {
+            solveKeys.add(BuildConfig.GEMINI_API_KEY);
+            solveKeyKinds.add(KIND_SUB);
         }
-        else if (!userKey.isEmpty()) {
-            keyToUse = userKey;
+
+        // Personal keys: primary for free users (gated by the master toggle), and an automatic
+        // fallback for subscribers when their subscription quota runs out.
+        boolean usePersonal = privileged || ApiKeyStore.isEnabled(this);
+        if (usePersonal) {
+            for (String k : ApiKeyStore.getKeys(this)) {
+                if (!solveKeys.contains(k)) { solveKeys.add(k); solveKeyKinds.add(KIND_USER); }
+            }
         }
 
-        if (keyToUse.isEmpty()) {
+        if (solveKeys.isEmpty()) {
             showPaymentDialog();
             return;
+        }
+
+        // App backup keys as a last-resort fallback once the user is past the gate.
+        for (String bk : BuildConfig.GEMINI_BACKUP_KEYS.split(",")) {
+            String k = bk.trim();
+            if (!k.isEmpty() && !solveKeys.contains(k)) { solveKeys.add(k); solveKeyKinds.add(KIND_BACKUP); }
         }
 
         isSaved = false;
         // A freshly generated solution is editable/saveable even if we arrived here from
         // History — otherwise processAIResult() would keep the Save controls hidden.
         isFromHistory = false;
-        geminiAI = new GeminiAI(keyToUse);
         progressBar.setVisibility(View.VISIBLE);
         setInputLocked(true); // can't edit the problem while the AI is solving
 
-        String systemPrompt = getTranslatedSystemPrompt(currentLangCode, problem);
+        // Snapshot any attached images for this solve.
+        solveImages = selectedImages.isEmpty() ? null : new ArrayList<>(selectedImages);
+        String effectiveProblem = problem;
+        if (solveImages != null) {
+            effectiveProblem = "The problem statement and/or the figure are provided in the attached image(s). "
+                    + "Read the image(s) carefully and treat them as the problem.\n" + problem;
+        }
+        solvePrompt = getTranslatedSystemPrompt(currentLangCode, effectiveProblem);
+        solveProblemText = problem;
 
         // Capture localized notification text now, while the (locale-wrapped) activity context is valid.
-        final String readyTitle = getString(R.string.notif_solution_ready_title);
-        final String readyBody = getString(R.string.notif_solution_ready_body);
-        final String failTitle = getString(R.string.notif_solution_failed_title);
-        final String failBody = getString(R.string.notif_solution_failed_body);
-        final String problemText = problem;
+        nReadyTitle = getString(R.string.notif_solution_ready_title);
+        nReadyBody = getString(R.string.notif_solution_ready_body);
+        nFailTitle = getString(R.string.notif_solution_failed_title);
+        nFailBody = getString(R.string.notif_solution_failed_body);
+        nNotGeoTitle = getString(R.string.scan_not_geometry_title);
+        nNotGeoMsg = getString(R.string.solve_not_geometry_msg);
+        nQuotaBody = getString(R.string.notif_quota_body);
 
-        Futures.addCallback(geminiAI.getSolution(systemPrompt), new FutureCallback<GenerateContentResponse>() {
+        runSolveAttempt(0);
+    }
+
+    private void runSolveAttempt(int keyIndex) {
+        geminiAI = new GeminiAI(solveKeys.get(keyIndex));
+        com.google.common.util.concurrent.ListenableFuture<GenerateContentResponse> future =
+                (solveImages != null && !solveImages.isEmpty())
+                        ? geminiAI.getSolutionWithImages(solveImages, solvePrompt)
+                        : geminiAI.getSolution(solvePrompt);
+        Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
             @Override
             public void onSuccess(GenerateContentResponse result) {
                 final String text = (result != null) ? result.getText() : null;
+                final boolean notGeometry = text != null && text.toUpperCase().contains("NOT_GEOMETRY");
                 runOnUiThread(() -> {
-                    if (!isFinishing() && !isDestroyed()) {
+                    boolean alive = !isFinishing() && !isDestroyed();
+                    if (alive) {
                         progressBar.setVisibility(View.GONE);
                         setInputLocked(false); // solving done — editing allowed again
-                        if (text != null) {
-                            lastAIResponse = text;
-                            processAIResult(text);
+                    }
+
+                    if (notGeometry) {
+                        // The AI judged this isn't a geometry problem — tell the user, don't render a "solution".
+                        isSaved = true;
+                        if (alive) {
+                            solutionControls.setVisibility(View.GONE);
+                            new AlertDialog.Builder(GeometryInputActivity.this)
+                                    .setTitle(nNotGeoTitle)
+                                    .setMessage(nNotGeoMsg)
+                                    .setPositiveButton(android.R.string.ok, null)
+                                    .show();
                         }
+                        if (!isActivityVisible) postSolutionNotification(nNotGeoTitle, nNotGeoMsg, solveProblemText, null);
+                        return;
+                    }
+
+                    if (alive && text != null) {
+                        lastAIResponse = text;
+                        processAIResult(text);
                     }
                     // If the user left the screen, the solve still finished in the background — tell them.
                     if (!isActivityVisible) {
-                        if (text != null) postSolutionNotification(readyTitle, readyBody, problemText, text);
-                        else postSolutionNotification(failTitle, failBody, problemText, null);
+                        if (text != null) postSolutionNotification(nReadyTitle, nReadyBody, solveProblemText, text);
+                        else postSolutionNotification(nFailTitle, nFailBody, solveProblemText, null);
                     }
                 });
             }
             @Override public void onFailure(Throwable t) {
+                Log.e(TAG, "Gemini Error (key #" + (keyIndex + 1) + " of " + solveKeys.size() + ")", t);
+                final boolean exhausted = isKeyExhausted(t);
+
+                // Out of quota / unusable key -> automatically roll over to the next key in the chain.
+                if (exhausted && keyIndex + 1 < solveKeys.size()) {
+                    final String nextKind = solveKeyKinds.get(keyIndex + 1);
+                    runOnUiThread(() -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            // Tell the user WHAT we're switching to (subscription -> their key -> backup).
+                            int msgRes = KIND_USER.equals(nextKind)
+                                    ? R.string.switching_to_user_key
+                                    : R.string.switching_backup_key;
+                            Toast.makeText(GeometryInputActivity.this, getString(msgRes), Toast.LENGTH_SHORT).show();
+                        }
+                        runSolveAttempt(keyIndex + 1);
+                    });
+                    return;
+                }
+
+                // No keys left to try.
                 runOnUiThread(() -> {
                     if (!isFinishing() && !isDestroyed()) {
                         progressBar.setVisibility(View.GONE);
                         setInputLocked(false); // solving failed — editing allowed again
-                        Toast.makeText(GeometryInputActivity.this, "AI Error: Check your API Key or Network Connection.", Toast.LENGTH_LONG).show();
+                        if (exhausted) {
+                            showQuotaExpiredDialog(); // every key (incl. the user's) is out of quota/expired
+                        } else {
+                            Toast.makeText(GeometryInputActivity.this, "AI Error: Check your API Key or Network Connection.", Toast.LENGTH_LONG).show();
+                        }
                     }
-                    if (!isActivityVisible) postSolutionNotification(failTitle, failBody, problemText, null);
-                    Log.e(TAG, "Gemini Error", t);
+                    if (!isActivityVisible) {
+                        if (exhausted) postSolutionNotification(nFailTitle, nQuotaBody, solveProblemText, null);
+                        else postSolutionNotification(nFailTitle, nFailBody, solveProblemText, null);
+                    }
                 });
             }
         }, ContextCompat.getMainExecutor(this));
+    }
+
+    /** True when an error means the current key can't be used (quota/rate/permission/invalid). */
+    private boolean isKeyExhausted(Throwable t) {
+        String m = (t == null || t.getMessage() == null) ? "" : t.getMessage().toLowerCase();
+        return m.contains("quota") || m.contains("resource_exhausted") || m.contains("429")
+                || m.contains("rate") || m.contains("exhaust") || m.contains("api key")
+                || m.contains("api_key") || m.contains("permission") || m.contains("billing")
+                || m.contains("invalid") || m.contains("unavailable") || m.contains("overload");
+    }
+
+    /**
+     * Every key in the chain is out of quota / expired. Explain what happened based on which kinds
+     * of keys we tried, and offer a shortcut to Settings so the user can add/update an API key.
+     */
+    private void showQuotaExpiredDialog() {
+        boolean hadSub = solveKeyKinds != null && solveKeyKinds.contains(KIND_SUB);
+        boolean hadUser = solveKeyKinds != null && solveKeyKinds.contains(KIND_USER);
+
+        int msgRes;
+        if (hadSub && hadUser)      msgRes = R.string.quota_expired_both; // subscription AND your keys
+        else if (hadSub)            msgRes = R.string.quota_expired_sub;  // subscription only
+        else                        msgRes = R.string.quota_expired_user; // your keys only
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.quota_expired_title)
+                .setMessage(msgRes)
+                .setPositiveButton(R.string.open_settings,
+                        (d, w) -> startActivity(new Intent(GeometryInputActivity.this, SettingsActivity.class)))
+                .setNegativeButton(android.R.string.ok, null)
+                .show();
     }
 
     private boolean isActivityVisible = false;
@@ -628,14 +803,116 @@ public class GeometryInputActivity extends AppCompatActivity {
         btnStopAI.setVisibility(View.VISIBLE);
         progressBar.setVisibility(View.GONE);
         setInputLocked(false); // editing allowed again
+        selectedImages.clear();
+        refreshImageStrip();
         isSaved = true;
         updateCanvasSize(0.60f);
+    }
+
+    // --- Voice input ---
+    private void startVoiceInput() {
+        try {
+            Intent intent = new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            intent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, voiceLocaleTag());
+            intent.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, getString(R.string.voice_prompt));
+            voiceLauncher.launch(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+            Toast.makeText(this, getString(R.string.voice_unavailable), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private String voiceLocaleTag() {
+        switch (currentLangCode) {
+            case "ru": return "ru-RU";
+            case "hy": return "hy-AM";
+            default:   return "en-US";
+        }
+    }
+
+    // --- Image attachments ---
+    private void addImagesFromUris(List<android.net.Uri> uris) {
+        for (android.net.Uri uri : uris) {
+            android.graphics.Bitmap bmp = decodeScaledBitmap(uri, 1280);
+            if (bmp != null) selectedImages.add(bmp);
+        }
+        refreshImageStrip();
+    }
+
+    private android.graphics.Bitmap decodeScaledBitmap(android.net.Uri uri, int maxDim) {
+        try {
+            android.graphics.Bitmap original = android.provider.MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+            if (original == null) return null;
+            int w = original.getWidth(), h = original.getHeight();
+            float ratio = Math.min((float) maxDim / w, (float) maxDim / h);
+            if (ratio >= 1f) return original; // already small enough
+            return android.graphics.Bitmap.createScaledBitmap(original, Math.round(w * ratio), Math.round(h * ratio), true);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load image", e);
+            Toast.makeText(this, "Couldn't load that image.", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+    }
+
+    private void refreshImageStrip() {
+        if (imageStrip == null || imageScroll == null) return;
+        imageStrip.removeAllViews();
+        imageScroll.setVisibility(selectedImages.isEmpty() ? View.GONE : View.VISIBLE);
+        float d = getResources().getDisplayMetrics().density;
+        int sizePx = Math.round(d * 88), delPx = Math.round(d * 24), gapPx = Math.round(d * 10), padPx = Math.round(d * 4);
+        for (int i = 0; i < selectedImages.size(); i++) {
+            final int index = i;
+            android.widget.FrameLayout frame = new android.widget.FrameLayout(this);
+            LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(sizePx, sizePx);
+            flp.setMargins(0, padPx, gapPx, padPx);
+            frame.setLayoutParams(flp);
+
+            // Rounded card so the thumbnail has clean corners.
+            MaterialCardView card = new MaterialCardView(this);
+            card.setLayoutParams(new android.widget.FrameLayout.LayoutParams(sizePx, sizePx));
+            card.setRadius(d * 12);
+            card.setCardElevation(d * 2);
+            card.setStrokeWidth(0);
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.surface_white));
+
+            ImageView iv = new ImageView(this);
+            iv.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            iv.setImageBitmap(selectedImages.get(index));
+            card.addView(iv);
+            frame.addView(card);
+
+            // Circular delete badge in the top corner.
+            ImageButton del = new ImageButton(this);
+            android.widget.FrameLayout.LayoutParams dlp = new android.widget.FrameLayout.LayoutParams(
+                    delPx, delPx, android.view.Gravity.TOP | android.view.Gravity.END);
+            dlp.setMargins(0, padPx, padPx, 0);
+            del.setLayoutParams(dlp);
+            del.setImageResource(android.R.drawable.ic_menu_close_clear_cancel);
+            del.setBackgroundResource(R.drawable.circle_delete_bg);
+            del.setColorFilter(Color.WHITE);
+            del.setPadding(padPx, padPx, padPx, padPx);
+            del.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            del.setContentDescription(getString(R.string.remove_image));
+            del.setOnClickListener(v -> {
+                if (index < selectedImages.size()) {
+                    selectedImages.remove(index);
+                    refreshImageStrip();
+                }
+            });
+            frame.addView(del);
+            imageStrip.addView(frame);
+        }
     }
 
     // Lock the problem inputs while the AI is solving; unlock before/after.
     private void setInputLocked(boolean locked) {
         if (etDescription != null) etDescription.setEnabled(!locked);
         if (etExtra != null) etExtra.setEnabled(!locked);
+        if (btnAddImage != null) btnAddImage.setEnabled(!locked);
         View solveBtn = findViewById(R.id.btnSolveProblem);
         if (solveBtn != null) solveBtn.setEnabled(!locked);
         if (locked) {

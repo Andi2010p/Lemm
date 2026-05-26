@@ -185,7 +185,7 @@ public class GradeCurriculumActivity extends AppCompatActivity {
                     if (canvas2D != null) canvas2D.setCurrentTool("MOVE");
                     if (canvas3D != null) canvas3D.setMoveMode(true);
                     btnToggleTool.setImageResource(R.drawable.ic_move);
-                    btnToggleTool.setColorFilter(android.graphics.Color.parseColor("#0C3D6A"));
+                    btnToggleTool.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.main_blue));
                 } else {
                     if (canvas2D != null) canvas2D.setCurrentTool("SELECT");
                     if (canvas3D != null) canvas3D.setMoveMode(false);

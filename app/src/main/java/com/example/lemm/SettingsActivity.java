@@ -6,19 +6,28 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.SwitchCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
     private int proTapCount = 0;
@@ -51,6 +60,9 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         setupThemeToggle();
+
+        // Pull this account's saved keys from the cloud so the management screen is up to date.
+        ApiKeyStore.syncFromCloud(this, null);
 
         findViewById(R.id.btnApiKeyConfig).setOnClickListener(v -> openApiKeyDialog());
 
@@ -139,7 +151,7 @@ public class SettingsActivity extends AppCompatActivity {
     private void checkCurrentProStatus() {
         SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         if (userPrefs.getBoolean("is_pro_user", false)) {
-            tvStatus.setText("Status: Pro Tier Active");
+            tvStatus.setText(R.string.pro_status_active);
             tvStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
             btnBuyPro.setVisibility(View.GONE);
         }
@@ -149,42 +161,137 @@ public class SettingsActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.api_key_title);
 
+        ScrollView scroll = new ScrollView(this);
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(60, 40, 60, 0);
+        layout.setPadding(60, 30, 60, 0);
+        scroll.addView(layout);
 
         TextView info = new TextView(this);
         info.setText(R.string.api_key_info);
-        info.setPadding(0, 0, 0, 20);
+        info.setPadding(0, 0, 0, 16);
         layout.addView(info);
 
-        TextInputLayout textInputLayout = new TextInputLayout(this);
-        textInputLayout.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+        // Toggle: use my own API keys or not.
+        SwitchCompat useSwitch = new SwitchCompat(this);
+        useSwitch.setText(R.string.api_key_use_personal);
+        useSwitch.setChecked(ApiKeyStore.isEnabled(this));
+        layout.addView(useSwitch);
 
-        final TextInputEditText input = new TextInputEditText(this);
-        SharedPreferences prefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
-        input.setText(prefs.getString("user_api_key", ""));
-        input.setHint(R.string.api_key_hint);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        TextView listLabel = new TextView(this);
+        listLabel.setText(R.string.api_key_your_keys);
+        listLabel.setPadding(0, 24, 0, 4);
+        layout.addView(listLabel);
 
-        textInputLayout.addView(input);
-        layout.addView(textInputLayout);
+        // One row per personal key, each removable.
+        final LinearLayout keysContainer = new LinearLayout(this);
+        keysContainer.setOrientation(LinearLayout.VERTICAL);
+        layout.addView(keysContainer);
 
-        builder.setView(layout);
+        List<ApiKeyStore.Entry> existing = ApiKeyStore.getEntries(this);
+        if (existing.isEmpty()) {
+            addKeyRow(keysContainer, "", true);
+        } else {
+            for (ApiKeyStore.Entry e : existing) addKeyRow(keysContainer, e.key, e.enabled);
+        }
+
+        MaterialButton addBtn = new MaterialButton(this, null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle);
+        addBtn.setText(R.string.api_key_add_another);
+        addBtn.setOnClickListener(v -> addKeyRow(keysContainer, "", true));
+        layout.addView(addBtn);
+
+        setKeysEnabled(keysContainer, addBtn, useSwitch.isChecked());
+        useSwitch.setOnCheckedChangeListener((b, checked) ->
+                setKeysEnabled(keysContainer, addBtn, checked));
+
+        builder.setView(scroll);
 
         builder.setPositiveButton(R.string.api_key_save, (dialog, which) -> {
-            String key = input.getText().toString().trim();
-            prefs.edit().putString("user_api_key", key).apply();
-            Toast.makeText(this, "API Key Saved", Toast.LENGTH_SHORT).show();
-        });
-
-        builder.setNeutralButton("Clear Key", (dialog, which) -> {
-            prefs.edit().remove("user_api_key").apply();
-            Toast.makeText(this, "API Key Cleared", Toast.LENGTH_SHORT).show();
+            List<ApiKeyStore.Entry> entries = new ArrayList<>();
+            for (int i = 0; i < keysContainer.getChildCount(); i++) {
+                View row = keysContainer.getChildAt(i);
+                if (row instanceof ViewGroup) {
+                    ViewGroup g = (ViewGroup) row;
+                    SwitchCompat sw = null;
+                    EditText e = null;
+                    for (int j = 0; j < g.getChildCount(); j++) {
+                        View child = g.getChildAt(j);
+                        if (child instanceof SwitchCompat) sw = (SwitchCompat) child;
+                        else if (child instanceof TextInputLayout) e = ((TextInputLayout) child).getEditText();
+                    }
+                    if (e != null) {
+                        String k = e.getText().toString().trim();
+                        if (!k.isEmpty()) {
+                            entries.add(new ApiKeyStore.Entry(k, sw == null || sw.isChecked()));
+                        }
+                    }
+                }
+            }
+            ApiKeyStore.setEntries(this, entries);
+            ApiKeyStore.setEnabled(this, useSwitch.isChecked());
+            ApiKeyStore.pushToCloud(this); // sync to this account so other devices get the same keys
+            Toast.makeText(this, R.string.api_key_saved, Toast.LENGTH_SHORT).show();
         });
 
         builder.setNegativeButton(R.string.cancel, null);
         builder.show();
+    }
+
+    /** Adds a single key row: per-key on/off switch + password input + remove button. */
+    private void addKeyRow(LinearLayout container, String value, boolean enabled) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        // Per-key on/off: when off, this key is skipped by the auto-rotation
+        // (but stays saved so it can be re-enabled later).
+        SwitchCompat keySwitch = new SwitchCompat(this);
+        keySwitch.setChecked(enabled);
+        keySwitch.setContentDescription(getString(R.string.api_key_use_this));
+        row.addView(keySwitch);
+
+        TextInputLayout til = new TextInputLayout(this);
+        til.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+        til.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextInputEditText edit = new TextInputEditText(this);
+        edit.setHint(R.string.api_key_hint);
+        edit.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        if (value != null) edit.setText(value);
+        til.addView(edit);
+
+        ImageButton remove = new ImageButton(this);
+        remove.setImageResource(android.R.drawable.ic_menu_close_clear_cancel);
+        remove.setBackgroundResource(android.R.color.transparent);
+        remove.setContentDescription(getString(R.string.api_key_remove));
+        remove.setOnClickListener(v -> container.removeView(row));
+
+        row.addView(til);
+        row.addView(remove);
+        container.addView(row);
+    }
+
+    /** Greys out and disables the key list + add button when the toggle is off. */
+    private void setKeysEnabled(LinearLayout container, View addBtn, boolean enabled) {
+        addBtn.setEnabled(enabled);
+        container.setAlpha(enabled ? 1f : 0.4f);
+        addBtn.setAlpha(enabled ? 1f : 0.4f);
+        for (int i = 0; i < container.getChildCount(); i++) {
+            View row = container.getChildAt(i);
+            if (row instanceof ViewGroup) {
+                ViewGroup g = (ViewGroup) row;
+                for (int j = 0; j < g.getChildCount(); j++) {
+                    View child = g.getChildAt(j);
+                    child.setEnabled(enabled);
+                    if (child instanceof TextInputLayout) {
+                        EditText e = ((TextInputLayout) child).getEditText();
+                        if (e != null) e.setEnabled(enabled);
+                    }
+                }
+            }
+        }
     }
 
     private void updateLocale(String lang) {

@@ -63,6 +63,10 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         setupUser();
         setupListeners();
+
+        // Fetch this account's personal API keys from the cloud so they're ready to use on this
+        // device (e.g. right after logging in on a new phone).
+        ApiKeyStore.syncFromCloud(this, null);
     }
 
     private void initViews() {
@@ -147,7 +151,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void processCapturedPhoto() {
         // --- STRICT AI SECURITY CHECK ---
-        SharedPreferences apiPrefs = getSharedPreferences("AI_Settings", MODE_PRIVATE);
         SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
         String username = userPrefs.getString("username", "");
@@ -156,8 +159,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (username.equals("Admin_Teacher") || isProUser) {
             apiKey = BuildConfig.GEMINI_API_KEY;
-        } else {
-            apiKey = apiPrefs.getString("user_api_key", "");
+        } else if (ApiKeyStore.hasUsableKeys(this)) {
+            apiKey = ApiKeyStore.getKeys(this).get(0);
         }
 
         // If the user is NOT pro and has NO custom key, block them!

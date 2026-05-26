@@ -49,6 +49,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class HistoryActivity extends AppCompatActivity {
 
@@ -63,6 +65,9 @@ public class HistoryActivity extends AppCompatActivity {
 
     private DatabaseReference cloudRef;
     private ValueEventListener cloudListener;
+
+    // Serializes all DB writes/reads off the UI thread so the cloud merge never freezes the list.
+    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,31 +137,39 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void loadLocalHistoryOnly() {
+        List<GenericItem> fresh = queryLocalHistory(showingSolutions);
         displayList.clear();
-        Cursor cursor = showingSolutions ? dbHelper.getHistory(currentUsername) : dbHelper.getDrawings(currentUsername);
+        displayList.addAll(fresh);
+        adapter.notifyDataSetChanged();
+    }
 
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                if (showingSolutions) {
-                    String id = String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow("hist_id")));
-                    String title = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                    String prob = cursor.getString(cursor.getColumnIndexOrThrow("problem"));
-                    String raw = cursor.getString(cursor.getColumnIndexOrThrow("raw_response"));
-                    String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
-                    displayList.add(new GenericItem(id, title, prob, raw, date));
-                } else {
-                    String id = String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow("drw_id")));
-                    String title = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                    String data = cursor.getString(cursor.getColumnIndexOrThrow("data"));
-                    String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
-                    displayList.add(new GenericItem(id, title, "Date: " + date, data, date));
-                }
-            } while (cursor.moveToNext());
+    /** Reads the local DB into a sorted list. Safe to call from a background thread. */
+    private List<GenericItem> queryLocalHistory(boolean solutions) {
+        List<GenericItem> out = new ArrayList<>();
+        Cursor cursor = solutions ? dbHelper.getHistory(currentUsername) : dbHelper.getDrawings(currentUsername);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                do {
+                    if (solutions) {
+                        String id = String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow("hist_id")));
+                        String title = cursor.getString(cursor.getColumnIndexOrThrow("name"));
+                        String prob = cursor.getString(cursor.getColumnIndexOrThrow("problem"));
+                        String raw = cursor.getString(cursor.getColumnIndexOrThrow("raw_response"));
+                        String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                        out.add(new GenericItem(id, title, prob, raw, date));
+                    } else {
+                        String id = String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow("drw_id")));
+                        String title = cursor.getString(cursor.getColumnIndexOrThrow("name"));
+                        String data = cursor.getString(cursor.getColumnIndexOrThrow("data"));
+                        String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                        out.add(new GenericItem(id, title, "Date: " + date, data, date));
+                    }
+                } while (cursor.moveToNext());
+            }
             cursor.close();
         }
-
-        Collections.sort(displayList, (o1, o2) -> o2.date.compareTo(o1.date));
-        adapter.notifyDataSetChanged();
+        Collections.sort(out, (o1, o2) -> o2.date.compareTo(o1.date));
+        return out;
     }
 
     // REAL-TIME CLOUD LISTENER
@@ -193,55 +206,67 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void mergeData(DataSnapshot cloudSnapshot) {
-        try {
-            android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
+        final boolean solutions = showingSolutions;
 
-            // Mirror the cloud into local additively. We never blanket-delete here: with Firebase
-            // offline persistence the first snapshot can arrive empty/cached, and a blanket delete
-            // would then wipe good local rows. Each cloud item replaces its local namesake below.
-            if (cloudSnapshot != null && cloudSnapshot.exists()) {
-                for (DataSnapshot child : cloudSnapshot.getChildren()) {
-                    String date = child.child("date").getValue(String.class);
-                    String title = child.child("title").getValue(String.class);
-                    if (title == null) title = "Synced Item";
-                    if (date == null) continue;
+        // Pull the snapshot into a lightweight in-memory list here (cheap, no disk I/O). We never
+        // blanket-delete: with Firebase offline persistence the first snapshot can arrive empty/cached,
+        // so a blanket delete would wipe good local rows. Each cloud item replaces its local namesake.
+        final List<ContentValues> rows = new ArrayList<>();
+        if (cloudSnapshot != null && cloudSnapshot.exists()) {
+            for (DataSnapshot child : cloudSnapshot.getChildren()) {
+                String date = child.child("date").getValue(String.class);
+                if (date == null) continue;
+                String title = child.child("title").getValue(String.class);
+                if (title == null) title = "Synced Item";
 
-                    if (showingSolutions) {
-                        String prob = child.child("problem").getValue(String.class);
-                        String raw = child.child("raw_response").getValue(String.class);
-
-                        ContentValues v = new ContentValues();
-                        v.put("username", currentUsername);
-                        v.put("name", title);
-                        v.put("problem", prob != null ? prob : "");
-                        v.put("solution", "");
-                        v.put("raw_response", raw != null ? raw : "");
-                        v.put("date", date);
-                        v.put("synced", 1); // mirrored from cloud => already synced
-                        // Remove any local copy of this same item (incl. an unsynced one just saved) to avoid duplicates
-                        db.delete("history", "username = ? AND date = ?", new String[]{currentUsername, date});
-                        db.insert("history", null, v);
-                    } else {
-                        String data = child.child("data").getValue(String.class);
-
-                        ContentValues v = new ContentValues();
-                        v.put("username", currentUsername);
-                        v.put("name", title);
-                        v.put("data", data != null ? data : "{}");
-                        v.put("date", date);
-                        v.put("synced", 1); // mirrored from cloud => already synced
-                        // Remove any local copy of this same item (incl. an unsynced one just saved) to avoid duplicates
-                        db.delete("drawings", "username = ? AND date = ?", new String[]{currentUsername, date});
-                        db.insert("drawings", null, v);
-                    }
+                ContentValues v = new ContentValues();
+                v.put("username", currentUsername);
+                v.put("name", title);
+                v.put("date", date);
+                v.put("synced", 1); // mirrored from cloud => already synced
+                if (solutions) {
+                    String prob = child.child("problem").getValue(String.class);
+                    String raw = child.child("raw_response").getValue(String.class);
+                    v.put("problem", prob != null ? prob : "");
+                    v.put("solution", "");
+                    v.put("raw_response", raw != null ? raw : "");
+                } else {
+                    String data = child.child("data").getValue(String.class);
+                    v.put("data", data != null ? data : "{}");
                 }
+                rows.add(v);
             }
-        } catch (Exception e) {
-            Log.e("HistorySync", "Error mirroring data: " + e.getMessage());
         }
 
-        // 3. Refresh the UI list instantly
-        loadLocalHistoryOnly();
+        // Do every write in ONE transaction on a background thread (autocommit fsync-per-row was the
+        // freeze), then reload the list off-thread and hand the finished result to the UI.
+        final String table = solutions ? "history" : "drawings";
+        ioExecutor.execute(() -> {
+            try {
+                android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.beginTransaction();
+                try {
+                    for (ContentValues v : rows) {
+                        db.delete(table, "username = ? AND date = ?",
+                                new String[]{currentUsername, v.getAsString("date")});
+                        db.insert(table, null, v);
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+            } catch (Exception e) {
+                Log.e("HistorySync", "Error mirroring data: " + e.getMessage());
+            }
+
+            final List<GenericItem> fresh = queryLocalHistory(solutions);
+            runOnUiThread(() -> {
+                if (showingSolutions != solutions) return; // user switched tabs while we worked
+                displayList.clear();
+                displayList.addAll(fresh);
+                adapter.notifyDataSetChanged();
+            });
+        });
     }
     private void showRenameDialog(GenericItem item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -675,6 +700,7 @@ public class HistoryActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (cloudRef != null && cloudListener != null) cloudRef.removeEventListener(cloudListener);
+        ioExecutor.shutdown();
     }
 
     @Override protected void attachBaseContext(Context newBase) { super.attachBaseContext(LocaleHelper.onAttach(newBase)); }

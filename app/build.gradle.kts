@@ -32,6 +32,10 @@ android {
         // Read the key from the properties object we loaded above
         val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+
+        // Comma-separated backup keys used as fallback when the primary key is out of quota.
+        val geminiBackupKeys = localProperties.getProperty("GEMINI_BACKUP_KEYS") ?: ""
+        buildConfigField("String", "GEMINI_BACKUP_KEYS", "\"$geminiBackupKeys\"")
     }
     buildFeatures {
         buildConfig = true
@@ -78,7 +82,6 @@ dependencies {
     // Firebase products - versions are now managed by the firebase-bom
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-auth")
-    implementation("com.facebook.android:facebook-login:16.0.0")
     // Google Sign-In Library
     implementation("com.google.android.gms:play-services-auth:21.1.1")
     // Google Generative AI

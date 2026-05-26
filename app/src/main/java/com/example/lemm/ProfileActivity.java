@@ -37,7 +37,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private TextView tvUsername, tvHistoryCount, tvDrawingCount;
     private ImageButton btnBack;
-    private MaterialButton btnLogout, btnChangePass, btnDeleteAccount;
+    private MaterialButton btnLogout, btnChangePass, btnChangeUsername, btnDeleteAccount;
     private DatabaseHelper dbHelper;
     private ImageView imgProfileAvatar;
     private MaterialCardView cardProfileAvatar;
@@ -59,6 +59,7 @@ public class ProfileActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
         btnLogout = findViewById(R.id.btnProfileLogout);
         btnChangePass = findViewById(R.id.btnChangePassword);
+        btnChangeUsername = findViewById(R.id.btnChangeUsername);
         btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
         imgProfileAvatar = findViewById(R.id.imgProfileAvatar);
         cardProfileAvatar = findViewById(R.id.cardProfileAvatar);
@@ -79,6 +80,16 @@ public class ProfileActivity extends AppCompatActivity {
                 return;
             }
             showChangePasswordDialog(username);
+        });
+
+        btnChangeUsername.setOnClickListener(v -> {
+            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            String username = pref.getString("username", "");
+            if (pref.getBoolean("is_guest", false) || username.startsWith("GuestUser_") || username.equals("Admin_Teacher")) {
+                Toast.makeText(this, "You cannot change the username in Guest or Admin mode.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            showChangeUsernameDialog(username);
         });
 
         btnLogout.setOnClickListener(v -> {
@@ -390,6 +401,95 @@ public class ProfileActivity extends AppCompatActivity {
 
         builder.setNegativeButton(getString(R.string.cancel), null);
         builder.show();
+    }
+
+    private void showChangeUsernameDialog(String oldUsername) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.change_username));
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 0);
+
+        final EditText input = new EditText(this);
+        input.setHint(getString(R.string.enter_new_username));
+        input.setText(oldUsername);
+        input.setSelectAllOnFocus(true);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        layout.addView(input);
+        builder.setView(layout);
+
+        builder.setPositiveButton(getString(R.string.update), null);
+        builder.setNegativeButton(getString(R.string.cancel), null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Keep the dialog open on validation errors (only dismiss on success).
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            String newName = input.getText().toString().trim();
+
+            if (newName.isEmpty()) {
+                input.setError(getString(R.string.enter_all_fields));
+                return;
+            }
+            if (newName.equals(oldUsername)) { dialog.dismiss(); return; }
+
+            String lower = newName.toLowerCase();
+            if (lower.startsWith("guestuser") || lower.equals("admin_teacher")) {
+                input.setError(getString(R.string.restricted_prefix));
+                return;
+            }
+            if (!newName.matches("[a-zA-Z0-9_]{3,20}")) {
+                input.setError(getString(R.string.username_invalid));
+                return;
+            }
+            if (dbHelper.checkUsernameExists(newName)) {
+                input.setError(getString(R.string.username_taken));
+                return;
+            }
+
+            dialog.dismiss();
+            applyUsernameChange(oldUsername, newName);
+        });
+    }
+
+    private void applyUsernameChange(String oldName, String newName) {
+        // 1. Rename every local row (users, history, drawings).
+        if (!dbHelper.renameUser(oldName, newName)) {
+            Toast.makeText(this, "Could not update username.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // 2. Update the saved session + migrate the avatar key to the new name.
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor ed = pref.edit();
+        ed.putString("username", newName);
+        String avatar = pref.getString("avatar_" + oldName, null);
+        if (avatar != null) {
+            ed.putString("avatar_" + newName, avatar);
+            ed.remove("avatar_" + oldName);
+        }
+        ed.apply();
+
+        // 3. Update the canonical username stored against this account in the cloud.
+        com.google.firebase.auth.FirebaseUser fbUser =
+                com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (fbUser != null) {
+            FirebaseManager.getDatabase().getReference("users_info")
+                    .child(fbUser.getUid()).child("username").setValue(newName);
+        }
+
+        // 4. Move the cloud data node: drop the old one (unless it sanitizes to the same path)
+        //    and re-push the now-renamed local rows under the new name.
+        if (!FirebaseManager.sanitizeUser(oldName).equals(FirebaseManager.sanitizeUser(newName))) {
+            FirebaseManager.getUserRef(oldName).removeValue();
+        }
+        CloudSyncManager.syncLocalToCloud(dbHelper, newName);
+
+        Toast.makeText(this, getString(R.string.username_updated), Toast.LENGTH_SHORT).show();
+        tvUsername.setText(newName);
+        setupUserData();
     }
 
     private void performAccountDeletion(String username) {

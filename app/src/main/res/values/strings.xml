@@ -52,6 +52,11 @@
     <string name="online">Online</string>
     <string name="your_activity">Your Activity</string>
     <string name="security">Security</string>
+    <string name="change_username">Change Username</string>
+    <string name="enter_new_username">Enter new username</string>
+    <string name="username_updated">Username updated</string>
+    <string name="username_taken">That username is already taken.</string>
+    <string name="username_invalid">Use 3–20 letters, numbers, or underscores.</string>
 
     <string name="new_problem">New Problem</string>
     <string name="scan_ocr">Scan OCR</string>
@@ -67,7 +72,26 @@
     <string name="api_key_hint">Paste Gemini API Key here</string>
     <string name="api_key_save">Save Key</string>
     <string name="api_key_info">Lemma AI usage is high. Provide your own key or purchase Pro.</string>
+    <string name="api_key_use_personal">Use my own API keys</string>
+    <string name="api_key_your_keys">Your API keys</string>
+    <string name="api_key_add_another">Add another key</string>
+    <string name="api_key_remove">Remove key</string>
+    <string name="api_key_use_this">Use this key</string>
+    <string name="api_key_saved">API keys saved</string>
     <string name="upgrade_pro">Upgrade to Pro</string>
+
+    <!-- Settings screen labels -->
+    <string name="settings_ai_access">AI Access configuration</string>
+    <string name="set_personal_api_key">Set Personal API Key</string>
+    <string name="api_key_subtitle">Use your own key to use the app for free.</string>
+    <string name="pro_tier_title">Lemma Pro Tier</string>
+    <string name="pro_status_free">Status: Free Tier</string>
+    <string name="pro_status_active">Status: Pro Tier Active</string>
+    <string name="unlock_unlimited_ai">Unlock Unlimited AI</string>
+    <string name="appearance">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="access_denied">Access Required</string>
     <string name="access_denied_msg">Please enter an API Key in Settings or purchase Pro.</string>
     <string name="error_not_geometry">Security Filter: Lemma AI only solves math and geometry.</string>
@@ -78,11 +102,26 @@
     <string name="scan_error_failed">Scanner Error: Connection lost.</string>
     <string name="scan_error_loading_photo">Error: Could not load photo.</string>
     <string name="scan_not_geometry_title">Not a Geometry Problem</string>
+    <string name="solve_not_geometry_msg">This doesn\'t look like a geometry problem. Please enter a geometry problem — shapes, angles, areas, volumes, or proofs.</string>
+    <string name="add_image">Add Image</string>
+    <string name="remove_image">Remove image</string>
+    <string name="enter_problem_or_image">Type a problem or add an image first.</string>
+    <string name="speak_problem">Speak the problem</string>
+    <string name="voice_prompt">Describe the geometry problem…</string>
+    <string name="voice_unavailable">Voice input isn\'t available on this device.</string>
     <string name="scan_not_geometry_msg">This image doesn\'t look like a geometry problem. Please scan a clear geometry problem (with shapes, angles, or figures).</string>
     <string name="notif_solution_ready_title">Solution Ready</string>
     <string name="notif_solution_ready_body">Your geometry solution is ready. Tap to view.</string>
     <string name="notif_solution_failed_title">Solution Failed</string>
     <string name="notif_solution_failed_body">Couldn\'t generate the solution. Check your connection or API key.</string>
+    <string name="notif_quota_body">The AI quota is used up. Open Lemma to add or update your API key.</string>
+    <string name="switching_to_user_key">Subscription limit reached — switching to your API key…</string>
+    <string name="switching_backup_key">Switching to a backup AI key…</string>
+    <string name="quota_expired_title">AI Quota Reached</string>
+    <string name="quota_expired_both">Your subscription\'s AI quota is used up, and your own API key(s) are also out of quota or expired.\n\nAdd or update an API key in Settings, or try again later.</string>
+    <string name="quota_expired_sub">Your subscription\'s AI quota is temporarily used up.\n\nYou can add your own API key in Settings to keep solving, or try again later.</string>
+    <string name="quota_expired_user">Your API key(s) are out of quota or have expired.\n\nPlease add or update your API key in Settings.</string>
+    <string name="open_settings">Open Settings</string>
     <string name="title_set_angle">Set Angle Between Lines</string>
     <string name="title_smart_dim">Smart Dimension</string>
     <string name="title_rename_vertex">Rename Vertex</string>
@@ -114,10 +153,9 @@
     <string name="step_prefix">STEP </string>
     <string name="final_answer">FINAL ANSWER:</string>
 
-    <string name="default_web_client_id">481743722691-874nj07keqhs20s6bolgram4bp4ghfdr.apps.googleusercontent.com</string>
-    <string name="facebook_app_id">1234567890</string>
-    <string name="fb_login_protocol_scheme">fb1234567890</string>
-    <string name="facebook_client_token">YOUR_CLIENT_TOKEN_HERE</string>
+    <!-- default_web_client_id is generated automatically by the google-services plugin from
+         google-services.json (the Web OAuth client, type 3). Do NOT hardcode it here, or it will
+         override the json and break Google Sign-In whenever the json changes. -->
 
     <!-- ================= THEOREMS & QUIZZES ================= -->
     <string name="theorems_title">Theorems &amp; Formulas</string>

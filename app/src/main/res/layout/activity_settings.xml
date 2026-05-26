@@ -13,14 +13,32 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/settings"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/main_blue"
-            android:layout_marginBottom="24dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_revert"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@color/main_blue"
+                android:contentDescription="Back" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="@string/settings"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/main_blue" />
+        </LinearLayout>
 
         <!-- AI ACCESS CARD -->
         <com.google.android.material.card.MaterialCardView
@@ -39,7 +57,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="AI Access configuration"
+                    android:text="@string/settings_ai_access"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_subtitle"
@@ -47,19 +65,16 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnApiKeyConfig"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    style="@style/Widget.Lemm.Button.Outlined"
                     android:layout_width="match_parent"
-                    android:layout_height="55dp"
-                    android:text="Set Personal API Key"
-                    android:textColor="@color/main_blue"
-                    app:strokeColor="@color/main_blue"
-                    app:icon="@android:drawable/ic_lock_lock"
-                    app:iconTint="@color/main_blue" />
+                    android:layout_height="56dp"
+                    android:text="@string/set_personal_api_key"
+                    app:icon="@android:drawable/ic_lock_lock" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Use your own key to use the app for free."
+                    android:text="@string/api_key_subtitle"
                     android:textSize="11sp"
                     android:layout_marginTop="8dp"
                     android:textColor="@color/text_subtitle"/>
@@ -86,7 +101,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Lemma Pro Tier"
+                    android:text="@string/pro_tier_title"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="#F57F17"
@@ -96,16 +111,16 @@
                     android:id="@+id/tvProStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Status: Free Tier"
+                    android:text="@string/pro_status_free"
                     android:textColor="@color/text_subtitle"
                     android:layout_marginBottom="12dp"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnBuyPro"
+                    style="@style/Widget.Lemm.Button"
                     android:layout_width="match_parent"
-                    android:layout_height="55dp"
-                    android:text="Unlock Unlimited AI"
-                    android:textColor="#FFFFFF"
+                    android:layout_height="56dp"
+                    android:text="@string/unlock_unlimited_ai"
                     app:backgroundTint="#F57F17"
                     app:icon="@android:drawable/btn_star_big_on" />
             </LinearLayout>
@@ -140,9 +155,9 @@
                     android:layout_height="wrap_content"
                     app:singleSelection="true"
                     app:selectionRequired="true">
-                    <Button android:id="@+id/btnLangEn" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/language_en" />
-                    <Button android:id="@+id/btnLangRu" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/language_ru" />
-                    <Button android:id="@+id/btnLangHy" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/language_hy" />
+                    <Button android:id="@+id/btnLangEn" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/language_en" />
+                    <Button android:id="@+id/btnLangRu" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/language_ru" />
+                    <Button android:id="@+id/btnLangHy" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/language_hy" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -164,7 +179,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Appearance"
+                    android:text="@string/appearance"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="?android:attr/textColorPrimary"
@@ -176,30 +191,21 @@
                     android:layout_height="wrap_content"
                     app:singleSelection="true"
                     app:selectionRequired="true">
-                    <Button android:id="@+id/btnThemeSystem" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="System" />
-                    <Button android:id="@+id/btnThemeLight" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Light" />
-                    <Button android:id="@+id/btnThemeDark" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Dark" />
+                    <Button android:id="@+id/btnThemeSystem" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/theme_system" />
+                    <Button android:id="@+id/btnThemeLight" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/theme_light" />
+                    <Button android:id="@+id/btnThemeDark" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/theme_dark" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAboutUs"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/Widget.Lemm.Button.Outlined"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="4dp"
             android:text="@string/about_us"
-            android:textColor="@color/main_blue"
-            app:strokeColor="@color/main_blue" />
-
-        <Button
-            android:id="@+id/btnBack"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/cancel"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:textColor="@color/text_subtitle" />
+            app:icon="@android:drawable/ic_menu_info_details" />
 
     </LinearLayout>
 </ScrollView>

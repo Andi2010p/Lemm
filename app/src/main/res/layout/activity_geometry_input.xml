@@ -40,7 +40,7 @@
                     android:layout_marginEnd="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_menu_revert"
-                    app:tint="@color/primary_dark" />
+                    app:tint="@color/text_title" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -48,7 +48,7 @@
                     android:layout_weight="1"
                     android:text="@string/geometry_solver"
                     android:textStyle="bold"
-                    android:textColor="@color/primary_dark"
+                    android:textColor="@color/text_title"
                     android:textSize="16sp" />
 
                 <ImageButton
@@ -101,6 +101,8 @@
                         android:hint="@string/describe_problem"
                         app:startIconDrawable="@android:drawable/ic_menu_edit"
                         app:startIconTint="@color/primary"
+                        app:endIconMode="clear_text"
+                        app:endIconTint="@color/primary"
                         app:boxCornerRadiusBottomEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
                         app:boxCornerRadiusTopEnd="12dp"
@@ -111,6 +113,9 @@
                             android:id="@+id/etDescription"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:gravity="top"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="8dp"
                             android:inputType="textMultiLine"
                             android:maxLength="2500"
                             android:minLines="1"
@@ -118,6 +123,17 @@
                             android:textColor="@color/text_main"
                             android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnVoiceInput"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="4dp"
+                        android:src="@android:drawable/ic_btn_speak_now"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/speak_problem"
+                        app:tint="@color/primary" />
 
                     <ImageButton
                         android:id="@+id/btnExpandDesc"
@@ -158,6 +174,9 @@
                             android:id="@+id/etExtraCommands"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:gravity="top"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="8dp"
                             android:inputType="textMultiLine"
                             android:maxLength="500"
                             android:minLines="1"
@@ -165,6 +184,17 @@
                             android:textColor="@color/text_main"
                             android:textSize="13sp" />
                     </com.google.android.material.textfield.TextInputLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnVoiceExtra"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="4dp"
+                        android:src="@android:drawable/ic_btn_speak_now"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/speak_problem"
+                        app:tint="@color/secondary" />
 
                     <ImageButton
                         android:id="@+id/btnExpandExtra"
@@ -176,6 +206,36 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         app:tint="@color/secondary" />
                 </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddImage"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/add_image"
+                    android:textAllCaps="false"
+                    android:textColor="@color/main_blue"
+                    app:strokeColor="@color/main_blue"
+                    app:cornerRadius="12dp"
+                    app:icon="@android:drawable/ic_menu_gallery"
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/main_blue" />
+
+                <HorizontalScrollView
+                    android:id="@+id/imageScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:scrollbars="none"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:id="@+id/imageStrip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
 
                 <Button
                     android:id="@+id/btnSolveProblem"

@@ -19,11 +19,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
-    private com.facebook.CallbackManager mCallbackManager;
     private EditText etIdentifier, etPassword;
     private Button btnLogin;
     private com.google.android.material.button.MaterialButton btnGoogleLogin;
@@ -202,29 +200,6 @@ public class LoginActivity extends AppCompatActivity {
             startActivityForResult(signInIntent, RC_SIGN_IN);
         });
 
-        // --- FACEBOOK LOGIN ---
-        mCallbackManager = com.facebook.CallbackManager.Factory.create();
-        com.google.android.material.button.MaterialButton btnFacebookLogin = findViewById(R.id.btnFacebookLogin);
-
-        btnFacebookLogin.setOnClickListener(v -> {
-            com.facebook.login.LoginManager.getInstance().logInWithReadPermissions(this, java.util.Arrays.asList("email", "public_profile"));
-        });
-
-        com.facebook.login.LoginManager.getInstance().registerCallback(mCallbackManager, new com.facebook.FacebookCallback<com.facebook.login.LoginResult>() {
-            @Override
-            public void onSuccess(com.facebook.login.LoginResult loginResult) {
-                handleFacebookAccessToken(loginResult.getAccessToken());
-            }
-            @Override
-            public void onCancel() {
-                Toast.makeText(LoginActivity.this, "Facebook Login Canceled", Toast.LENGTH_SHORT).show();
-            }
-            @Override
-            public void onError(com.facebook.FacebookException error) {
-                Toast.makeText(LoginActivity.this, "Facebook Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-
         tvSignUp.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, RegisterActivity.class)));
         tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
     }
@@ -299,63 +274,44 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        mCallbackManager.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                if (account != null) {
-                    firebaseAuthWithGoogle(account.getIdToken(), account);
+                if (account == null || account.getIdToken() == null) {
+                    // No ID token means requestIdToken() got the wrong/empty Web client ID.
+                    android.util.Log.e("GoogleSignIn", "No ID token in the returned account.");
+                    Toast.makeText(this, "Google Sign-In failed: no ID token returned. The Web client ID is wrong or missing.", Toast.LENGTH_LONG).show();
+                    return;
                 }
+                firebaseAuthWithGoogle(account.getIdToken(), account);
             } catch (ApiException e) {
-                Toast.makeText(this, "Google Sign-In failed: " + e.getStatusCode(), Toast.LENGTH_LONG).show();
+                android.util.Log.e("GoogleSignIn", "ApiException code=" + e.getStatusCode() + " "
+                        + com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.getStatusCodeString(e.getStatusCode()), e);
+                Toast.makeText(this, googleSignInError(e.getStatusCode()), Toast.LENGTH_LONG).show();
             }
         }
     }
 
-    private void handleFacebookAccessToken(com.facebook.AccessToken token) {
-        Toast.makeText(this, "Connecting Facebook to Firebase...", Toast.LENGTH_SHORT).show();
-
-        com.google.firebase.auth.AuthCredential credential = com.google.firebase.auth.FacebookAuthProvider.getCredential(token.getToken());
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        String email = (user.getEmail() != null) ? user.getEmail() : user.getUid() + "@facebook.com";
-
-                        // FIX: Check if they already have an established username in users_info first!
-                        FirebaseManager.getDatabase().getReference("users_info")
-                                .child(user.getUid()).child("username")
-                                .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(com.google.firebase.database.DataSnapshot snapshot) {
-                                        String finalUsername = snapshot.getValue(String.class);
-                                        if (finalUsername == null || finalUsername.isEmpty()) {
-                                            String rawName = (user.getDisplayName() != null) ? user.getDisplayName() : "FB_User";
-                                            finalUsername = rawName.replaceAll("[^a-zA-Z0-9_]", "_");
-                                            FirebaseManager.getDatabase().getReference("users_info")
-                                                    .child(user.getUid()).child("username").setValue(finalUsername);
-                                        }
-
-                                        try {
-                                            dbHelper.syncGoogleUser(finalUsername, email, user.getUid());
-                                            CloudSyncManager.syncLocalToCloud(dbHelper, finalUsername);
-                                        } catch (Exception ignored) {}
-
-                                        Toast.makeText(LoginActivity.this, getString(R.string.welcome, finalUsername), Toast.LENGTH_SHORT).show();
-                                        saveSessionAndGoMain(finalUsername, false);
-                                    }
-
-                                    @Override
-                                    public void onCancelled(com.google.firebase.database.DatabaseError error) {
-                                        Toast.makeText(LoginActivity.this, "FB Login Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                    } else {
-                        Toast.makeText(this, "Firebase Facebook Auth Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                });
+    /** Human-readable explanation for the most common Google Sign-In status codes. */
+    private String googleSignInError(int code) {
+        switch (code) {
+            case 10: // DEVELOPER_ERROR
+                return "Google Sign-In failed (10): this build's SHA-1 or the Web client ID isn't registered for this Firebase project. "
+                        + "Add your SHA-1 in Firebase Console, re-download google-services.json, then uninstall & reinstall.";
+            case 12500: // SIGN_IN_FAILED
+                return "Google Sign-In failed (12500): update Google Play Services and make sure a Google account is added on this device.";
+            case 12501: // SIGN_IN_CANCELLED
+                return "Google Sign-In was canceled.";
+            case 12502: // SIGN_IN_CURRENTLY_IN_PROGRESS
+                return "A Google Sign-In is already in progress.";
+            case 7:     // NETWORK_ERROR
+                return "Network error during Google Sign-In. Check your connection.";
+            default:
+                return "Google Sign-In failed (code " + code + "): "
+                        + com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.getStatusCodeString(code);
+        }
     }
 
     private void firebaseAuthWithGoogle(String idToken, GoogleSignInAccount account) {
@@ -408,7 +364,12 @@ public class LoginActivity extends AppCompatActivity {
                                     }
                                 });
                     } else {
-                        Toast.makeText(LoginActivity.this, "Firebase Authentication Failed.", Toast.LENGTH_SHORT).show();
+                        String em = (task.getException() != null) ? task.getException().getMessage() : "unknown error";
+                        android.util.Log.e("GoogleSignIn", "Firebase signInWithCredential failed: " + em, task.getException());
+                        Toast.makeText(LoginActivity.this,
+                                "Firebase rejected the Google login: " + em
+                                        + "\n(If this mentions the provider being disabled, enable Google in Firebase Console → Authentication → Sign-in method.)",
+                                Toast.LENGTH_LONG).show();
                     }
                 });
     }
