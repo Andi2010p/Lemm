@@ -88,7 +88,7 @@
     <string name="nothing_to_copy">Nothing to copy yet</string>
     <string name="preparing_image">Preparing image…</string>
     <string name="export_choose">Download as</string>
-    <string name="export_image_opt">Image — figure only</string>
+    <string name="export_image_opt">Drawing only (image)</string>
     <string name="export_pdf_opt">PDF — figure + solution</string>
     <string name="pdf_saved">PDF saved to Documents</string>
     <string name="export_failed">Export failed</string>

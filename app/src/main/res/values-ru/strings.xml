@@ -88,7 +88,7 @@
     <string name="nothing_to_copy">Пока нечего копировать</string>
     <string name="preparing_image">Подготовка изображения…</string>
     <string name="export_choose">Скачать как</string>
-    <string name="export_image_opt">Изображение — только рисунок</string>
+    <string name="export_image_opt">Только рисунок (изображение)</string>
     <string name="export_pdf_opt">PDF — рисунок + решение</string>
     <string name="pdf_saved">PDF сохранён в Документах</string>
     <string name="export_failed">Не удалось экспортировать</string>
