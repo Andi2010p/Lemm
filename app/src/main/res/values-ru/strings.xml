@@ -77,6 +77,23 @@
     <string name="api_key_add_another">Добавить ещё ключ</string>
     <string name="api_key_remove">Удалить ключ</string>
     <string name="api_key_use_this">Использовать этот ключ</string>
+
+    <!-- Solution copy / export -->
+    <string name="copy">Копировать</string>
+    <string name="copy_all">Копировать всё</string>
+    <string name="copied">Скопировано в буфер обмена</string>
+    <string name="save_image">Сохранить изображение</string>
+    <string name="solution_image_saved">Изображение решения сохранено в галерее</string>
+    <string name="save_image_failed">Не удалось сохранить изображение</string>
+    <string name="nothing_to_copy">Пока нечего копировать</string>
+    <string name="preparing_image">Подготовка изображения…</string>
+    <string name="export_choose">Скачать как</string>
+    <string name="export_image_opt">Изображение — только рисунок</string>
+    <string name="export_pdf_opt">PDF — рисунок + решение</string>
+    <string name="pdf_saved">PDF сохранён в Документах</string>
+    <string name="export_failed">Не удалось экспортировать</string>
+    <string name="no_figure">В этой задаче нет рисунка для сохранения.</string>
+    <string name="download">Скачать</string>
     <string name="api_key_saved">Ключи сохранены</string>
     <string name="upgrade_pro">Купить Pro</string>
 

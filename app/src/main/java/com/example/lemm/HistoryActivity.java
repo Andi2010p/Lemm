@@ -97,7 +97,8 @@ public class HistoryActivity extends AppCompatActivity {
             @Override public void onRenameClick(GenericItem item) { showRenameDialog(item); }
             @Override public void onDeleteClick(GenericItem item) { confirmDelete(item); }
             @Override public void onDownloadClick(GenericItem item) {
-                if (!showingSolutions) showDownloadFormatDialog(item);
+                if (showingSolutions) exportSolutionImage(item);
+                else showDownloadFormatDialog(item);
             }
         });
 
@@ -458,6 +459,26 @@ public class HistoryActivity extends AppCompatActivity {
             intent.putExtra("SAVED_DATE", item.date);
             startActivity(intent);
         }
+    }
+
+    /** Renders the saved solution's 3D figure offscreen, then offers Image / PDF export. */
+    private void exportSolutionImage(GenericItem item) {
+        Bitmap figure = null;
+        try {
+            GeometryCanvas3D cv = new GeometryCanvas3D(this, null);
+            cv.loadFromSolution(item.data);
+            if (!cv.isEmpty()) {
+                int size = 1200;
+                cv.measure(View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY));
+                cv.layout(0, 0, size, size);
+                figure = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+                cv.draw(new Canvas(figure));
+            }
+        } catch (Exception e) {
+            Log.e("HistoryExport", "Figure render failed: " + e.getMessage());
+        }
+        SolutionExporter.showExportDialog(this, figure, SolutionExporter.cleanSolutionText(item.data), item.title);
     }
 
     private void showDownloadFormatDialog(GenericItem item) {

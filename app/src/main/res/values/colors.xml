@@ -21,6 +21,10 @@
     <color name="grad_bottom">#EBF4FF</color>
     <!-- Soft tinted circle behind icons -->
     <color name="icon_bg_blue">#EBF4FF</color>
+    <!-- Faint tint for the decorative geometry-symbol background pattern (alpha-baked) -->
+    <color name="bg_pattern">#221E3A8A</color>
+    <!-- Soft fill behind tonal destructive buttons -->
+    <color name="danger_bg">#FDE8E8</color>
     <!-- PRO highlight card -->
     <color name="pro_card_bg">#FFFDE7</color>
     <!-- Input fields / floating control panels -->

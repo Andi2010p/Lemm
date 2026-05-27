@@ -1,14 +1,23 @@
 package com.example.lemm;
 
 import android.Manifest;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.view.Gravity;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
@@ -50,6 +59,9 @@ public class GeometryInputActivity extends AppCompatActivity {
 
     private String lastSolutionText = "";
     private String lastAIResponse = "";
+    private View resultActions;
+    // Plain text of each rendered solution card, in order — used for "Copy all".
+    private final List<String> solutionCardTexts = new ArrayList<>();
     private String editId = "";
     private String originalDate = null;
     private boolean isFromHistory = false;
@@ -101,6 +113,9 @@ public class GeometryInputActivity extends AppCompatActivity {
         inputArea = findViewById(R.id.inputExpandableArea);
         stepsContainer = findViewById(R.id.stepsContainer);
         solutionControls = findViewById(R.id.solutionControls);
+        resultActions = findViewById(R.id.resultActions);
+        findViewById(R.id.btnCopyAll).setOnClickListener(v -> copyAllSolution());
+        findViewById(R.id.btnSaveImage).setOnClickListener(v -> exportSolution());
         progressBar = findViewById(R.id.progressBar);
         btnStopAI = findViewById(R.id.btnStopAI);
         btnToggleInput = findViewById(R.id.btnToggleInput);
@@ -595,6 +610,7 @@ public class GeometryInputActivity extends AppCompatActivity {
     private void processAIResult(String text) {
         canvas3D.clear();
         stepsContainer.removeAllViews();
+        solutionCardTexts.clear();
 
         btnStopAI.setVisibility(View.GONE);
 
@@ -647,6 +663,10 @@ public class GeometryInputActivity extends AppCompatActivity {
         if (!finalAnswerText.isEmpty()) {
             addFinalAnswerCard(finalAnswerText);
         }
+
+        // Copy / Save-image are available whenever a solution is on screen (incl. opened from History).
+        if (resultActions != null)
+            resultActions.setVisibility(stepsContainer.getChildCount() > 0 ? View.VISIBLE : View.GONE);
 
         inputArea.setVisibility(View.GONE);
         btnToggleInput.setColorFilter(Color.parseColor("#E67E22"));
@@ -728,8 +748,7 @@ public class GeometryInputActivity extends AppCompatActivity {
             tv.setText(android.text.Html.fromHtml(text));
         }
 
-        card.addView(tv);
-        stepsContainer.addView(card);
+        finishCard(card, tv);
     }
 
     private void addStepCard(String sectionText) {
@@ -758,8 +777,7 @@ public class GeometryInputActivity extends AppCompatActivity {
             tv.setText(android.text.Html.fromHtml(processedText));
         }
 
-        card.addView(tv);
-        stepsContainer.addView(card);
+        finishCard(card, tv);
     }
 
     private void addFinalAnswerCard(String answerText) {
@@ -790,14 +808,95 @@ public class GeometryInputActivity extends AppCompatActivity {
             tv.setText(android.text.Html.fromHtml(fullText));
         }
 
-        card.addView(tv);
+        finishCard(card, tv);
+    }
+
+    /**
+     * Wraps a card's text in a vertical box and adds a small "copy" button at the bottom-right that
+     * copies just that card. Also records the plain text so "Copy all" can rebuild the full solution.
+     */
+    private void finishCard(MaterialCardView card, TextView tv) {
+        final String plain = tv.getText().toString();
+        solutionCardTexts.add(plain);
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.addView(tv);
+
+        ImageButton copy = new ImageButton(this);
+        copy.setImageResource(R.drawable.ic_copy);
+        copy.setColorFilter(ContextCompat.getColor(this, R.color.text_subtitle));
+        copy.setBackgroundResource(android.R.color.transparent);
+        copy.setContentDescription(getString(R.string.copy));
+        int sz = (int) (36 * getResources().getDisplayMetrics().density);
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(sz, sz);
+        clp.gravity = Gravity.END;
+        clp.rightMargin = 12;
+        clp.bottomMargin = 6;
+        copy.setLayoutParams(clp);
+        copy.setOnClickListener(v -> copyToClipboard(plain));
+        box.addView(copy);
+
+        card.addView(box);
         stepsContainer.addView(card);
+    }
+
+    private void copyAllSolution() {
+        if (solutionCardTexts.isEmpty()) {
+            Toast.makeText(this, R.string.nothing_to_copy, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String s : solutionCardTexts) {
+            if (sb.length() > 0) sb.append("\n\n");
+            sb.append(s);
+        }
+        copyToClipboard(sb.toString());
+    }
+
+    private void copyToClipboard(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            Toast.makeText(this, R.string.nothing_to_copy, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (cm != null) {
+            cm.setPrimaryClip(ClipData.newPlainText("Lemma Solution", text));
+            Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /** Snapshot of the live 3D figure (its own view only), or null if there's no figure. */
+    private Bitmap renderFigureBitmap() {
+        if (canvas3D == null || canvas3D.isEmpty()
+                || canvas3D.getWidth() <= 0 || canvas3D.getHeight() <= 0) return null;
+        Bitmap b = Bitmap.createBitmap(canvas3D.getWidth(), canvas3D.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+        c.drawColor(ContextCompat.getColor(this, R.color.canvas_bg));
+        canvas3D.draw(c);
+        return b;
+    }
+
+    /** Offers Image (figure only) / PDF (figure + solution text) export of the current solution. */
+    private void exportSolution() {
+        if (solutionCardTexts.isEmpty()) {
+            Toast.makeText(this, R.string.nothing_to_copy, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String s : solutionCardTexts) {
+            if (sb.length() > 0) sb.append("\n\n");
+            sb.append(s);
+        }
+        String title = getIntent().hasExtra("SAVED_NAME") ? getIntent().getStringExtra("SAVED_NAME") : "Solution";
+        SolutionExporter.showExportDialog(this, renderFigureBitmap(), sb.toString(), title);
     }
 
     private void resetAll () {
         canvas3D.clear();
         stepsContainer.removeAllViews();
         solutionControls.setVisibility(View.GONE);
+        if (resultActions != null) resultActions.setVisibility(View.GONE);
         inputArea.setVisibility(View.VISIBLE);
         btnToggleInput.setColorFilter(ContextCompat.getColor(this, R.color.primary));
         btnStopAI.setVisibility(View.VISIBLE);

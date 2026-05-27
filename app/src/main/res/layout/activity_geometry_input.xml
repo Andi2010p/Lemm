@@ -517,6 +517,36 @@
                 app:backgroundTint="#27AE60" />
         </LinearLayout>
 
+        <!-- Always-available actions whenever a solution is shown (incl. from History) -->
+        <LinearLayout
+            android:id="@+id/resultActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCopyAll"
+                style="@style/Widget.Lemm.Button.Tonal"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:text="@string/copy_all"
+                app:icon="@drawable/ic_copy" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveImage"
+                style="@style/Widget.Lemm.Button.Tonal"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="@string/download"
+                app:icon="@android:drawable/stat_sys_download" />
+        </LinearLayout>
+
         <ScrollView
             android:id="@+id/resultScrollView"
             android:layout_width="match_parent"

@@ -222,7 +222,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnChangeUsername"
-                    style="@style/Widget.Lemm.Button.Outlined"
+                    style="@style/Widget.Lemm.Button.Tonal"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:text="@string/change_username"
@@ -256,7 +256,7 @@
             android:layout_marginBottom="12dp"/>
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDeleteAccount"
-            style="@style/Widget.Lemm.Button.DangerOutlined"
+            style="@style/Widget.Lemm.Button.DangerTonal"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:text="Delete Account &amp; All Data"

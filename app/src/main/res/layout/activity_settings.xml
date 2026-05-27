@@ -65,7 +65,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnApiKeyConfig"
-                    style="@style/Widget.Lemm.Button.Outlined"
+                    style="@style/Widget.Lemm.Button.Tonal"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:text="@string/set_personal_api_key"
@@ -200,7 +200,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAboutUs"
-            style="@style/Widget.Lemm.Button.Outlined"
+            style="@style/Widget.Lemm.Button.Tonal"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="4dp"

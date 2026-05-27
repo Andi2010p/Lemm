@@ -70,9 +70,10 @@
     <!-- Filled primary. Uses @color/primary (stays a strong blue in dark mode) so white text
          keeps good contrast — main_blue lightens at night and would wash out white text. -->
     <style name="Widget.Lemm.Button" parent="Widget.MaterialComponents.Button">
-        <item name="cornerRadius">14dp</item>
+        <item name="cornerRadius">16dp</item>
         <item name="iconGravity">textStart</item>
         <item name="iconPadding">10dp</item>
+        <item name="iconSize">20dp</item>
         <item name="android:insetTop">2dp</item>
         <item name="android:insetBottom">2dp</item>
         <item name="android:textAllCaps">false</item>
@@ -87,9 +88,10 @@
 
     <!-- Secondary / outlined. Text + stroke use main_blue (readable as light blue at night). -->
     <style name="Widget.Lemm.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
-        <item name="cornerRadius">14dp</item>
+        <item name="cornerRadius">16dp</item>
         <item name="iconGravity">textStart</item>
         <item name="iconPadding">10dp</item>
+        <item name="iconSize">20dp</item>
         <item name="android:insetTop">2dp</item>
         <item name="android:insetBottom">2dp</item>
         <item name="android:textAllCaps">false</item>
@@ -110,6 +112,32 @@
     <!-- Destructive, low-emphasis (e.g. Delete account) — outlined so it isn't tapped by accident. -->
     <style name="Widget.Lemm.Button.DangerOutlined" parent="Widget.Lemm.Button.Outlined">
         <item name="strokeColor">@color/error_red</item>
+        <item name="android:textColor">@color/error_red</item>
+        <item name="iconTint">@color/error_red</item>
+        <item name="rippleColor">@color/error_red</item>
+    </style>
+
+    <!-- Tonal (soft filled, no shadow) — modern secondary action. Light-blue fill + blue label;
+         both swap to dark-blue fill + light-blue label at night via the color resources. -->
+    <style name="Widget.Lemm.Button.Tonal" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="cornerRadius">16dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">10dp</item>
+        <item name="iconSize">20dp</item>
+        <item name="android:insetTop">2dp</item>
+        <item name="android:insetBottom">2dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="backgroundTint">@color/icon_bg_blue</item>
+        <item name="android:textColor">@color/main_blue</item>
+        <item name="iconTint">@color/main_blue</item>
+        <item name="rippleColor">@color/main_blue</item>
+    </style>
+
+    <!-- Tonal destructive (e.g. Delete account): soft red fill, red label. -->
+    <style name="Widget.Lemm.Button.DangerTonal" parent="Widget.Lemm.Button.Tonal">
+        <item name="backgroundTint">@color/danger_bg</item>
         <item name="android:textColor">@color/error_red</item>
         <item name="iconTint">@color/error_red</item>
         <item name="rippleColor">@color/error_red</item>

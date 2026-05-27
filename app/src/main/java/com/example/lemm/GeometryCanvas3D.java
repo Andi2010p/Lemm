@@ -97,6 +97,40 @@ public class GeometryCanvas3D extends View {
         resetRotation();
     }
 
+    /** Parses a solution's raw text and adds every 3D command (DRAW3D/LINE3D/PLANE3D/…) to this canvas.
+     *  Lets the figure be rebuilt offscreen (e.g. when exporting from History). */
+    public void loadFromSolution(String rawText) {
+        if (rawText == null) return;
+        for (String raw : rawText.split("\n")) {
+            String line = raw.trim();
+            try {
+                if (line.startsWith("DRAW3D:")) { String[] a = cmdArgs(line); if (a.length >= 4) addPoint(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3])); }
+                else if (line.startsWith("LINE3D:")) { String[] a = cmdArgs(line); if (a.length >= 2) addLine(a[0].trim(), a[1].trim()); }
+                else if (line.startsWith("PLANE3D:")) { String[] a = cmdArgs(line); if (a.length >= 2) { List<String> v = new ArrayList<>(); for (int i = 1; i < a.length; i++) v.add(a[i].trim()); addPlane(v); } }
+                else if (line.startsWith("CONE3D:")) { String[] a = cmdArgs(line); if (a.length >= 7) addCone(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4]), pf(a[5]), pf(a[6])); }
+                else if (line.startsWith("PYRAMID3D:")) { String[] a = cmdArgs(line); if (a.length >= 7) addPyramid(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4]), pf(a[5]), pf(a[6])); }
+                else if (line.startsWith("CYLINDER3D:")) { String[] a = cmdArgs(line); if (a.length >= 6) addCylinder(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4]), pf(a[5])); }
+                else if (line.startsWith("SPHERE3D:")) { String[] a = cmdArgs(line); if (a.length >= 5) addSphere(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4])); }
+                else if (line.startsWith("CIRCLE3D:")) { String[] a = cmdArgs(line); if (a.length >= 5) addCircle(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4])); }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private static String[] cmdArgs(String line) {
+        String[] p = line.split(":");
+        return (p.length < 2) ? new String[0] : p[1].trim().split(",");
+    }
+
+    private static float pf(String s) {
+        try { return Float.parseFloat(s.replaceAll("[^0-9.\\-]", "")); } catch (Exception e) { return 0f; }
+    }
+
+    /** True when there's no figure to draw (used to skip the canvas when exporting a solution). */
+    public boolean isEmpty() {
+        return points.isEmpty() && lines.isEmpty() && planes.isEmpty() && cones.isEmpty()
+                && pyramids.isEmpty() && cylinders.isEmpty() && circles.isEmpty() && spheres.isEmpty();
+    }
+
     public void resetRotation() {
         rotateX = -25f; rotateY = 45f; rotateZ = 0f; translateX = 0f; translateY = 0f; scaleFactor = 1.0f;
         invalidate();

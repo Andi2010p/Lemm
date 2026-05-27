@@ -77,6 +77,23 @@
     <string name="api_key_add_another">Add another key</string>
     <string name="api_key_remove">Remove key</string>
     <string name="api_key_use_this">Use this key</string>
+
+    <!-- Solution copy / export -->
+    <string name="copy">Copy</string>
+    <string name="copy_all">Copy all</string>
+    <string name="copied">Copied to clipboard</string>
+    <string name="save_image">Save image</string>
+    <string name="solution_image_saved">Solution image saved to gallery</string>
+    <string name="save_image_failed">Couldn\'t save image</string>
+    <string name="nothing_to_copy">Nothing to copy yet</string>
+    <string name="preparing_image">Preparing image…</string>
+    <string name="export_choose">Download as</string>
+    <string name="export_image_opt">Image — figure only</string>
+    <string name="export_pdf_opt">PDF — figure + solution</string>
+    <string name="pdf_saved">PDF saved to Documents</string>
+    <string name="export_failed">Export failed</string>
+    <string name="no_figure">This problem has no figure to save as an image.</string>
+    <string name="download">Download</string>
     <string name="api_key_saved">API keys saved</string>
     <string name="upgrade_pro">Upgrade to Pro</string>
 

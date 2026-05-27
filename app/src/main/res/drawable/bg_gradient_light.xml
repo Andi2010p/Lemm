@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Top -> bottom gradient. Colors adapt automatically: soft ice-blue in light mode,
-         near-black navy in dark mode (see values/ and values-night/ colors.xml). -->
-    <gradient
-        android:startColor="@color/grad_top"
-        android:endColor="@color/grad_bottom"
-        android:angle="270" />
-</shape>
+<!-- Gradient base + faint scattered geometry symbols on top. Colors adapt automatically:
+     soft ice-blue in light mode, near-black navy in dark mode (values/ and values-night/). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <gradient
+                android:startColor="@color/grad_top"
+                android:endColor="@color/grad_bottom"
+                android:angle="270" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/bg_geometry_pattern" />
+</layer-list>

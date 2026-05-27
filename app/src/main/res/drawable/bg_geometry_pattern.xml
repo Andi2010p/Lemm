@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Faint, scattered MATH motifs over the gradient: symbols (pi, root, integral, sigma,
+     infinity), curves (sine, parabola), a unit circle with an angle, coordinate axes, and the
+     Pythagorean figure as the centerpiece. Stroke/fill use @color/bg_pattern (adapts light/dark). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="720dp"
+    android:viewportWidth="360"
+    android:viewportHeight="720">
+
+    <!-- π (top-left) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="3" android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M34,50 L94,50 M48,50 L44,100 M80,50 L84,100" />
+
+    <!-- sine wave (top) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M130,68 C148,46 166,46 184,68 C202,90 220,90 238,68 C256,46 274,46 292,68" />
+
+    <!-- √ radical (left) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="3" android:fillColor="#00000000"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M30,262 L40,272 L52,238 L112,238" />
+
+    <!-- unit circle + radius + angle arc (right) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:pathData="M262,210 a34,34 0 1,0 68,0 a34,34 0 1,0 -68,0" />
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M296,210 L330,210 M296,210 L324,190" />
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:pathData="M316,210 A20,20 0 0,0 312,196" />
+    <path android:fillColor="@color/bg_pattern"
+        android:pathData="M296,210 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+
+    <!-- Pythagorean theorem figure: right triangle with a square on each side (centerpiece) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineJoin="round"
+        android:pathData="M150,430 L220,430 L150,370 Z" />
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineJoin="round"
+        android:pathData="M150,430 L220,430 L220,500 L150,500 Z" />
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineJoin="round"
+        android:pathData="M150,370 L90,370 L90,430 L150,430" />
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineJoin="round"
+        android:pathData="M150,370 L210,300 L280,360 L220,430" />
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineJoin="round"
+        android:pathData="M150,416 L164,416 L164,430" />
+
+    <!-- ∫ integral (right) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="3" android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M323,302 C315,302 318,320 317,346 C316,372 319,390 311,398" />
+
+    <!-- ∑ summation (right) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="3" android:fillColor="#00000000"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M330,458 L290,458 L312,485 L290,512 L330,512" />
+
+    <!-- parabola (lower-left) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M48,478 C92,568 128,568 172,478" />
+
+    <!-- ∞ lemniscate (lower-left) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:pathData="M100,612 C100,598 78,598 78,612 C78,626 100,626 100,612 C100,598 122,598 122,612 C122,626 100,626 100,612 Z" />
+
+    <!-- coordinate axes + arrows + plotted point (bottom-left) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M28,682 L112,682 M44,620 L44,700 M112,682 L106,678 M112,682 L106,686 M44,620 L40,626 M44,620 L48,626" />
+    <path android:fillColor="@color/bg_pattern"
+        android:pathData="M82,650 m-3.5,0 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0" />
+
+    <!-- regular hexagon (bottom-right) -->
+    <path android:strokeColor="@color/bg_pattern" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:strokeLineJoin="round"
+        android:pathData="M324,645 L307,674 L273,674 L256,645 L273,616 L307,616 Z" />
+</vector>

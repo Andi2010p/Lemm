@@ -77,6 +77,23 @@
     <string name="api_key_add_another">Ավելացնել ևս մեկ բանալի</string>
     <string name="api_key_remove">Հեռացնել բանալին</string>
     <string name="api_key_use_this">Օգտագործել այս բանալին</string>
+
+    <!-- Solution copy / export -->
+    <string name="copy">Պատճենել</string>
+    <string name="copy_all">Պատճենել ամբողջը</string>
+    <string name="copied">Պատճենվեց սեղմատախտակին</string>
+    <string name="save_image">Պահպանել նկարը</string>
+    <string name="solution_image_saved">Լուծման նկարը պահպանվեց պատկերասրահում</string>
+    <string name="save_image_failed">Չհաջողվեց պահպանել նկարը</string>
+    <string name="nothing_to_copy">Դեռ պատճենելու բան չկա</string>
+    <string name="preparing_image">Նկարի պատրաստում…</string>
+    <string name="export_choose">Ներբեռնել որպես</string>
+    <string name="export_image_opt">Նկար — միայն գծագիրը</string>
+    <string name="export_pdf_opt">PDF — գծագիր + լուծում</string>
+    <string name="pdf_saved">PDF-ը պահպանվեց Փաստաթղթերում</string>
+    <string name="export_failed">Չհաջողվեց արտահանել</string>
+    <string name="no_figure">Այս խնդրում գծագիր չկա պահպանելու համար:</string>
+    <string name="download">Ներբեռնել</string>
     <string name="api_key_saved">Բանալիները պահպանվեցին</string>
     <string name="upgrade_pro">Անցնել Pro տարբերակին</string>
 

@@ -17,6 +17,10 @@
     <color name="surface_white">#161F30</color>
     <color name="card_bg_light">#161F30</color>
     <color name="icon_bg_blue">#14233B</color>
+    <!-- Brighter + slightly stronger so the geometry pattern reads on near-black -->
+    <color name="bg_pattern">#307DB3FF</color>
+    <!-- Soft fill behind tonal destructive buttons (dark red tint) -->
+    <color name="danger_bg">#3A1E1E</color>
     <color name="pro_card_bg">#241F0E</color>
     <color name="field_bg">#22324D</color>
     <color name="answer_card_bg">#102A1A</color>
