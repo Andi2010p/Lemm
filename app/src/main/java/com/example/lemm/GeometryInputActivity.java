@@ -322,7 +322,11 @@ public class GeometryInputActivity extends AppCompatActivity {
                 "EXAMPLE: CONE3D:MyCone,0,0,0,50,150,1.0\n\n" +
                 "COMMAND LIST:\n" +
                 "DRAW3D:Label,x,y,z\n" +
-                "LINE3D:Label1,Label2\n" +
+                "LINE3D:Label1,Label2[,COLOR]   (COLOR is optional — use it ONLY when the user " +
+                "asks for a specific color in the additional instructions, or when highlighting " +
+                "an auxiliary line is helpful. Accepts a hex like #FF0000, or a name: red, blue, " +
+                "green, orange, purple, magenta, cyan, yellow, pink, brown, teal, gold, navy. " +
+                "Example: LINE3D:H,M,red highlights the height HM in red.)\n" +
                 "- radius: Radius of the base.\n" +
                 "- height: Vertical height from base to apex.\n" +
                 "- curvature: 1.0 (standard cone), 2.5 (concave shard), 0.5 (convex dome).\n\n" +
@@ -685,7 +689,12 @@ public class GeometryInputActivity extends AppCompatActivity {
                     if (args.length >= 4) canvas3D.addPoint(args[0].trim(), f(args[1]), f(args[2]), f(args[3]));
                     break;
                 case "LINE3D":
-                    if (args.length >= 2) canvas3D.addLine(args[0].trim(), args[1].trim());
+                    if (args.length >= 2) {
+                        // Optional 3rd arg = color (e.g. "red", "#FF0000") so the AI can highlight
+                        // construction lines like a height or auxiliary segment in another color.
+                        Integer col = (args.length >= 3) ? GeometryCanvas3D.parseColorArg(args[2]) : null;
+                        canvas3D.addLine(args[0].trim(), args[1].trim(), col);
+                    }
                     break;
                 case "PLANE3D":
                     if (args.length >= 2) {

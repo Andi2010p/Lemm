@@ -45,7 +45,11 @@ public class GeometryCanvas3D extends View {
         public String label; float x, y, z, sx, sy; boolean isVertex;
         Point3D(String l, float x, float y, float z) { this.label = l; this.x = x; this.y = y; this.z = z; this.isVertex = l != null && !l.isEmpty(); }
     }
-    private static class Line3D { String a, b; Line3D(String a, String b) { this.a = a; this.b = b; } }
+    private static class Line3D {
+        String a, b;
+        Integer color; // null = use the default 3D line color
+        Line3D(String a, String b, Integer color) { this.a = a; this.b = b; this.color = color; }
+    }
     private static class Plane3D { List<String> labels; Plane3D(List<String> l) { this.labels = l; } }
     private static class Cone3D { String label; float cx, cy, cz, r, h, curvature; Cone3D(String l, float x, float y, float z, float r, float h, float cur) { this.label = l; this.cx = x; this.cy = y; this.cz = z; this.r = r; this.h = h; this.curvature = cur; } }
     private static class Pyramid3D { String label; float cx, cy, cz, w, d, h; Pyramid3D(String l, float x, float y, float z, float w, float d, float h) { this.label = l; this.cx = x; this.cy = y; this.cz = z; this.w = w; this.d = d; this.h = h; } }
@@ -84,7 +88,45 @@ public class GeometryCanvas3D extends View {
     public boolean isMoveMode() { return isMoveMode; }
 
     public void addPoint(String l, float x, float y, float z) { points.add(new Point3D(l, x, y, z)); invalidate(); }
-    public void addLine(String a, String b) { lines.add(new Line3D(a, b)); invalidate(); }
+    public void addLine(String a, String b) { addLine(a, b, null); }
+    /** Add a line with an optional custom color (null = default 3D line color). */
+    public void addLine(String a, String b, Integer color) { lines.add(new Line3D(a, b, color)); invalidate(); }
+
+    /**
+     * Parses a color argument the AI may put as the 3rd argument of LINE3D.
+     * Accepts "#RRGGBB", "#AARRGGBB", or a small set of common names
+     * (red, blue, green, orange, purple, magenta, cyan, yellow, pink, brown, black, white,
+     *  teal, lime, navy, gold). Returns null on anything unrecognized.
+     */
+    public static Integer parseColorArg(String s) {
+        if (s == null) return null;
+        String t = s.trim().toLowerCase();
+        if (t.isEmpty()) return null;
+        try {
+            if (t.startsWith("#")) return Color.parseColor(t);
+            switch (t) {
+                case "red":     return 0xFFE53935;
+                case "blue":    return 0xFF1E88E5;
+                case "green":   return 0xFF43A047;
+                case "orange":  return 0xFFFB8C00;
+                case "purple":  return 0xFF8E24AA;
+                case "magenta": return 0xFFD81B60;
+                case "cyan":    return 0xFF00ACC1;
+                case "yellow":  return 0xFFFDD835;
+                case "pink":    return 0xFFEC407A;
+                case "brown":   return 0xFF6D4C41;
+                case "black":   return 0xFF000000;
+                case "white":   return 0xFFFFFFFF;
+                case "teal":    return 0xFF00897B;
+                case "lime":    return 0xFFC0CA33;
+                case "navy":    return 0xFF1A237E;
+                case "gold":    return 0xFFFFC107;
+                default: return Color.parseColor(t); // fall back to Android's named-color set
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
     public void addPlane(List<String> labels) { planes.add(new Plane3D(labels)); invalidate(); }
     public void addCircle(String l, float x, float y, float z, float r) { circles.add(new Circle3D(l, x, y, z, r)); invalidate(); }
     public void addSphere(String l, float x, float y, float z, float r) { spheres.add(new Sphere3D(l, x, y, z, r)); invalidate(); }
@@ -105,7 +147,13 @@ public class GeometryCanvas3D extends View {
             String line = raw.trim();
             try {
                 if (line.startsWith("DRAW3D:")) { String[] a = cmdArgs(line); if (a.length >= 4) addPoint(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3])); }
-                else if (line.startsWith("LINE3D:")) { String[] a = cmdArgs(line); if (a.length >= 2) addLine(a[0].trim(), a[1].trim()); }
+                else if (line.startsWith("LINE3D:")) {
+                    String[] a = cmdArgs(line);
+                    if (a.length >= 2) {
+                        Integer col = (a.length >= 3) ? parseColorArg(a[2]) : null;
+                        addLine(a[0].trim(), a[1].trim(), col);
+                    }
+                }
                 else if (line.startsWith("PLANE3D:")) { String[] a = cmdArgs(line); if (a.length >= 2) { List<String> v = new ArrayList<>(); for (int i = 1; i < a.length; i++) v.add(a[i].trim()); addPlane(v); } }
                 else if (line.startsWith("CONE3D:")) { String[] a = cmdArgs(line); if (a.length >= 7) addCone(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4]), pf(a[5]), pf(a[6])); }
                 else if (line.startsWith("PYRAMID3D:")) { String[] a = cmdArgs(line); if (a.length >= 7) addPyramid(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4]), pf(a[5]), pf(a[6])); }
@@ -187,11 +235,14 @@ public class GeometryCanvas3D extends View {
             }
         }
 
+        int defaultLineColor = linePaint.getColor();
         for (Line3D l : lines) {
             Point3D p1 = findPt(l.a), p2 = findPt(l.b);
             if (p1 != null && p2 != null) {
                 linePaint.setStrokeWidth(3f);
+                if (l.color != null) linePaint.setColor(l.color);
                 canvas.drawLine(p1.sx, p1.sy, p2.sx, p2.sy, linePaint);
+                if (l.color != null) linePaint.setColor(defaultLineColor);
             }
         }
 
