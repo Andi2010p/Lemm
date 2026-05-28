@@ -168,6 +168,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.update(TABLE_USERS, v, KEY_USERNAME + " = ? OR " + KEY_EMAIL + " = ?", new String[]{identifier, identifier}) > 0;
     }
 
+    /**
+     * Returns the next default name for a save, like "Drawing (3)" or "Solution (1)". Scans names
+     * that match "<basePrefix> (N)" for the user and returns one higher than the max — so deleting
+     * a middle entry doesn't reuse its number.
+     *
+     * @param table        "drawings" or "history"
+     * @param username     the current account
+     * @param basePrefix   the localized base name (already translated, e.g. "Drawing"/"Рисунок"/"Գծագիր")
+     */
+    public String nextDefaultName(String table, String username, String basePrefix) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int max = 0;
+        Cursor c = null;
+        try {
+            c = db.rawQuery("SELECT name FROM " + table + " WHERE username = ? AND name LIKE ?",
+                    new String[]{username, basePrefix + " (%"});
+            java.util.regex.Pattern pat = java.util.regex.Pattern.compile(
+                    "^" + java.util.regex.Pattern.quote(basePrefix) + "\\s*\\((\\d+)\\)$");
+            while (c.moveToNext()) {
+                String n = c.getString(0);
+                if (n == null) continue;
+                java.util.regex.Matcher m = pat.matcher(n);
+                if (m.matches()) {
+                    try {
+                        int v = Integer.parseInt(m.group(1));
+                        if (v > max) max = v;
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (c != null) c.close();
+        }
+        return basePrefix + " (" + (max + 1) + ")";
+    }
+
     /** Renames a user everywhere it's used locally: the users row plus all history/drawing rows. */
     public boolean renameUser(String oldName, String newName) {
         SQLiteDatabase db = this.getWritableDatabase();

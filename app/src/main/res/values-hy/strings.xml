@@ -94,6 +94,18 @@
     <string name="export_failed">Չհաջողվեց արտահանել</string>
     <string name="no_figure">Այս խնդրում գծագիր չկա պահպանելու համար:</string>
     <string name="download">Ներբեռնել</string>
+
+    <!-- Default base names for unnamed saves -->
+    <string name="default_drawing_name">Գծագիր</string>
+    <string name="default_solution_name">Լուծում</string>
+
+    <!-- Splash screen -->
+    <string name="splash_tagline">Երկրաչափական ԱԲ</string>
+    <string name="splash_checking">Կապի ստուգում…</string>
+    <string name="no_internet_title">Ինտերնետ կապ չկա</string>
+    <string name="no_internet_msg">Հավելվածը պահանջում է ինտերնետ կապ: Խնդրում ենք ստուգել ձեր կապը և կրկին փորձել:</string>
+    <string name="retry">Կրկնել</string>
+    <string name="exit">Դուրս գալ</string>
     <string name="api_key_saved">Բանալիները պահպանվեցին</string>
     <string name="upgrade_pro">Անցնել Pro տարբերակին</string>
 

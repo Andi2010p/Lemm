@@ -429,19 +429,10 @@ public class ProfileActivity extends AppCompatActivity {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
             String newName = input.getText().toString().trim();
 
-            if (newName.isEmpty()) {
-                input.setError(getString(R.string.enter_all_fields));
-                return;
-            }
             if (newName.equals(oldUsername)) { dialog.dismiss(); return; }
-
-            String lower = newName.toLowerCase();
-            if (lower.startsWith("guestuser") || lower.equals("admin_teacher")) {
-                input.setError(getString(R.string.restricted_prefix));
-                return;
-            }
-            if (!newName.matches("[a-zA-Z0-9_]{3,20}")) {
-                input.setError(getString(R.string.username_invalid));
+            Integer err = UsernameRules.validate(newName);
+            if (err != null) {
+                input.setError(getString(err));
                 return;
             }
             if (dbHelper.checkUsernameExists(newName)) {

@@ -62,15 +62,11 @@ public class SplashActivity extends AppCompatActivity {
     }
     private void showNoInternetDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("No Internet Connection")
-                .setMessage("This app requires an internet connection to function. Please check your connection and try again.")
+                .setTitle(getString(R.string.no_internet_title))
+                .setMessage(getString(R.string.no_internet_msg))
                 .setCancelable(false)
-                .setPositiveButton("Retry", (dialog, which) -> {
-                    recreate();
-                })
-                .setNegativeButton("Exit", (dialog, which) -> {
-                    finish();
-                })
+                .setPositiveButton(getString(R.string.retry), (dialog, which) -> recreate())
+                .setNegativeButton(getString(R.string.exit), (dialog, which) -> finish())
                 .show();
     }
 }

@@ -888,7 +888,9 @@ public class GeometryInputActivity extends AppCompatActivity {
             if (sb.length() > 0) sb.append("\n\n");
             sb.append(s);
         }
-        String title = getIntent().hasExtra("SAVED_NAME") ? getIntent().getStringExtra("SAVED_NAME") : "Solution";
+        String title = getIntent().hasExtra("SAVED_NAME")
+                ? getIntent().getStringExtra("SAVED_NAME")
+                : getString(R.string.default_solution_name);
         SolutionExporter.showExportDialog(this, renderFigureBitmap(), sb.toString(), title);
     }
 
@@ -1164,7 +1166,11 @@ public class GeometryInputActivity extends AppCompatActivity {
         builder.setTitle("Save Solution");
         final EditText input = new EditText(this);
 
-        String defaultName = getIntent().hasExtra("SAVED_NAME") ? getIntent().getStringExtra("SAVED_NAME") : "Solution";
+        String currentUser = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("username", "GuestUser");
+        String base = getString(R.string.default_solution_name);
+        String defaultName = getIntent().hasExtra("SAVED_NAME")
+                ? getIntent().getStringExtra("SAVED_NAME")
+                : dbHelper.nextDefaultName("history", currentUser, base);
         input.setText(defaultName);
         input.setSelectAllOnFocus(true);
 
@@ -1175,9 +1181,9 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         builder.setPositiveButton("Save", (dialog, which) -> {
             String title = input.getText().toString().trim();
-            if (title.isEmpty()) title = "Unnamed Solution";
+            if (title.isEmpty()) title = dbHelper.nextDefaultName("history", currentUser, base);
 
-            String user = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("username", "GuestUser");
+            String user = currentUser;
             String prob = etDescription.getText().toString();
 
             try {

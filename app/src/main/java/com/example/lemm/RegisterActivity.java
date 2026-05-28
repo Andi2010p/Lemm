@@ -63,12 +63,17 @@ public class RegisterActivity extends AppCompatActivity {
                 String pass = etPassword.getText().toString().trim();
                 String repeatPass = etRepeatPassword.getText().toString().trim();
 
-                if (user.isEmpty() || email.isEmpty() || pass.isEmpty()) {
+                if (email.isEmpty() || pass.isEmpty()) {
                     Toast.makeText(this, getString(R.string.enter_all_fields), Toast.LENGTH_SHORT).show();
                     return;
                 }
-                if (user.toLowerCase().startsWith("guestuser") || user.toLowerCase().equals("admin_teacher")) {
-                    Toast.makeText(this, getString(R.string.restricted_prefix), Toast.LENGTH_SHORT).show();
+                Integer userErr = UsernameRules.validate(user);
+                if (userErr != null) {
+                    Toast.makeText(this, getString(userErr), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (dbHelper.checkUsernameExists(user)) {
+                    Toast.makeText(this, getString(R.string.username_taken), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (!pass.equals(repeatPass)) {
@@ -146,7 +151,7 @@ public class RegisterActivity extends AppCompatActivity {
                             if (task.isSuccessful()) {
                                 String email = account.getEmail();
                                 String rawName = (account.getDisplayName() != null) ? account.getDisplayName() : email.split("@")[0];
-                                String safeUsername = rawName.replaceAll("[^a-zA-Z0-9_]", "_");
+                                String safeUsername = UsernameRules.sanitize(rawName);
 
                                 // Save Cloud mapping and Local DB
                                 com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();

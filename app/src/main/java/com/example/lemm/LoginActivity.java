@@ -332,7 +332,7 @@ public class LoginActivity extends AppCompatActivity {
                                         String finalUsername = snapshot.getValue(String.class);
                                         if (finalUsername == null || finalUsername.isEmpty()) {
                                             String rawName = (account.getDisplayName() != null) ? account.getDisplayName() : email.split("@")[0];
-                                            finalUsername = rawName.replaceAll("[^a-zA-Z0-9_]", "_");
+                                            finalUsername = UsernameRules.sanitize(rawName);
                                             FirebaseManager.getDatabase().getReference("users_info")
                                                     .child(uid).child("username").setValue(finalUsername);
                                         }

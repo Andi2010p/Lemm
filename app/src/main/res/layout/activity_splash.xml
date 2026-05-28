@@ -15,7 +15,9 @@
         android:layout_below="@id/imgLogo"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"
-        android:text="GEOMETRY AI"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="@string/splash_tagline"
         android:textColor="#FFFFFF"
         android:textSize="26sp"
         android:textStyle="bold"
@@ -26,7 +28,7 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="50dp"
-        android:text="Checking Connection..."
+        android:text="@string/splash_checking"
         android:textColor="#B0BEC5"
         android:textSize="14sp" />
 

@@ -565,9 +565,11 @@ public class DrawingActivity extends AppCompatActivity {
 
         final EditText input = new EditText(this);
 
+        String base = getString(R.string.default_drawing_name);
+        String currentUser = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("username", "GuestUser");
         String defaultName = getIntent().hasExtra("SAVED_NAME")
                 ? getIntent().getStringExtra("SAVED_NAME")
-                : "Drawing_" + System.currentTimeMillis();
+                : dbHelper.nextDefaultName("drawings", currentUser, base);
         input.setText(defaultName);
         input.setSelectAllOnFocus(true);
 
@@ -578,7 +580,7 @@ public class DrawingActivity extends AppCompatActivity {
 
         builder.setPositiveButton(getString(R.string.save), (dialog, which) -> {
             String name = input.getText().toString().trim();
-            if (name.isEmpty()) name = "unnamed";
+            if (name.isEmpty()) name = dbHelper.nextDefaultName("drawings", currentUser, base);
             saveAndSync(name);
         });
 
