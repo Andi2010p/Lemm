@@ -17,6 +17,9 @@
     <color name="surface_white">#161F30</color>
     <color name="card_bg_light">#161F30</color>
     <color name="icon_bg_blue">#14233B</color>
+    <!-- Muted dark header that sits over the near-black body without shouting -->
+    <color name="header_grad_start">#0E1B30</color>
+    <color name="header_grad_end">#1E3A8A</color>
     <!-- Brighter + slightly stronger so the geometry pattern reads on near-black -->
     <color name="bg_pattern">#307DB3FF</color>
     <!-- Soft fill behind tonal destructive buttons (dark red tint) -->

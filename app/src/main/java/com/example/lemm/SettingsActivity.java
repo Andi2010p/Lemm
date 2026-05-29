@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,21 +44,8 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        MaterialButtonToggleGroup toggleLanguage = findViewById(R.id.toggleLanguage);
         currentLang = getSharedPreferences("Settings", MODE_PRIVATE).getString("Locale.Helper.Selected.Language", "en");
-
-        if (currentLang.equals("en")) toggleLanguage.check(R.id.btnLangEn);
-        else if (currentLang.equals("ru")) toggleLanguage.check(R.id.btnLangRu);
-        else if (currentLang.equals("hy")) toggleLanguage.check(R.id.btnLangHy);
-
-        toggleLanguage.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (isChecked) {
-                String selectedLang = "en";
-                if (checkedId == R.id.btnLangRu) selectedLang = "ru";
-                else if (checkedId == R.id.btnLangHy) selectedLang = "hy";
-                if (!selectedLang.equals(currentLang)) updateLocale(selectedLang);
-            }
-        });
+        setupLanguagePicker();
 
         setupThemeToggle();
 
@@ -121,6 +109,36 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+    }
+
+    /** Same chip + dropdown as StartActivity — keeps the language picker consistent app-wide. */
+    private void setupLanguagePicker() {
+        View card = findViewById(R.id.cardLanguage);
+        TextView tvLang = findViewById(R.id.tvCurrentLang);
+        if (card == null || tvLang == null) return;
+        tvLang.setText(codeToLabel(currentLang));
+        card.setOnClickListener(v -> {
+            PopupMenu menu = new PopupMenu(this, card);
+            menu.getMenu().add(0, 0, 0, getString(R.string.language_en));
+            menu.getMenu().add(0, 1, 1, getString(R.string.language_ru));
+            menu.getMenu().add(0, 2, 2, getString(R.string.language_hy));
+            menu.setOnMenuItemClickListener(item -> {
+                String code = "en";
+                if (item.getItemId() == 1) code = "ru";
+                else if (item.getItemId() == 2) code = "hy";
+                if (!code.equals(currentLang)) updateLocale(code);
+                return true;
+            });
+            menu.show();
+        });
+    }
+
+    private String codeToLabel(String code) {
+        switch (code) {
+            case "ru": return "RU";
+            case "hy": return "HY";
+            default:   return "EN";
+        }
     }
 
     private void setupThemeToggle() {

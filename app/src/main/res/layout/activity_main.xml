@@ -66,7 +66,7 @@
                 android:layout_height="match_parent"
                 android:background="@color/surface_white"
                 android:src="@android:drawable/ic_menu_myplaces"
-                app:tint="@color/primary" />
+                app:tint="@color/main_blue" />
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 
@@ -130,7 +130,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/new_problem"
-                            android:textColor="@color/primary"
+                            android:textColor="@color/main_blue"
                             android:textSize="22sp"
                             android:textStyle="bold" />
 

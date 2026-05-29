@@ -21,6 +21,9 @@
     <color name="grad_bottom">#EBF4FF</color>
     <!-- Soft tinted circle behind icons -->
     <color name="icon_bg_blue">#EBF4FF</color>
+    <!-- Main-page header gradient (overridden in values-night for cohesion with the dark body) -->
+    <color name="header_grad_start">#1E3A8A</color>
+    <color name="header_grad_end">#3B82F6</color>
     <!-- Faint tint for the decorative geometry-symbol background pattern (alpha-baked) -->
     <color name="bg_pattern">#221E3A8A</color>
     <!-- Soft fill behind tonal destructive buttons -->

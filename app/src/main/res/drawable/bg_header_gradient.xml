@@ -2,8 +2,8 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Fades diagonally from Dark Royal Blue to Vibrant Tech Blue -->
     <gradient
-        android:startColor="#1E3A8A"
-        android:endColor="#3B82F6"
+        android:startColor="@color/header_grad_start"
+        android:endColor="@color/header_grad_end"
         android:angle="135" />
     <!-- Rounds only the bottom corners for a beautiful dashboard effect -->
     <corners
