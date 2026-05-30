@@ -290,11 +290,9 @@ public class GeometryInputActivity extends AppCompatActivity {
                 break;
         }
         return "SYSTEM: " + instructions + "\n" +
-                "GEOMETRY GATE (CHECK FIRST): Decide whether the PROBLEM below is a GEOMETRY problem " +
-                "(triangles, circles, polygons, angles, areas, perimeters, volumes, coordinates, solids, " +
-                "geometric proofs or constructions). If it is NOT a geometry problem — e.g. plain text, a question, " +
-                "pure arithmetic/algebra/calculus with no figure, or any non-geometry topic — output EXACTLY this " +
-                "single token and NOTHING else (no steps, no drawing commands): NOT_GEOMETRY\n" +
+                "Any problem the user sends is fair game — solve it as best you can. If the problem isn't " +
+                "geometric, simply skip the 3D drawing commands and give a clear step-by-step solution. " +
+                "Only emit DRAW3D/LINE3D/PLANE3D etc. when the problem actually has a figure or shape to draw.\n" +
                 "CORE RULES:\n" +
                 "1. Output drawing commands first: DRAW3D, LINE3D, PLANE3D.\n" +
                 "2. Always use PLANE3D for faces of 3D shapes (Pyramids, Cubes).\n" +
@@ -447,10 +445,16 @@ public class GeometryInputActivity extends AppCompatActivity {
         nNotGeoMsg = getString(R.string.solve_not_geometry_msg);
         nQuotaBody = getString(R.string.notif_quota_body);
 
-        runSolveAttempt(0);
+        runSolveAttempt(0, 0);
     }
 
-    private void runSolveAttempt(int keyIndex) {
+    private void runSolveAttempt(int keyIndex) { runSolveAttempt(keyIndex, 0); }
+
+    /**
+     * @param retry how many transient (503-class) retries on THIS key have already been attempted.
+     *              Reset to 0 when rotating to a different key.
+     */
+    private void runSolveAttempt(int keyIndex, int retry) {
         geminiAI = new GeminiAI(solveKeys.get(keyIndex));
         com.google.common.util.concurrent.ListenableFuture<GenerateContentResponse> future =
                 (solveImages != null && !solveImages.isEmpty())
@@ -495,32 +499,49 @@ public class GeometryInputActivity extends AppCompatActivity {
                 });
             }
             @Override public void onFailure(Throwable t) {
-                Log.e(TAG, "Gemini Error (key #" + (keyIndex + 1) + " of " + solveKeys.size() + ")", t);
-                final boolean exhausted = isKeyExhausted(t);
+                Log.e(TAG, "Gemini Error (key #" + (keyIndex + 1) + " of " + solveKeys.size()
+                        + ", retry " + retry + ")", t);
+                final boolean transient_ = isTransientError(t);
+                final boolean exhausted = !transient_ && isKeyExhausted(t);
 
-                // Out of quota / unusable key -> automatically roll over to the next key in the chain.
+                // 503/overload/timeout is server-side — rotating keys hits the same overloaded model.
+                // Retry the SAME key with exponential backoff (1s, 2s, 4s).
+                if (transient_ && retry < MAX_TRANSIENT_RETRIES) {
+                    long delay = 1000L * (1L << retry);
+                    runOnUiThread(() -> {
+                        if (!isFinishing() && !isDestroyed())
+                            Toast.makeText(GeometryInputActivity.this, R.string.servers_busy_retry, Toast.LENGTH_SHORT).show();
+                    });
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                            () -> { if (!isFinishing() && !isDestroyed()) runSolveAttempt(keyIndex, retry + 1); },
+                            delay);
+                    return;
+                }
+
+                // Key out of quota -> automatically roll over to the next key in the chain.
                 if (exhausted && keyIndex + 1 < solveKeys.size()) {
                     final String nextKind = solveKeyKinds.get(keyIndex + 1);
                     runOnUiThread(() -> {
                         if (!isFinishing() && !isDestroyed()) {
-                            // Tell the user WHAT we're switching to (subscription -> their key -> backup).
                             int msgRes = KIND_USER.equals(nextKind)
                                     ? R.string.switching_to_user_key
                                     : R.string.switching_backup_key;
                             Toast.makeText(GeometryInputActivity.this, getString(msgRes), Toast.LENGTH_SHORT).show();
                         }
-                        runSolveAttempt(keyIndex + 1);
+                        runSolveAttempt(keyIndex + 1, 0); // fresh retry counter on a different key
                     });
                     return;
                 }
 
-                // No keys left to try.
+                // Out of options.
                 runOnUiThread(() -> {
                     if (!isFinishing() && !isDestroyed()) {
                         progressBar.setVisibility(View.GONE);
-                        setInputLocked(false); // solving failed — editing allowed again
-                        if (exhausted) {
-                            showQuotaExpiredDialog(); // every key (incl. the user's) is out of quota/expired
+                        setInputLocked(false);
+                        if (transient_) {
+                            showServersBusyDialog();        // overloaded servers, NOT a key problem
+                        } else if (exhausted) {
+                            showQuotaExpiredDialog();
                         } else {
                             Toast.makeText(GeometryInputActivity.this, "AI Error: Check your API Key or Network Connection.", Toast.LENGTH_LONG).show();
                         }
@@ -534,20 +555,66 @@ public class GeometryInputActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
-    /** True when an error means the current key can't be used (quota/rate/permission/invalid). */
+    /** True when an error means THIS KEY can't be used (quota/rate/billing/permission/invalid).
+     *  Server-side overload (503) is NOT here — switching keys to the same overloaded model
+     *  doesn't help. See {@link #isTransientError}. */
     private boolean isKeyExhausted(Throwable t) {
         String m = (t == null || t.getMessage() == null) ? "" : t.getMessage().toLowerCase();
         return m.contains("quota") || m.contains("resource_exhausted") || m.contains("429")
                 || m.contains("rate") || m.contains("exhaust") || m.contains("api key")
                 || m.contains("api_key") || m.contains("permission") || m.contains("billing")
-                || m.contains("invalid") || m.contains("unavailable") || m.contains("overload");
+                || m.contains("invalid");
     }
+
+    /** True when the error is a transient SERVER-side problem (overload, timeout, 5xx).
+     *  Same key should be retried after a short delay; rotating keys is pointless. */
+    private boolean isTransientError(Throwable t) {
+        String m = (t == null || t.getMessage() == null) ? "" : t.getMessage().toLowerCase();
+        return m.contains("503") || m.contains("502") || m.contains("504") || m.contains("500")
+                || m.contains("unavailable") || m.contains("overload") || m.contains("overloaded")
+                || m.contains("deadline") || m.contains("timeout") || m.contains("timed out")
+                || m.contains("temporarily") || m.contains("try again");
+    }
+
+    private static final int MAX_TRANSIENT_RETRIES = 3;
 
     /**
      * Every key in the chain is out of quota / expired. Explain what happened based on which kinds
      * of keys we tried, and offer a shortcut to Settings so the user can add/update an API key.
      */
+    /** Shown when the AI returned 503/overload repeatedly — this is a server problem, not a quota
+     *  or key problem. Offers a Retry that re-runs the whole rotation. */
+    private void showServersBusyDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.servers_busy_title)
+                .setMessage(R.string.servers_busy_msg)
+                .setPositiveButton(R.string.retry, (d, w) -> {
+                    if (solveProblemText != null && !solveProblemText.isEmpty())
+                        solveWithAI(solveProblemText);
+                })
+                .setNegativeButton(android.R.string.ok, null)
+                .show();
+    }
+
     private void showQuotaExpiredDialog() {
+        // Pro / Admin = unlimited access. Skip the upgrade-flavored "quota expired" dialog and
+        // let them simply retry — the AI servers must just be transiently busy.
+        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean privileged = userPrefs.getString("username", "").equals("Admin_Teacher")
+                || userPrefs.getBoolean("is_pro_user", false);
+        if (privileged) {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.pro_busy_title)
+                    .setMessage(R.string.pro_busy_msg)
+                    .setPositiveButton(R.string.retry, (d, w) -> {
+                        if (solveProblemText != null && !solveProblemText.isEmpty())
+                            solveWithAI(solveProblemText);
+                    })
+                    .setNegativeButton(android.R.string.ok, null)
+                    .show();
+            return;
+        }
+
         boolean hadSub = solveKeyKinds != null && solveKeyKinds.contains(KIND_SUB);
         boolean hadUser = solveKeyKinds != null && solveKeyKinds.contains(KIND_USER);
 

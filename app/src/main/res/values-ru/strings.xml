@@ -150,6 +150,11 @@
     <string name="quota_expired_both">Лимит ИИ по подписке исчерпан, и ваши собственные ключи API тоже исчерпаны или недействительны.\n\nДобавьте или обновите ключ в настройках либо повторите попытку позже.</string>
     <string name="quota_expired_sub">Лимит ИИ по подписке временно исчерпан.\n\nВы можете добавить свой ключ API в настройках, чтобы продолжить, либо повторить попытку позже.</string>
     <string name="quota_expired_user">Ваши ключи API исчерпаны или недействительны.\n\nПожалуйста, добавьте или обновите ключ в настройках.</string>
+    <string name="pro_busy_title">ИИ временно занят</string>
+    <string name="pro_busy_msg">Все серверы ИИ временно заняты. Повторите попытку через минуту — ваш Pro-доступ не имеет ограничений.</string>
+    <string name="servers_busy_retry">Серверы заняты — повтор…</string>
+    <string name="servers_busy_title">Серверы ИИ заняты</string>
+    <string name="servers_busy_msg">Серверы ИИ временно перегружены (503). Повторите попытку через минуту — это не связано с вашим аккаунтом или ключом API.</string>
     <string name="open_settings">Открыть настройки</string>
     <string name="title_set_angle">Установить угол</string>
     <string name="title_smart_dim">Размеры</string>

@@ -22,10 +22,10 @@ public class GeminiAI {
         SafetySetting sex = new SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH);
         SafetySetting danger = new SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH);
 
-        // 2. Using the requested gemini-3-flash-preview model.
-        // We pass "null" for the generation config to avoid any Builder errors.
+        // Production-stable flash model. We previously used "gemini-3-flash-preview", which is a
+        // preview pool and returns 503 ("Service Unavailable / overloaded") for almost every call.
         GenerativeModel gm = new GenerativeModel(
-                "gemini-3-flash-preview",
+                "gemini-2.5-flash",
                 apiKey,
                 null,
                 Arrays.asList(harass, hate, sex, danger)

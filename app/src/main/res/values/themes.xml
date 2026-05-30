@@ -12,8 +12,11 @@
         <item name="colorSecondaryVariant">@color/secondary_light</item>
         <item name="colorOnSecondary">@color/surface_white</item>
 
-        <!-- Backgrounds -->
-        <item name="android:windowBackground">@color/bg_main</item>
+        <!-- Backgrounds: a drawable (not a plain color) so the night variant is picked from
+             drawable-night/ on the very first frame — color-resource lookup can briefly miss the
+             night qualifier when the user has forced Dark while the system is Light, causing a
+             white flash before AppCompat applies the override. -->
+        <item name="android:windowBackground">@drawable/window_bg</item>
 
         <!-- GLOBAL MAGIC OVERRIDES (Applies to EVERYTHING) -->
         <item name="materialButtonStyle">@style/ModernButton</item>

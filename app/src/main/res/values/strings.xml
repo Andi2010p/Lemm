@@ -150,6 +150,11 @@
     <string name="quota_expired_both">Your subscription\'s AI quota is used up, and your own API key(s) are also out of quota or expired.\n\nAdd or update an API key in Settings, or try again later.</string>
     <string name="quota_expired_sub">Your subscription\'s AI quota is temporarily used up.\n\nYou can add your own API key in Settings to keep solving, or try again later.</string>
     <string name="quota_expired_user">Your API key(s) are out of quota or have expired.\n\nPlease add or update your API key in Settings.</string>
+    <string name="pro_busy_title">AI Temporarily Busy</string>
+    <string name="pro_busy_msg">All AI servers are temporarily busy. Please try again in a moment — your Pro access has no usage limits.</string>
+    <string name="servers_busy_retry">Servers busy — retrying…</string>
+    <string name="servers_busy_title">AI Servers Busy</string>
+    <string name="servers_busy_msg">The AI servers are temporarily overloaded (503). Please try again in a moment — this isn\'t a problem with your account or API key.</string>
     <string name="open_settings">Open Settings</string>
     <string name="title_set_angle">Set Angle Between Lines</string>
     <string name="title_smart_dim">Smart Dimension</string>
