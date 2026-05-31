@@ -20,7 +20,7 @@ import com.android.billingclient.api.QueryProductDetailsParams;
 import com.android.billingclient.api.QueryPurchasesParams;
 
 import java.util.Collections;
-
+   //comment for comment
 public class BillingManager {
     private static final String TAG = "BillingManager";
     public static final String PRODUCT_PRO_UNLOCK = "lemma_pro_unlock";
