@@ -52,6 +52,13 @@ public class LoginActivity extends AppCompatActivity {
         tvSignUp = findViewById(R.id.tvSignUp);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
+        // "Guest mode" from the welcome screen passes credentials in as extras — pre-fill them
+        // so the user just has to tap Login.
+        String prefillEmail = getIntent().getStringExtra("PREFILL_EMAIL");
+        String prefillPassword = getIntent().getStringExtra("PREFILL_PASSWORD");
+        if (prefillEmail != null && !prefillEmail.isEmpty()) etIdentifier.setText(prefillEmail);
+        if (prefillPassword != null && !prefillPassword.isEmpty()) etPassword.setText(prefillPassword);
+
         // --- MAIN LOGIN BUTTON LOGIC ---
         btnLogin.setOnClickListener(v -> {
             try {
