@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DARK variant of the body gradient. Hardcoded colors (matching values-night/colors.xml's
+     grad_top / grad_bottom) so the drawable resolver picks this file the instant uiMode=night
+     applies — no first-frame light-color resolution. Pair: drawable/bg_gradient_light.xml. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <gradient
+                android:startColor="#0A0F1C"
+                android:endColor="#0E1B30"
+                android:angle="270" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/bg_geometry_pattern" />
+</layer-list>

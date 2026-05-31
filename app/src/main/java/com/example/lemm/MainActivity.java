@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Uri photoUri;
     private String currentPhotoPath;
+    private com.google.firebase.database.ValueEventListener apiKeyAutoSync;
 
     private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -67,6 +68,16 @@ public class MainActivity extends AppCompatActivity {
         // Fetch this account's personal API keys from the cloud so they're ready to use on this
         // device (e.g. right after logging in on a new phone).
         ApiKeyStore.syncFromCloud(this, null);
+
+        // Realtime autosync: whenever the same account's keys/toggle change on ANOTHER device,
+        // the change lands in this device's local prefs in ~1s — no need to reopen Settings.
+        apiKeyAutoSync = ApiKeyStore.attachRealtimeListener(this, null);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ApiKeyStore.detachRealtimeListener(apiKeyAutoSync);
     }
 
     private void initViews() {

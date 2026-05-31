@@ -145,6 +145,36 @@ public final class ApiKeyStore {
         ref.child(CLOUD_ENABLED).setValue(isEnabled(c));
     }
 
+    /**
+     * Attaches a long-lived realtime listener so that whenever another device of the same account
+     * updates the API keys / toggle, this device mirrors the change into local prefs immediately.
+     * Returns the listener handle (or null for guests) so the caller can detach later.
+     */
+    public static ValueEventListener attachRealtimeListener(Context c, Runnable onChange) {
+        DatabaseReference ref = cloudRef();
+        if (ref == null) return null;
+        ValueEventListener listener = new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snap) {
+                String raw = snap.child(CLOUD_KEYS).getValue(String.class);
+                Boolean enabled = snap.child(CLOUD_ENABLED).getValue(Boolean.class);
+                if (raw != null) {
+                    prefs(c).edit().putString(KEY_LIST, raw).apply();
+                    setEntries(c, getEntries(c)); // normalize + keep the legacy single-key value in sync
+                }
+                if (enabled != null) setEnabled(c, enabled);
+                if (onChange != null) onChange.run();
+            }
+            @Override public void onCancelled(@NonNull DatabaseError e) {}
+        };
+        ref.addValueEventListener(listener);
+        return listener;
+    }
+
+    public static void detachRealtimeListener(ValueEventListener listener) {
+        DatabaseReference ref = cloudRef();
+        if (ref != null && listener != null) ref.removeEventListener(listener);
+    }
+
     /** Pulls the keys + toggle saved for this account into local storage, then runs onDone (UI refresh). */
     public static void syncFromCloud(Context c, Runnable onDone) {
         DatabaseReference ref = cloudRef();

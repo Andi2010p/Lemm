@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DARK variant of the main-page header gradient. Hardcoded colors so the night variant kicks
+     in on the first frame, with no chance of a brief bright-blue flash before AppCompat's
+     uiMode override is applied. Pair: drawable/bg_header_gradient.xml. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:startColor="#0E1B30"
+        android:endColor="#1E3A8A"
+        android:angle="135" />
+    <corners
+        android:bottomLeftRadius="32dp"
+        android:bottomRightRadius="32dp" />
+</shape>

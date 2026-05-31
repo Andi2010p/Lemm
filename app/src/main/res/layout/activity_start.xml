@@ -145,6 +145,16 @@
             app:strokeWidth="2dp"
             app:cornerRadius="16dp" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGuestMode"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:text="@string/try_guest_mode"
+            android:textAllCaps="false"
+            android:textColor="@color/main_blue" />
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

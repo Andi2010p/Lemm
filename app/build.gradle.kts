@@ -36,6 +36,13 @@ android {
         // Comma-separated backup keys used as fallback when the primary key is out of quota.
         val geminiBackupKeys = localProperties.getProperty("GEMINI_BACKUP_KEYS") ?: ""
         buildConfigField("String", "GEMINI_BACKUP_KEYS", "\"$geminiBackupKeys\"")
+
+        // Shared judge / demo account used by the "Guest mode" button on the welcome screen.
+        // NOTE: these end up in the APK and are extractable — they're for demo/judging only.
+        val guestEmail = localProperties.getProperty("GUEST_EMAIL") ?: ""
+        val guestPassword = localProperties.getProperty("GUEST_PASSWORD") ?: ""
+        buildConfigField("String", "GUEST_EMAIL", "\"$guestEmail\"")
+        buildConfigField("String", "GUEST_PASSWORD", "\"$guestPassword\"")
     }
     buildFeatures {
         buildConfig = true

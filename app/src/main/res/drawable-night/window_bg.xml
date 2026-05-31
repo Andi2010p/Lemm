@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Window background for the DARK theme. Hardcoded colors so the drawable resolver picks this
+     variant the moment the activity's config has uiMode=night (which AppCompat sets before the
+     first frame), instead of going through a color-resource lookup that can briefly miss the
+     night qualifier on the very first frame of a forced Dark launch. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:startColor="#0A0F1C"
+        android:endColor="#0E1B30"
+        android:angle="270" />
+</shape>

@@ -8,7 +8,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.firebase.auth.FirebaseAuth;
 import java.util.UUID;
 
 public class StartActivity extends AppCompatActivity {
@@ -36,6 +38,11 @@ public class StartActivity extends AppCompatActivity {
         Button btnRegister = findViewById(R.id.btnGoToRegister);
         if (btnRegister != null) {
             btnRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
+        }
+
+        Button btnGuest = findViewById(R.id.btnGuestMode);
+        if (btnGuest != null) {
+            btnGuest.setOnClickListener(v -> autoLoginAsDemoAccount());
         }
 /* admin mode
         Button btnQuickStart = findViewById(R.id.btnQuickStart);
@@ -102,6 +109,67 @@ public class StartActivity extends AppCompatActivity {
             case "hy": return "HY";
             default:   return "EN";
         }
+    }
+
+    /**
+     * "Guest mode" shortcut — signs in as the shared judge/demo account so the user lands directly
+     * in the main page with all of that account's history available. Credentials are read from
+     * BuildConfig (gitignored local.properties). This is NOT a true anonymous guest — it's a
+     * shared demo account, so cloud sync is enabled (history is the demo account's history).
+     */
+    private void autoLoginAsDemoAccount() {
+        String email = BuildConfig.GUEST_EMAIL;
+        String pass  = BuildConfig.GUEST_PASSWORD;
+        if (email == null || email.isEmpty() || pass == null || pass.isEmpty()) {
+            Toast.makeText(this, "Guest credentials aren't configured.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Toast.makeText(this, "Signing in…", Toast.LENGTH_SHORT).show();
+        FirebaseAuth.getInstance().signInWithEmailAndPassword(email, pass)
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        String msg = (task.getException() != null) ? task.getException().getMessage() : "Unknown";
+                        Toast.makeText(this, "Guest login failed: " + msg, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    String uid = task.getResult().getUser().getUid();
+                    // Fetch the demo account's username from the cloud (so History keys to its data),
+                    // with a 4-second fallback to the email prefix if Firebase is slow.
+                    final boolean[] done = {false};
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        if (done[0]) return;
+                        done[0] = true;
+                        finishGuestLogin(email.split("@")[0], email, pass);
+                    }, 4000);
+                    FirebaseManager.getDatabase().getReference("users_info").child(uid).child("username")
+                            .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                                @Override public void onDataChange(com.google.firebase.database.DataSnapshot snap) {
+                                    if (done[0]) return; done[0] = true;
+                                    String name = snap.getValue(String.class);
+                                    if (name == null || name.isEmpty() || name.contains("@")) name = email.split("@")[0];
+                                    finishGuestLogin(name, email, pass);
+                                }
+                                @Override public void onCancelled(com.google.firebase.database.DatabaseError e) {
+                                    if (done[0]) return; done[0] = true;
+                                    finishGuestLogin(email.split("@")[0], email, pass);
+                                }
+                            });
+                });
+    }
+
+    private void finishGuestLogin(String username, String email, String pass) {
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        // is_guest = false on purpose — this is a shared signed-in account, NOT a local-only guest,
+        // so cloud sync is enabled and the demo account's history shows up.
+        pref.edit().putString("username", username).putBoolean("is_guest", false).apply();
+        try {
+            DatabaseHelper db = new DatabaseHelper(this);
+            db.addUser(username, email, pass);
+            CloudSyncManager.syncLocalToCloud(db, username);
+        } catch (Exception ignored) {}
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 
     @Override
