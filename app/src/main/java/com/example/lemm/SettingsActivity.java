@@ -34,6 +34,7 @@ public class SettingsActivity extends AppCompatActivity {
     private int proTapCount = 0;
     private String currentLang;
     private MaterialButton btnBuyPro;
+    private MaterialButton btnUnsubscribe;
     private TextView tvStatus;
 
     private BillingManager billingManager;
@@ -59,6 +60,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         checkCurrentProStatus();
 
+        // Pull this account's Pro status from the cloud (e.g. activated on another device), then refresh.
+        ProStatusManager.syncFromCloud(this, this::checkCurrentProStatus);
+
         billingManager = new BillingManager(this, new BillingManager.BillingListener() {
             @Override public void onBillingReady() {}
             @Override public void onPriceFetched(String price) {
@@ -70,6 +74,18 @@ public class SettingsActivity extends AppCompatActivity {
         billingManager.startConnection();
 
         btnBuyPro.setOnClickListener(v -> billingManager.initiatePurchase());
+
+        btnUnsubscribe = findViewById(R.id.btnUnsubscribe);
+        btnUnsubscribe.setOnClickListener(v -> new AlertDialog.Builder(this)
+                .setTitle(R.string.unsubscribe_title)
+                .setMessage(R.string.unsubscribe_msg)
+                .setPositiveButton(R.string.unsubscribe_yes, (d, w) -> {
+                    ProStatusManager.revoke(this);
+                    Toast.makeText(this, R.string.unsubscribe_done, Toast.LENGTH_SHORT).show();
+                    checkCurrentProStatus();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show());
 
         // --- SECURED ADMIN BACKDOOR ---
         SharedPreferences userPrefs = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
@@ -92,11 +108,8 @@ public class SettingsActivity extends AppCompatActivity {
                 if (proTapCount >= 5) {
                     proTapCount = 0;
 
-                    // Save BOTH the Pro status AND the secret bypass key
-                    proPrefs.edit()
-                            .putBoolean("is_pro_user", true)
-                            .putBoolean("pro_bypass", true) // The permanent bypass key!
-                            .apply();
+                    // Grant Pro (with the permanent bypass) AND mirror it to this account in the cloud.
+                    ProStatusManager.grant(this, true);
 
                     Toast.makeText(this, "🎉 Secret Unlocked: Pro Tier Activated!", Toast.LENGTH_LONG).show();
                     checkCurrentProStatus();
@@ -107,6 +120,9 @@ public class SettingsActivity extends AppCompatActivity {
         findViewById(R.id.btnAboutUs).setOnClickListener(v -> {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://andi2010p.github.io/Lemm/")));
         });
+
+        findViewById(R.id.btnHowToUse).setOnClickListener(v ->
+                startActivity(new Intent(this, OnboardingActivity.class)));
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
@@ -167,11 +183,17 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void checkCurrentProStatus() {
-        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        if (userPrefs.getBoolean("is_pro_user", false)) {
+        boolean isPro = ProStatusManager.isPro(this);
+        if (isPro) {
             tvStatus.setText(R.string.pro_status_active);
             tvStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
             btnBuyPro.setVisibility(View.GONE);
+            if (btnUnsubscribe != null) btnUnsubscribe.setVisibility(View.VISIBLE);
+        } else {
+            tvStatus.setText(R.string.pro_status_free);
+            tvStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_subtitle));
+            btnBuyPro.setVisibility(View.VISIBLE);
+            if (btnUnsubscribe != null) btnUnsubscribe.setVisibility(View.GONE);
         }
     }
 

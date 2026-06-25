@@ -39,6 +39,12 @@ public class GradeCurriculumActivity extends AppCompatActivity {
 
     private int currentGrade, currentTopic;
 
+    // Multi-question quiz state
+    private java.util.List<String> quizQuestions = new java.util.ArrayList<>();
+    private java.util.List<String> quizAnswers = new java.util.ArrayList<>();
+    private int quizIndex = 0;
+    private boolean awaitingNextQuestion = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -231,73 +237,136 @@ public class GradeCurriculumActivity extends AppCompatActivity {
     private void setExplanationHtml(int grade, int topic) {
         if (tvTheoremExplanation == null) return;
 
-        int defId = getResources().getIdentifier("th_def_" + grade + "_" + topic, "string", getPackageName());
-        int proofId = getResources().getIdentifier("th_proof_" + grade + "_" + topic, "string", getPackageName());
-        int exId = getResources().getIdentifier("th_ex_" + grade + "_" + topic, "string", getPackageName());
+        String def = resolveString("th_def_" + grade + "_" + topic);
+        String exp = resolveString("th_exp_" + grade + "_" + topic);
+        String proof = resolveString("th_proof_" + grade + "_" + topic);
+        String hints = resolveString("th_ex_" + grade + "_" + topic);
 
-        int qId = getResources().getIdentifier("th_q_" + grade + "_" + topic, "string", getPackageName());
-        int aId = getResources().getIdentifier("th_a_" + grade + "_" + topic, "string", getPackageName());
-
-        String def = defId != 0 ? getString(defId).replace("\n", "<br>") : "";
-        String proof = proofId != 0 ? getString(proofId).replace("\n", "<br>") : "";
-        String ex = exId != 0 ? getString(exId).replace("\n", "<br>") : "";
-
-        String html = "<b><font color='#0C3D6A'>" + getString(R.string.th_header_theorem) + "</font></b><br>" + def + "<br><br>" +
-                "<b><font color='#27AE60'>" + getString(R.string.th_header_proof) + "</font></b><br>" + proof + "<br><br>" +
-                "<b><font color='#E67E22'>" + getString(R.string.th_header_example) + "</font></b><br>" + ex;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            tvTheoremExplanation.setText(Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT));
-        } else {
-            tvTheoremExplanation.setText(Html.fromHtml(html));
+        StringBuilder html = new StringBuilder();
+        html.append("<b><font color='#0C3D6A'>").append(getString(R.string.th_header_theorem)).append("</font></b><br>").append(def);
+        if (!exp.isEmpty()) {
+            html.append("<br><br><b><font color='#2980B9'>").append(getString(R.string.th_header_explanation)).append("</font></b><br>").append(exp);
+        }
+        if (!proof.isEmpty()) {
+            html.append("<br><br><b><font color='#27AE60'>").append(getString(R.string.th_header_proof)).append("</font></b><br>").append(proof);
+        }
+        if (!hints.isEmpty()) {
+            html.append("<br><br><b><font color='#E67E22'>").append(getString(R.string.th_header_hints)).append("</font></b><br>").append(hints);
         }
 
-        // INTERACTIVE QUIZ LOGIC
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            tvTheoremExplanation.setText(Html.fromHtml(html.toString(), Html.FROM_HTML_MODE_COMPACT));
+        } else {
+            tvTheoremExplanation.setText(Html.fromHtml(html.toString()));
+        }
+
+        setupQuiz(grade, topic);
+    }
+
+    /** Returns the string for the given resource name, with newlines converted to HTML breaks, or "" if missing. */
+    private String resolveString(String name) {
+        int id = getResources().getIdentifier(name, "string", getPackageName());
+        return id != 0 ? getString(id).replace("\n", "<br>") : "";
+    }
+
+    // INTERACTIVE QUIZ LOGIC (supports one or more questions per theorem)
+    private void setupQuiz(int grade, int topic) {
         View quizCard = findViewById(R.id.quizCard);
         TextView tvQuizQuestion = findViewById(R.id.tvQuizQuestion);
         TextView tvQuizFeedback = findViewById(R.id.tvQuizFeedback);
         com.google.android.material.textfield.TextInputEditText etQuizAnswer = findViewById(R.id.etQuizAnswer);
-        View btnCheckAnswer = findViewById(R.id.btnCheckAnswer);
+        com.google.android.material.button.MaterialButton btnCheckAnswer = findViewById(R.id.btnCheckAnswer);
+        if (quizCard == null) return;
 
-        if (qId != 0 && aId != 0 && quizCard != null) {
-            quizCard.setVisibility(View.VISIBLE);
-            tvQuizQuestion.setText(getString(qId));
-            String correctAnswer = getString(aId).trim();
+        // Collect all available questions: th_q / th_a, then th_q2 / th_a2, th_q3 / th_a3 ...
+        quizQuestions.clear();
+        quizAnswers.clear();
+        for (int n = 1; n <= 5; n++) {
+            String suffix = (n == 1) ? "" : String.valueOf(n);
+            int qId = getResources().getIdentifier("th_q" + suffix + "_" + grade + "_" + topic, "string", getPackageName());
+            int aId = getResources().getIdentifier("th_a" + suffix + "_" + grade + "_" + topic, "string", getPackageName());
+            if (qId != 0 && aId != 0) {
+                quizQuestions.add(getString(qId));
+                quizAnswers.add(getString(aId).trim());
+            }
+        }
 
-            // Clear previous answer if user reloads
-            etQuizAnswer.setText("");
-            tvQuizFeedback.setVisibility(View.GONE);
-
-            btnCheckAnswer.setOnClickListener(v -> {
-                String userAnswer = etQuizAnswer.getText().toString().trim();
-
-                // Haptic feedback (small vibration)
-                v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
-
-                if (userAnswer.isEmpty()) {
-                    tvQuizFeedback.setVisibility(View.VISIBLE);
-                    tvQuizFeedback.setText("Please enter an answer.");
-                    tvQuizFeedback.setTextColor(android.graphics.Color.parseColor("#F59E0B")); // Orange
-                    return;
-                }
-
-                tvQuizFeedback.setVisibility(View.VISIBLE);
-
-                if (userAnswer.equals(correctAnswer)) {
-                    tvQuizFeedback.setText(getString(R.string.correct_answer));
-                    tvQuizFeedback.setTextColor(android.graphics.Color.parseColor("#10B981")); // Green
-
-                    // Hide keyboard on success
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    if (imm != null) imm.hideSoftInputFromWindow(etQuizAnswer.getWindowToken(), 0);
-                } else {
-                    tvQuizFeedback.setText(getString(R.string.incorrect_answer));
-                    tvQuizFeedback.setTextColor(android.graphics.Color.parseColor("#EF4444")); // Red
-                    etQuizAnswer.selectAll(); // Select the wrong text so they can easily type over it
-                }
-            });
-        } else if (quizCard != null) {
+        if (quizQuestions.isEmpty()) {
             quizCard.setVisibility(View.GONE);
+            return;
+        }
+
+        quizCard.setVisibility(View.VISIBLE);
+        quizIndex = 0;
+        awaitingNextQuestion = false;
+        showQuizQuestion(tvQuizQuestion, tvQuizFeedback, etQuizAnswer, btnCheckAnswer);
+
+        btnCheckAnswer.setOnClickListener(v -> {
+            v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+
+            // "Next question" mode after a correct answer
+            if (awaitingNextQuestion) {
+                quizIndex++;
+                awaitingNextQuestion = false;
+                showQuizQuestion(tvQuizQuestion, tvQuizFeedback, etQuizAnswer, btnCheckAnswer);
+                return;
+            }
+
+            String userAnswer = etQuizAnswer.getText().toString().trim().replace(',', '.');
+            tvQuizFeedback.setVisibility(View.VISIBLE);
+
+            if (userAnswer.isEmpty()) {
+                tvQuizFeedback.setText(getString(R.string.enter_answer_prompt));
+                tvQuizFeedback.setTextColor(android.graphics.Color.parseColor("#F59E0B"));
+                return;
+            }
+
+            String correctAnswer = quizAnswers.get(quizIndex).replace(',', '.');
+            if (answersMatch(userAnswer, correctAnswer)) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.hideSoftInputFromWindow(etQuizAnswer.getWindowToken(), 0);
+
+                boolean hasNext = quizIndex < quizQuestions.size() - 1;
+                if (hasNext) {
+                    tvQuizFeedback.setText(getString(R.string.correct_next));
+                    tvQuizFeedback.setTextColor(android.graphics.Color.parseColor("#10B981"));
+                    awaitingNextQuestion = true;
+                    btnCheckAnswer.setText(getString(R.string.next_question));
+                } else {
+                    String msg = quizQuestions.size() > 1
+                            ? getString(R.string.all_correct)
+                            : getString(R.string.correct_answer);
+                    tvQuizFeedback.setText(msg);
+                    tvQuizFeedback.setTextColor(android.graphics.Color.parseColor("#10B981"));
+                    btnCheckAnswer.setEnabled(false);
+                }
+            } else {
+                tvQuizFeedback.setText(getString(R.string.incorrect_answer));
+                tvQuizFeedback.setTextColor(android.graphics.Color.parseColor("#EF4444"));
+                etQuizAnswer.selectAll();
+            }
+        });
+    }
+
+    private void showQuizQuestion(TextView tvQuizQuestion, TextView tvQuizFeedback,
+                                  com.google.android.material.textfield.TextInputEditText etQuizAnswer,
+                                  com.google.android.material.button.MaterialButton btnCheckAnswer) {
+        String label = quizQuestions.size() > 1
+                ? (quizIndex + 1) + "/" + quizQuestions.size() + ".  " + quizQuestions.get(quizIndex)
+                : quizQuestions.get(quizIndex);
+        tvQuizQuestion.setText(label);
+        etQuizAnswer.setText("");
+        tvQuizFeedback.setVisibility(View.GONE);
+        btnCheckAnswer.setText(getString(R.string.check_answer));
+        btnCheckAnswer.setEnabled(true);
+    }
+
+    /** Compares answers numerically when possible (so "5.0" == "5"), otherwise case-insensitive text. */
+    private boolean answersMatch(String user, String correct) {
+        try {
+            return Math.abs(Double.parseDouble(user) - Double.parseDouble(correct)) < 1e-6;
+        } catch (NumberFormatException e) {
+            return user.equalsIgnoreCase(correct);
         }
     }
 
@@ -332,6 +401,23 @@ public class GradeCurriculumActivity extends AppCompatActivity {
                 else if (topic == 4) {
                     engine.addLine(100, 350, 500, 350); engine.addLine(500, 350, 400, 150); engine.addLine(400, 150, 100, 350);
                     engine.addExplicitLabel(300, 380, "a"); engine.addExplicitLabel(220, 230, "b"); engine.addExplicitLabel(470, 230, "c");
+                }
+                else if (topic == 5) { // Exterior angle: triangle with the base extended
+                    Geometry left = engine.addLine(150, 350, 300, 150);
+                    Geometry right = engine.addLine(450, 350, 300, 150);
+                    Geometry base = engine.addLine(150, 350, 450, 350);
+                    Geometry ext = engine.addLine(450, 350, 580, 350);
+                    safeAddVisualAngle(right, ext, 70);
+                    engine.addExplicitLabel(300, 130, "B"); engine.addExplicitLabel(130, 375, "A");
+                    engine.addExplicitLabel(450, 380, "C"); engine.addExplicitLabel(585, 375, "D");
+                    engine.addExplicitLabel(495, 320, "ext");
+                }
+                else if (topic == 6) { // Parallel lines cut by a transversal
+                    engine.addLine(100, 180, 520, 180);
+                    engine.addLine(100, 330, 520, 330);
+                    Geometry t = engine.addLine(180, 90, 440, 430);
+                    engine.addExplicitLabel(285, 165, "α"); engine.addExplicitLabel(360, 315, "α");
+                    engine.addExplicitLabel(530, 180, "m"); engine.addExplicitLabel(530, 330, "n");
                 }
             }
             // ================= GRADE 8 =================
@@ -379,6 +465,24 @@ public class GradeCurriculumActivity extends AppCompatActivity {
                     engine.addLine(400, 100, 300, 350); engine.addLine(100, 350, 450, 225); engine.addLine(500, 350, 250, 225);
                     engine.addExplicitLabel(340, 280, "M"); engine.addExplicitLabel(360, 200, "2x"); engine.addExplicitLabel(320, 320, "x");
                 }
+                else if (topic == 8) { // Thales intercept: triangle with a line parallel to the base
+                    engine.addLine(300, 120, 150, 400);
+                    engine.addLine(300, 120, 450, 400);
+                    engine.addLine(150, 400, 450, 400);
+                    engine.addLine(225, 260, 375, 260);
+                    engine.addExplicitLabel(300, 100, "A");
+                    engine.addExplicitLabel(205, 195, "3"); engine.addExplicitLabel(180, 335, "6");
+                    engine.addExplicitLabel(390, 195, "4"); engine.addExplicitLabel(415, 335, "x");
+                }
+                else if (topic == 9) { // Trapezoid midsegment
+                    engine.addLine(220, 180, 380, 180);
+                    engine.addLine(150, 360, 450, 360);
+                    engine.addLine(220, 180, 150, 360);
+                    engine.addLine(380, 180, 450, 360);
+                    engine.addLine(185, 270, 415, 270);
+                    engine.addExplicitLabel(300, 160, "a"); engine.addExplicitLabel(300, 385, "b");
+                    engine.addExplicitLabel(300, 255, "m");
+                }
             }
             // ================= GRADE 9 =================
             else if (grade == 9) {
@@ -414,6 +518,24 @@ public class GradeCurriculumActivity extends AppCompatActivity {
                     engine.addExplicitLabel(300, 130, "a"); engine.addExplicitLabel(440, 250, "b");
                     engine.addExplicitLabel(300, 380, "c"); engine.addExplicitLabel(150, 250, "d");
                 }
+                else if (topic == 6) { // Intersecting chords inside a circle
+                    engine.addCircle(300, 250, 150);
+                    engine.addLine(170, 180, 430, 320);
+                    engine.addLine(200, 380, 400, 130);
+                    engine.addExplicitLabel(210, 205, "a"); engine.addExplicitLabel(395, 300, "b");
+                    engine.addExplicitLabel(245, 320, "c"); engine.addExplicitLabel(370, 175, "d");
+                }
+                else if (topic == 7) { // Ptolemy: cyclic quadrilateral with both diagonals
+                    engine.addCircle(300, 250, 150);
+                    engine.addLine(300, 100, 450, 250); // A-B
+                    engine.addLine(450, 250, 300, 400); // B-C
+                    engine.addLine(300, 400, 150, 250); // C-D
+                    engine.addLine(150, 250, 300, 100); // D-A
+                    engine.addLine(300, 100, 300, 400); // diagonal A-C
+                    engine.addLine(150, 250, 450, 250); // diagonal B-D
+                    engine.addExplicitLabel(300, 85, "A"); engine.addExplicitLabel(465, 250, "B");
+                    engine.addExplicitLabel(300, 415, "C"); engine.addExplicitLabel(135, 250, "D");
+                }
             }
         }
         // ================= GRADES 10, 11, 12 (3D) =================
@@ -431,6 +553,13 @@ public class GradeCurriculumActivity extends AppCompatActivity {
                     canvas3D.addPlane(Arrays.asList("A1", "B1", "C1", "D1")); canvas3D.addPoint("A1", -100, 100, -100); canvas3D.addPoint("B1", 100, 100, -100); canvas3D.addPoint("C1", 100, 100, 100); canvas3D.addPoint("D1", -100, 100, 100);
                     canvas3D.addPlane(Arrays.asList("A2", "B2", "C2", "D2")); canvas3D.addPoint("A2", -100, -100, -100); canvas3D.addPoint("B2", 100, -100, -100); canvas3D.addPoint("C2", 100, -100, 100); canvas3D.addPoint("D2", -100, -100, 100);
                 }
+                else if (grade == 10 && topic == 3) { // Line perpendicular to a plane
+                    canvas3D.addPlane(Arrays.asList("A", "B", "C", "D")); canvas3D.addPoint("A", -150, 0, -150); canvas3D.addPoint("B", 150, 0, -150); canvas3D.addPoint("C", 150, 0, 150); canvas3D.addPoint("D", -150, 0, 150);
+                    canvas3D.addPoint("O", 0, 0, 0); canvas3D.addPoint("T", 0, 200, 0);
+                    canvas3D.addLine("O", "T"); // the perpendicular line
+                    canvas3D.addPoint("P1", -120, 0, 0); canvas3D.addPoint("P2", 120, 0, 0); canvas3D.addLine("P1", "P2");
+                    canvas3D.addPoint("Q1", 0, 0, -120); canvas3D.addPoint("Q2", 0, 0, 120); canvas3D.addLine("Q1", "Q2");
+                }
                 else if (grade == 11 && topic == 1) {
                     canvas3D.addPlane(Arrays.asList("A", "B", "C", "D")); canvas3D.addPoint("A", -150, 0, -150); canvas3D.addPoint("B", 150, 0, -150); canvas3D.addPoint("C", 150, 0, 150); canvas3D.addPoint("D", -150, 0, 150);
                     canvas3D.addPoint("H", 0, 200, 0); canvas3D.addPoint("O", 0, 0, 0); canvas3D.addPoint("P", 100, 0, 80);
@@ -439,12 +568,21 @@ public class GradeCurriculumActivity extends AppCompatActivity {
                 }
                 else if (grade == 11 && topic == 2) { canvas3D.addCylinder("HexPrism", 0, -100, 0, 100, 200); }
                 else if (grade == 11 && topic == 3) { canvas3D.addPyramid("Pyramid", 0, -50, 0, 200, 200, 250); }
+                else if (grade == 11 && topic == 4) { // Cube with a space diagonal
+                    canvas3D.addPoint("A", -100, -100, -100); canvas3D.addPoint("B", 100, -100, -100); canvas3D.addPoint("C", 100, -100, 100); canvas3D.addPoint("D", -100, -100, 100);
+                    canvas3D.addPoint("A2", -100, 100, -100); canvas3D.addPoint("B2", 100, 100, -100); canvas3D.addPoint("C2", 100, 100, 100); canvas3D.addPoint("D2", -100, 100, 100);
+                    canvas3D.addLine("A", "B"); canvas3D.addLine("B", "C"); canvas3D.addLine("C", "D"); canvas3D.addLine("D", "A");
+                    canvas3D.addLine("A2", "B2"); canvas3D.addLine("B2", "C2"); canvas3D.addLine("C2", "D2"); canvas3D.addLine("D2", "A2");
+                    canvas3D.addLine("A", "A2"); canvas3D.addLine("B", "B2"); canvas3D.addLine("C", "C2"); canvas3D.addLine("D", "D2");
+                    canvas3D.addLine("A", "C2"); // space diagonal
+                }
                 else if (grade == 12 && topic == 1) { canvas3D.addCylinder("Cyl", 0, -100, 0, 100, 200); }
                 else if (grade == 12 && topic == 2) { canvas3D.addCone("Cone", 0, -100, 0, 120, 250, 1.0f); }
                 else if (grade == 12 && topic == 3) {
                     canvas3D.addSphere("Sphere", 0, 0, 0, 150);
                     canvas3D.addCylinder("CylWrap", 0, -150, 0, 150, 300);
                 }
+                else if (grade == 12 && topic == 4) { canvas3D.addCylinder("CylSide", 0, -100, 0, 100, 200); }
             }
         }
 

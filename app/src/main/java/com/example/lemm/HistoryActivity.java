@@ -24,6 +24,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -91,7 +92,7 @@ public class HistoryActivity extends AppCompatActivity {
 
         rvHistory.setLayoutManager(new LinearLayoutManager(this));
 
-        adapter = new GenericAdapter(displayList, new GenericAdapter.OnItemActionListener() {
+        adapter = new GenericAdapter(displayList, ioExecutor, new GenericAdapter.OnItemActionListener() {
             @Override public void onItemClick(GenericItem item) { openItem(item); }
             @Override public void onEditClick(GenericItem item) { editItem(item); }
             @Override public void onRenameClick(GenericItem item) { showRenameDialog(item); }
@@ -141,6 +142,7 @@ public class HistoryActivity extends AppCompatActivity {
         List<GenericItem> fresh = queryLocalHistory(showingSolutions);
         displayList.clear();
         displayList.addAll(fresh);
+        adapter.setSolutions(showingSolutions);
         adapter.notifyDataSetChanged();
     }
 
@@ -429,6 +431,12 @@ public class HistoryActivity extends AppCompatActivity {
             intent.putExtra("SAVED_NAME", item.title);
             intent.putExtra("SAVED_DATE", item.date);
             startActivity(intent);
+        } else if (GeometryCanvas3D.isJson3d(item.data)) {
+            Intent intent = new Intent(this, Drawing3DActivity.class);
+            intent.putExtra("LOAD_3D_DATA", item.data);
+            intent.putExtra("EDIT_ID", item.id);
+            intent.putExtra("SAVED_NAME", item.title);
+            startActivity(intent);
         } else {
             Intent intent = new Intent(this, DrawingActivity.class);
             intent.putExtra("LOAD_DRAWING_DATA", item.data);
@@ -449,6 +457,12 @@ public class HistoryActivity extends AppCompatActivity {
             intent.putExtra("SAVED_NAME", item.title);
             intent.putExtra("SAVED_RAW", item.data);
             intent.putExtra("SAVED_DATE", item.date);
+            startActivity(intent);
+        } else if (GeometryCanvas3D.isJson3d(item.data)) {
+            Intent intent = new Intent(this, Drawing3DActivity.class);
+            intent.putExtra("LOAD_3D_DATA", item.data);
+            intent.putExtra("EDIT_ID", item.id);
+            intent.putExtra("SAVED_NAME", item.title);
             startActivity(intent);
         } else {
             Intent intent = new Intent(this, DrawingActivity.class);
@@ -491,7 +505,7 @@ public class HistoryActivity extends AppCompatActivity {
 
     private void saveDrawingToGallery(GenericItem item, Bitmap.CompressFormat format, String ext, String mimeType) {
         try {
-            Bitmap bitmap = renderCadToBitmap(item.data);
+            Bitmap bitmap = renderCadToBitmap(item.data, 2000);
             String fileName = item.title.replaceAll("[^a-zA-Z0-9]", "_") + "_" + System.currentTimeMillis() + ext;
             OutputStream fos;
 
@@ -514,7 +528,7 @@ public class HistoryActivity extends AppCompatActivity {
 
     private void saveDrawingAsPdf(GenericItem item) {
         try {
-            Bitmap bitmap = renderCadToBitmap(item.data);
+            Bitmap bitmap = renderCadToBitmap(item.data, 2000);
             PdfDocument document = new PdfDocument();
             PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(bitmap.getWidth(), bitmap.getHeight(), 1).create();
             PdfDocument.Page page = document.startPage(pageInfo);
@@ -539,8 +553,7 @@ public class HistoryActivity extends AppCompatActivity {
         } catch (Exception e) { Toast.makeText(this, "PDF Export Failed", Toast.LENGTH_SHORT).show(); }
     }
 
-    private Bitmap renderCadToBitmap(String jsonData) throws Exception {
-        int size = 2000;
+    static Bitmap renderCadToBitmap(String jsonData, int size) throws Exception {
         Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
 
@@ -596,8 +609,11 @@ public class HistoryActivity extends AppCompatActivity {
         double drawH = maxY - minY;
         if (drawW <= 0) drawW = 100; if (drawH <= 0) drawH = 100;
 
-        // Apply a safe padding around the drawings (250 pixels)
-        float padding = 250f;
+        // All sizes below are tuned for a 2000px canvas; scale them by k so thumbnails look right too.
+        float k = size / 2000f;
+
+        // Apply a safe padding around the drawings (scaled)
+        float padding = 250f * k;
         float scale = (float) Math.min((size - 2 * padding) / drawW, (size - 2 * padding) / drawH);
 
         // Center the scaled drawing on the canvas
@@ -608,7 +624,7 @@ public class HistoryActivity extends AppCompatActivity {
         android.graphics.Paint linePaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         linePaint.setColor(Color.parseColor("#1A237E")); // Deep blueprints blue
         linePaint.setStyle(android.graphics.Paint.Style.STROKE);
-        linePaint.setStrokeWidth(8f);
+        linePaint.setStrokeWidth(8f * k);
 
         android.graphics.Paint vertexPaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         vertexPaint.setColor(Color.parseColor("#D32F2F")); // Bright red vertex dots
@@ -616,7 +632,7 @@ public class HistoryActivity extends AppCompatActivity {
 
         android.graphics.Paint textPaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.parseColor("#0C3D6A"));
-        textPaint.setTextSize(48f);
+        textPaint.setTextSize(48f * k);
         textPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         textPaint.setTextAlign(android.graphics.Paint.Align.CENTER);
 
@@ -643,7 +659,7 @@ public class HistoryActivity extends AppCompatActivity {
             for (org.locationtech.jts.geom.Coordinate c : coords) {
                 float vx = (float) (c.x * scale + offsetX);
                 float vy = (float) (c.y * scale + offsetY);
-                canvas.drawCircle(vx, vy, 12f, vertexPaint);
+                canvas.drawCircle(vx, vy, 12f * k, vertexPaint);
             }
 
             // Draw Dimension labels
@@ -656,7 +672,7 @@ public class HistoryActivity extends AppCompatActivity {
                 // Add a small background highlight behind text for readability
                 android.graphics.Paint bgPaint = new android.graphics.Paint();
                 bgPaint.setColor(Color.WHITE);
-                canvas.drawRect(cx - 120, cy - 35, cx + 120, cy + 20, bgPaint);
+                canvas.drawRect(cx - 120 * k, cy - 35 * k, cx + 120 * k, cy + 20 * k, bgPaint);
 
                 canvas.drawText(label, cx, cy, textPaint);
             }
@@ -666,11 +682,45 @@ public class HistoryActivity extends AppCompatActivity {
         for (CadEngine2d.NamedPoint np : points) {
             float px = (float) (np.x * scale + offsetX);
             float py = (float) (np.y * scale + offsetY);
-            canvas.drawText(np.label, px + 20, py - 20, textPaint);
+            canvas.drawText(np.label, px + 20 * k, py - 20 * k, textPaint);
         }
 
         return bitmap;
     }
+    /** Renders a small preview of a saved 3D drawing (the editable model JSON), or null on failure. */
+    static Bitmap renderDrawing3DThumb(Context ctx, String json, int size) {
+        try {
+            GeometryCanvas3D cv = new GeometryCanvas3D(ctx, null);
+            cv.loadFromJson(json);
+            if (cv.isEmpty()) return null;
+            cv.measure(View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY));
+            cv.layout(0, 0, size, size);
+            Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            cv.draw(new Canvas(bmp));
+            return bmp;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Renders a small preview of a saved solution's 3D figure, or null if it has no figure. */
+    static Bitmap renderSolutionThumb(Context ctx, String rawText, int size) {
+        try {
+            GeometryCanvas3D cv = new GeometryCanvas3D(ctx, null);
+            cv.loadFromSolution(rawText);
+            if (cv.isEmpty()) return null;
+            cv.measure(View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY));
+            cv.layout(0, 0, size, size);
+            Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            cv.draw(new Canvas(bmp));
+            return bmp;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static class GenericItem {
         String id;
         String title, subtext, data, date;
@@ -682,13 +732,24 @@ public class HistoryActivity extends AppCompatActivity {
     private static class GenericAdapter extends RecyclerView.Adapter<GenericAdapter.ViewHolder> {
         private List<GenericItem> items;
         private OnItemActionListener listener;
+        private final java.util.concurrent.Executor bgExec;
+        private boolean solutions = true;
+
+        // Thumbnails are generated once per item and cached so scrolling stays smooth.
+        private static final int THUMB_PX = 220;
+        private static final android.util.LruCache<String, Bitmap> THUMB_CACHE = new android.util.LruCache<>(40);
+        private static final android.os.Handler MAIN = new android.os.Handler(android.os.Looper.getMainLooper());
 
         interface OnItemActionListener {
             void onItemClick(GenericItem item); void onEditClick(GenericItem item);
             void onRenameClick(GenericItem item); void onDeleteClick(GenericItem item); void onDownloadClick(GenericItem item);
         }
 
-        GenericAdapter(List<GenericItem> items, OnItemActionListener listener) { this.items = items; this.listener = listener; }
+        GenericAdapter(List<GenericItem> items, java.util.concurrent.Executor bgExec, OnItemActionListener listener) {
+            this.items = items; this.bgExec = bgExec; this.listener = listener;
+        }
+
+        void setSolutions(boolean s) { this.solutions = s; }
 
         @NonNull @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) { return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_history, parent, false)); }
@@ -698,6 +759,8 @@ public class HistoryActivity extends AppCompatActivity {
             GenericItem item = items.get(position);
             holder.tvTitle.setText(item.title); holder.tvSub.setText(item.subtext); holder.tvDate.setText(item.date);
 
+            bindThumbnail(holder, item);
+
             holder.itemView.setOnClickListener(v -> listener.onItemClick(item));
             holder.btnDelete.setVisibility(View.GONE); // deletion is now done by swiping the card
             holder.btnRename.setOnClickListener(v -> listener.onRenameClick(item));
@@ -705,14 +768,49 @@ public class HistoryActivity extends AppCompatActivity {
             holder.btnEdit.setOnClickListener(v -> listener.onEditClick(item));
         }
 
+        /** Shows a cached thumbnail immediately, or generates one off the UI thread (re-rendered from the
+         *  saved DB record: the 3D figure for solutions, the 2D sketch for drawings). */
+        private void bindThumbnail(ViewHolder holder, GenericItem item) {
+            final boolean sol = solutions;
+            final String key = (sol ? "S" : "D") + item.id + "|" + item.date;
+            holder.ivThumb.setTag(key);
+
+            Bitmap cached = THUMB_CACHE.get(key);
+            if (cached != null) {
+                holder.ivThumb.setImageBitmap(cached);
+                return;
+            }
+
+            holder.ivThumb.setImageResource(sol ? android.R.drawable.ic_menu_gallery : android.R.drawable.ic_menu_edit);
+
+            final String data = item.data;
+            final Context ctx = holder.itemView.getContext().getApplicationContext();
+            bgExec.execute(() -> {
+                Bitmap bmp = null;
+                try {
+                    if (sol) bmp = renderSolutionThumb(ctx, data, THUMB_PX);
+                    else if (GeometryCanvas3D.isJson3d(data)) bmp = renderDrawing3DThumb(ctx, data, THUMB_PX);
+                    else bmp = renderCadToBitmap(data, THUMB_PX);
+                } catch (Exception ignored) { }
+                final Bitmap result = bmp;
+                if (result != null) THUMB_CACHE.put(key, result);
+                MAIN.post(() -> {
+                    if (result != null && key.equals(holder.ivThumb.getTag())) {
+                        holder.ivThumb.setImageBitmap(result);
+                    }
+                });
+            });
+        }
+
         @Override public int getItemCount() { return items.size(); }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvTitle, tvSub, tvDate; Button btnEdit; ImageButton btnDelete, btnRename, btnDownload;
+            TextView tvTitle, tvSub, tvDate; Button btnEdit; ImageButton btnDelete, btnRename, btnDownload; ImageView ivThumb;
             ViewHolder(View itemView) {
                 super(itemView);
                 tvTitle = itemView.findViewById(R.id.tvHistoryName); tvSub = itemView.findViewById(R.id.tvHistoryProblem); tvDate = itemView.findViewById(R.id.tvHistoryDate);
                 btnEdit = itemView.findViewById(R.id.btnEditHistory); btnDelete = itemView.findViewById(R.id.btnDeleteHistory); btnRename = itemView.findViewById(R.id.btnRenameHistory); btnDownload = itemView.findViewById(R.id.btnDownloadHistory);
+                ivThumb = itemView.findViewById(R.id.ivHistoryThumb);
             }
         }
     }

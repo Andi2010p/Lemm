@@ -167,7 +167,9 @@ public class CadGeometryCanvas extends View {
         float textX = (float) (pivot.x + (85f / scale) * Math.cos(Math.toRadians(a1 + sweep / 2)));
         float textY = (float) (pivot.y + (85f / scale) * Math.sin(Math.toRadians(a1 + sweep / 2)));
 
-        canvas.drawText(String.format("%.1f°", Math.abs(ann.angleValue)), textX, textY, textPaint);
+        // Show the ACTUAL angle between the two lines (the arc's own sweep), so the number always
+        // matches what's drawn — a stored target value could drift from the real geometry after edits.
+        canvas.drawText(String.format("%.1f°", Math.abs(sweep)), textX, textY, textPaint);
     }
 
     private void drawPreview(Canvas canvas) {

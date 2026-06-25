@@ -129,6 +129,8 @@ public class DrawingActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnBack).setOnClickListener(v -> confirmExit());
+        findViewById(R.id.btnOpen3D).setOnClickListener(v -> startActivity(new android.content.Intent(this, Drawing3DActivity.class)));
+        findViewById(R.id.btnExtrude3D).setOnClickListener(v -> extrudeSelectedTo3D());
         findViewById(R.id.btnToolMove).setOnClickListener(v -> selectTool("MOVE"));
         findViewById(R.id.btnToolSelect).setOnClickListener(v -> selectTool("SELECT"));
         findViewById(R.id.btnToolLine).setOnClickListener(v -> selectTool("LINE"));
@@ -431,6 +433,53 @@ public class DrawingActivity extends AppCompatActivity {
             if (!isOrthoMode && !isViewOnly) promptForDimensions(created, currentTool);
             drawingCanvas.invalidate();
         }
+    }
+
+    /** Extrudes the selected closed 2D shape into a 3D solid and opens it in the 3D editor. */
+    private void extrudeSelectedTo3D() {
+        Geometry g = drawingCanvas.getSelectedGeometry();
+        if (g == null) return;
+        if (!(g instanceof Polygon)) {
+            Toast.makeText(this, getString(R.string.extrude_need_closed), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Coordinate[] ring = g.getCoordinates();
+        int n = ring.length;
+        if (n > 1 && ring[0].equals2D(ring[n - 1])) n--; // drop the duplicated closing vertex
+        if (n < 3) {
+            Toast.makeText(this, getString(R.string.extrude_need_closed), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final float[] xs = new float[n];
+        final float[] zs = new float[n];
+        double sumX = 0, sumY = 0;
+        for (int i = 0; i < n; i++) { sumX += ring[i].x; sumY += ring[i].y; }
+        final double cx = sumX / n, cy = sumY / n;
+        for (int i = 0; i < n; i++) { // centre the profile on the origin so the solid sits in view
+            xs[i] = (float) (ring[i].x - cx);
+            zs[i] = (float) (ring[i].y - cy);
+        }
+
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setHint(getString(R.string.extrude_height));
+        input.setText("150");
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.extrude_height)
+                .setView(input)
+                .setPositiveButton(R.string.extrude, (d, w) -> {
+                    float h;
+                    try { h = Float.parseFloat(input.getText().toString().trim().replace(',', '.')); }
+                    catch (Exception e) { h = 150f; }
+                    if (h <= 0) h = 150f;
+                    android.content.Intent it = new android.content.Intent(this, Drawing3DActivity.class);
+                    it.putExtra("EXTRUDE_X", xs);
+                    it.putExtra("EXTRUDE_Z", zs);
+                    it.putExtra("EXTRUDE_H", h);
+                    startActivity(it);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private String identifyGeometryType(Geometry g) {

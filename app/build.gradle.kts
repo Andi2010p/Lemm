@@ -37,6 +37,14 @@ android {
         val geminiBackupKeys = localProperties.getProperty("GEMINI_BACKUP_KEYS") ?: ""
         buildConfigField("String", "GEMINI_BACKUP_KEYS", "\"$geminiBackupKeys\"")
 
+        // Transactional-email (SMTP) credentials — kept OUT of source. Put these in local.properties:
+        //   MAIL_USER=lemmaofficial13@gmail.com
+        //   MAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx   (a Google "App Password", no quotes)
+        val mailUser = localProperties.getProperty("MAIL_USER") ?: ""
+        buildConfigField("String", "MAIL_USER", "\"$mailUser\"")
+        val mailAppPassword = (localProperties.getProperty("MAIL_APP_PASSWORD") ?: "").trim()
+        buildConfigField("String", "MAIL_APP_PASSWORD", "\"$mailAppPassword\"")
+
     }
     buildFeatures {
         buildConfig = true

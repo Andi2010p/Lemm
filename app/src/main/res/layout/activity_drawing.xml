@@ -41,35 +41,53 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:padding="4dp"
-                    android:gravity="center_vertical">
+                    android:gravity="bottom">
 
-                    <ImageButton android:id="@+id/btnBack" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_revert" android:background="?attr/selectableItemBackground" app:tint="@color/text_subtitle" android:tooltipText="Back"/>
-                    <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
+                    <ImageButton android:id="@+id/btnBack" android:layout_width="44dp" android:layout_height="44dp" android:layout_gravity="bottom" android:src="@android:drawable/ic_menu_revert" android:background="?attr/selectableItemBackground" app:tint="@color/text_subtitle" android:tooltipText="Back"/>
+                    <View android:layout_width="1dp" android:layout_height="40dp" android:layout_gravity="bottom" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
 
-                    <ImageButton android:id="@+id/btnToolMove" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_move" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Pan"/>
-                    <ImageButton android:id="@+id/btnToolSelect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_selection" android:background="?attr/selectableItemBackground" app:tint="#E67E22" android:tooltipText="Smart Select / Dimension"/>
-                    <ImageButton android:id="@+id/btnToolOrtho" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_sort_by_size" android:background="?attr/selectableItemBackground" app:tint="#7F8C8D" android:tooltipText="Toggle Ortho (90°)"/>
+                    <!-- VIEW group -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/grp_view" android:textSize="9sp" android:textColor="@color/text_subtitle" android:gravity="center" android:letterSpacing="0.06"/>
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                            <ImageButton android:id="@+id/btnToolMove" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_move" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Pan"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                    <View android:layout_width="1dp" android:layout_height="40dp" android:layout_gravity="bottom" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
 
-                    <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
+                    <!-- DRAW group -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/grp_draw" android:textSize="9sp" android:textColor="@color/text_subtitle" android:gravity="center" android:letterSpacing="0.06"/>
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                            <ImageButton android:id="@+id/btnToolLine" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_line" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Line"/>
+                            <ImageButton android:id="@+id/btnToolPoly" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_edit" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Polyline" android:visibility="gone"/>
+                            <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Rectangle"/>
+                            <ImageButton android:id="@+id/btnToolCircle" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_circle" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Circle"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                    <View android:layout_width="1dp" android:layout_height="40dp" android:layout_gravity="bottom" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
 
-                    <ImageButton android:id="@+id/btnToolLine" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_line" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Line"/>
-                    <ImageButton android:id="@+id/btnToolPoly"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:src="@android:drawable/ic_menu_edit"
-                        android:background="?attr/selectableItemBackground"
-                        app:tint="#27AE60"
-                        android:tooltipText="Polyline"
-                        android:visibility="gone"/> <!-- Hides the button safely -->                    <ImageButton android:id="@+id/btnToolRect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_rectangle" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Rectangle"/>
-                    <ImageButton android:id="@+id/btnToolCircle" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_circle" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Circle"/>
+                    <!-- EDIT group -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/grp_edit" android:textSize="9sp" android:textColor="@color/text_subtitle" android:gravity="center" android:letterSpacing="0.06"/>
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                            <ImageButton android:id="@+id/btnToolSelect" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_selection" android:background="?attr/selectableItemBackground" app:tint="#E67E22" android:tooltipText="Smart Select / Dimension"/>
+                            <ImageButton android:id="@+id/btnToolOrtho" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_sort_by_size" android:background="?attr/selectableItemBackground" app:tint="#7F8C8D" android:tooltipText="Toggle Ortho (90°)"/>
+                            <ImageButton android:id="@+id/btnUndo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_undo" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Undo"/>
+                            <ImageButton android:id="@+id/btnRedo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_redo" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Redo"/>
+                            <ImageButton android:id="@+id/btnToolClear" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_delete" android:background="?attr/selectableItemBackground" app:tint="#C62828" android:tooltipText="Clear Canvas"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                    <View android:layout_width="1dp" android:layout_height="40dp" android:layout_gravity="bottom" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
 
-                    <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
-
-                    <ImageButton android:id="@+id/btnUndo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_undo" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Undo"/>
-                    <ImageButton android:id="@+id/btnRedo" android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_redo" android:background="?attr/selectableItemBackground" app:tint="@color/main_blue" android:tooltipText="Redo"/>
-                    <ImageButton android:id="@+id/btnToolClear" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_delete" android:background="?attr/selectableItemBackground" app:tint="#C62828" android:tooltipText="Clear Canvas"/>
-                    <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>
-                    <ImageButton android:id="@+id/btnToolSaveTop" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_save" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Save Drawing"/>
+                    <!-- FILE group -->
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/grp_file" android:textSize="9sp" android:textColor="@color/text_subtitle" android:gravity="center" android:letterSpacing="0.06"/>
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                            <Button android:id="@+id/btnOpen3D" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="wrap_content" android:layout_height="44dp" android:minWidth="44dp" android:paddingHorizontal="10dp" android:text="3D" android:textStyle="bold" android:textColor="@color/main_blue" android:tooltipText="Open 3D editor"/>
+                            <ImageButton android:id="@+id/btnToolSaveTop" android:layout_width="44dp" android:layout_height="44dp" android:src="@android:drawable/ic_menu_save" android:background="?attr/selectableItemBackground" app:tint="#27AE60" android:tooltipText="Save Drawing"/>
+                        </LinearLayout>
+                    </LinearLayout>
 
                 </LinearLayout>
             </HorizontalScrollView>
@@ -161,6 +179,17 @@
                             android:textColor="@color/main_blue"
                             android:padding="0dp"
                             android:visibility="gone"/>
+
+                        <Button
+                            android:id="@+id/btnExtrude3D"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_weight="1"
+                            android:text="@string/extrude"
+                            android:textSize="10sp"
+                            android:textColor="#27AE60"
+                            android:padding="0dp"/>
 
                         <Button
                             android:id="@+id/btnDeleteShape"

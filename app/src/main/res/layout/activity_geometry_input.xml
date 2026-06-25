@@ -473,6 +473,22 @@
                     android:textSize="20sp" />
             </LinearLayout>
 
+            <!-- Floating "stock" that slides out with full info about the tapped element. -->
+            <TextView
+                android:id="@+id/tvElementInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="10dp"
+                android:maxWidth="240dp"
+                android:background="@drawable/bg_info_stock"
+                android:padding="14dp"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:lineSpacingExtra="2dp"
+                android:elevation="8dp"
+                android:visibility="gone" />
+
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 

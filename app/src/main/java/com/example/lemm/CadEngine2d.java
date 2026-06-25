@@ -324,11 +324,51 @@ public class CadEngine2d {
     public List<AngleAnnotation> getAngleAnnotations() { return angleAnnotations; }
 
     public String getPropertiesText(android.content.Context context, Geometry g) {
+        if (g == null) return "";
+        java.util.Locale L = java.util.Locale.US;
+        Coordinate[] c = g.getCoordinates();
+
         if (g instanceof LineString) {
-            return context.getString(R.string.prop_length, g.getLength());
-        } else {
-            return context.getString(R.string.prop_area, g.getArea());
+            if (c.length == 2) {
+                double dx = c[1].x - c[0].x;
+                double dy = c[1].y - c[0].y;
+                // Angle to the horizontal axis, measured the SAME way the canvas draws its angle arcs
+                // (true angle between the line and the x-axis, 0°–180°), so the panel value matches the
+                // figure. A near-horizontal line reads ~3°, not ~177°.
+                double angle = Math.abs(Math.toDegrees(Math.atan2(dy, dx)));
+                double vy = -dy; // y-up for an intuitive slope sign (rising-right = positive)
+                String slope = Math.abs(dx) < 1e-6
+                        ? "∞"
+                        : String.format(L, "%.2f", vy / dx);
+                return context.getString(R.string.info_line) + "\n"
+                        + context.getString(R.string.info_length) + ": " + String.format(L, "%.1f", g.getLength()) + "\n"
+                        + context.getString(R.string.info_endpoints) + ": ("
+                        + String.format(L, "%.0f", c[0].x) + ", " + String.format(L, "%.0f", c[0].y) + ") → ("
+                        + String.format(L, "%.0f", c[1].x) + ", " + String.format(L, "%.0f", c[1].y) + ")\n"
+                        + context.getString(R.string.info_angle) + ": " + String.format(L, "%.1f", angle) + "°\n"
+                        + context.getString(R.string.info_slope) + ": " + slope;
+            }
+            return context.getString(R.string.info_polyline) + "\n"
+                    + context.getString(R.string.info_vertices) + ": " + c.length + "\n"
+                    + context.getString(R.string.info_length) + ": " + String.format(L, "%.1f", g.getLength());
         }
+
+        // Polygon: detect circle-like shapes (created via buffer, or tagged "R:" by a dimension).
+        int sides = Math.max(0, c.length - 1);
+        boolean isCircle = sides > 12
+                || (g.getUserData() != null && g.getUserData().toString().trim().toUpperCase(L).startsWith("R"));
+        if (isCircle) {
+            double r = g.getEnvelopeInternal().getWidth() / 2.0;
+            return context.getString(R.string.info_circle) + "\n"
+                    + context.getString(R.string.info_radius) + ": " + String.format(L, "%.1f", r) + "\n"
+                    + context.getString(R.string.info_diameter) + ": " + String.format(L, "%.1f", 2 * r) + "\n"
+                    + context.getString(R.string.info_circumference) + ": " + String.format(L, "%.1f", 2 * Math.PI * r) + "\n"
+                    + context.getString(R.string.info_area) + ": " + String.format(L, "%.1f", g.getArea());
+        }
+        return context.getString(R.string.info_polygon) + " (" + sides + ")\n"
+                + context.getString(R.string.info_sides) + ": " + sides + "\n"
+                + context.getString(R.string.info_perimeter) + ": " + String.format(L, "%.1f", g.getLength()) + "\n"
+                + context.getString(R.string.info_area) + ": " + String.format(L, "%.1f", g.getArea());
     }
 
     public Geometry getGeometryAt(double x, double y, double tol) {

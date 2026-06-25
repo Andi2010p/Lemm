@@ -123,6 +123,16 @@
                     android:text="@string/unlock_unlimited_ai"
                     app:backgroundTint="#F57F17"
                     app:icon="@android:drawable/btn_star_big_on" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnUnsubscribe"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="@string/unsubscribe"
+                    android:textColor="#C62828"
+                    app:strokeColor="#C62828"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -240,6 +250,15 @@
             android:layout_marginTop="4dp"
             android:text="@string/about_us"
             app:icon="@android:drawable/ic_menu_info_details" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnHowToUse"
+            style="@style/Widget.Lemm.Button.Tonal"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="4dp"
+            android:text="@string/how_to_use"
+            app:icon="@android:drawable/ic_menu_help" />
 
     </LinearLayout>
 </ScrollView>

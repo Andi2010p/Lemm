@@ -15,8 +15,10 @@ public class EmailSender {
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "465";
 
-    private static final String APP_EMAIL = "lemmaofficial13@gmail.com";
-    private static final String APP_PASSWORD = "ukgf sigx fkcr glsm\n";
+    // Credentials are injected at build time from local.properties (MAIL_USER / MAIL_APP_PASSWORD),
+    // so the SMTP app-password never lives in version-controlled source.
+    private static final String APP_EMAIL = BuildConfig.MAIL_USER;
+    private static final String APP_PASSWORD = BuildConfig.MAIL_APP_PASSWORD.trim();
 
     // THE BEAUTIFUL HTML TEMPLATE
     public static void sendOfficialEmail(String toEmail, String subject, String headline, String bodyText) {
@@ -45,6 +47,10 @@ public class EmailSender {
 
     // The actual background sender
     private static void executeEmail(String toEmail, String subject, String htmlBody) {
+        if (APP_EMAIL == null || APP_EMAIL.isEmpty() || APP_PASSWORD == null || APP_PASSWORD.isEmpty()) {
+            Log.e("EmailSender", "Email credentials not configured (set MAIL_USER / MAIL_APP_PASSWORD in local.properties).");
+            return;
+        }
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {

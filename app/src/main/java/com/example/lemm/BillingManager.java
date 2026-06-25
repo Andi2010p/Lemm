@@ -161,14 +161,21 @@ public class BillingManager {
     }
 
     private void saveProStatus(boolean isPro) {
-        SharedPreferences userPrefs = activity.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-
-        // If they unlocked Pro via the 5-tap cheat code, do NOT let Google Play lock them out!
-        if (userPrefs.getBoolean("pro_bypass", false)) {
-            Log.d(TAG, "Pro Bypass Active. Keeping Pro unlocked.");
+        if (isPro) {
+            // Purchase confirmed/restored on this device: grant locally AND mirror to the cloud so
+            // every device this account logs into sees Pro.
+            ProStatusManager.grant(activity, false);
             return;
         }
 
-        userPrefs.edit().putBoolean("is_pro_user", isPro).apply();
+        // isPro == false: Google Play sees no purchase on THIS device. Never revoke a Pro grant that
+        // came from the 5-tap unlock (pro_bypass) or from the account in the cloud (pro_cloud).
+        if (ProStatusManager.isProtected(activity)) {
+            Log.d(TAG, "Pro protected (bypass/cloud). Keeping Pro unlocked.");
+            return;
+        }
+
+        SharedPreferences userPrefs = activity.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        userPrefs.edit().putBoolean("is_pro_user", false).apply();
     }
 }

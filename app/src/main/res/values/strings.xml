@@ -117,12 +117,18 @@
     <string name="pro_status_free">Status: Free Tier</string>
     <string name="pro_status_active">Status: Pro Tier Active</string>
     <string name="unlock_unlimited_ai">Unlock Unlimited AI</string>
+    <string name="unsubscribe">Unsubscribe from Pro</string>
+    <string name="unsubscribe_title">Cancel Pro?</string>
+    <string name="unsubscribe_msg">This turns off Pro on all your devices. You can unlock it again anytime. (This does not refund a Google Play purchase.)</string>
+    <string name="unsubscribe_yes">Unsubscribe</string>
+    <string name="unsubscribe_done">Pro cancelled</string>
     <string name="appearance">Appearance</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="access_denied">Access Required</string>
     <string name="access_denied_msg">Please enter an API Key in Settings or purchase Pro.</string>
+    <string name="access_no_key_pro">Your Pro tier is active, but this build has no built-in AI key configured. Add your own Gemini API key in Settings to start solving.</string>
     <string name="error_not_geometry">Security Filter: Lemma AI only solves math and geometry.</string>
 
     <string name="scan_dialog_title">Scanning Image</string>
@@ -169,6 +175,10 @@
     <string name="tool_ortho_on">Ortho Mode ON</string>
     <string name="tool_ortho_off">Ortho Mode OFF</string>
     <string name="sketch_tools">Sketch Tools</string>
+    <string name="grp_view">VIEW</string>
+    <string name="grp_draw">DRAW</string>
+    <string name="grp_edit">EDIT</string>
+    <string name="grp_file">FILE</string>
     <string name="drawing_date">Date: %1$s</string>
     <string name="error_invalid_angle">Invalid angle</string>
     <string name="error_dim_positive">Dimension must be > 0</string>
@@ -191,19 +201,103 @@
          google-services.json (the Web OAuth client, type 3). Do NOT hardcode it here, or it will
          override the json and break Google Sign-In whenever the json changes. -->
 
+    <!-- ================= ONBOARDING / HOW TO USE ================= -->
+    <string name="onb_skip">Skip</string>
+    <string name="onb_next">Next</string>
+    <string name="onb_back">Back</string>
+    <string name="onb_start">Let\'s go!</string>
+    <string name="onb_leave_title">Leave the guide?</string>
+    <string name="onb_leave_msg">Are you sure you want to leave the instructions? You can open them again from Settings.</string>
+    <string name="onb_leave_yes">Yes, skip</string>
+    <string name="onb_leave_no">Keep reading</string>
+    <string name="how_to_use">How to use Lemma</string>
+
+    <string name="onb_t_welcome">Welcome to Lemma!</string>
+    <string name="onb_d_welcome">Lemma helps you learn geometry and solve problems. Let\'s take a quick tour to see what it can do!</string>
+    <string name="onb_t_ai">Ask the helper</string>
+    <string name="onb_d_ai">Type a geometry problem or take a photo of it. Lemma shows you the answer, step by step.</string>
+    <string name="onb_t_draw">Draw shapes</string>
+    <string name="onb_d_draw">Use the drawing board to make lines, circles and shapes. Tap any shape to see its size and angles.</string>
+    <string name="onb_t_3d">Make it 3D</string>
+    <string name="onb_d_3d">Draw a flat shape, press Extrude, and watch it pop up into a 3D figure you can spin around.</string>
+    <string name="onb_t_theorems">Learn the rules</string>
+    <string name="onb_d_theorems">Every theorem comes with a picture, a simple explanation, and a quick quiz to check what you learned.</string>
+    <string name="onb_t_history">Saved for you</string>
+    <string name="onb_d_history">Your solutions and drawings are saved here, so you can open them again anytime.</string>
+
+    <!-- ================= GEOMETRY INSPECTION (click an element for info) ================= -->
+    <string name="info_point">Point</string>
+    <string name="info_edge">Edge</string>
+    <string name="info_line">Line</string>
+    <string name="info_polyline">Polyline</string>
+    <string name="info_polygon">Polygon</string>
+    <string name="info_circle">Circle</string>
+    <string name="info_length">Length</string>
+    <string name="info_angle">Angle</string>
+    <string name="info_slope">Slope</string>
+    <string name="info_area">Area</string>
+    <string name="info_perimeter">Perimeter</string>
+    <string name="info_radius">Radius</string>
+    <string name="info_diameter">Diameter</string>
+    <string name="info_circumference">Circumference</string>
+    <string name="info_sides">Sides</string>
+    <string name="info_vertices">Vertices</string>
+    <string name="info_endpoints">Endpoints</string>
+    <string name="info_tap_hint">Tip: tap a point or line in the figure to see its measurements.</string>
+    <string name="info_plane">Plane</string>
+    <string name="info_vertex_at">Vertex at</string>
+    <string name="info_rays">Rays</string>
+
+    <!-- ================= 3D SKETCH EDITOR ================= -->
+    <string name="editor3d_title">3D Sketch Editor</string>
+    <string name="d3_inspect">Inspect</string>
+    <string name="d3_add_point">+ Point</string>
+    <string name="d3_add_line">+ Line</string>
+    <string name="d3_clear">Clear</string>
+    <string name="d3_rotate">Rotate</string>
+    <string name="d3_pan">Pan</string>
+    <string name="d3_reset">Reset</string>
+    <string name="d3_tap_first">Tap the first point</string>
+    <string name="d3_tap_second">Now tap the second point</string>
+    <string name="d3_need_point">Tap a labelled point</string>
+    <string name="d3_line_added">Line added</string>
+    <string name="d3_coords_title">New point (X, Y, Z)</string>
+    <string name="d3_deleted">Deleted</string>
+    <string name="extrude">Extrude</string>
+    <string name="extrude_need_closed">Select a closed shape to extrude (rectangle, circle, or polygon).</string>
+    <string name="extrude_height">Extrude height</string>
+    <string name="d3_need_profile">Add at least 3 points on the ground to extrude.</string>
+    <string name="info_midpoint">Midpoint of</string>
+    <string name="d3_draw">Draw</string>
+    <string name="d3_angle">Angle</string>
+    <string name="d3_finish">Finish</string>
+    <string name="d3_draw_hint">Tap the grid to drop points. Tap the first point to close the shape into a face.</string>
+    <string name="d3_face_added">Face created — press Extrude to make it 3D</string>
+    <string name="d3_rotate_to_sketch">Rotate the view so you look down at the grid, then sketch.</string>
+    <string name="d3_angle_pick1">Tap the angle\'s corner point</string>
+    <string name="d3_angle_pick2">Tap the first arm point</string>
+    <string name="d3_angle_pick3">Tap the second arm point</string>
+    <string name="d3_angle_added">Angle added</string>
+
     <!-- ================= THEOREMS & QUIZZES ================= -->
     <string name="theorems_title">Theorems &amp; Formulas</string>
     <string name="grade_title">Grade %1$d Curriculum</string>
     <string name="th_header_theorem">THEOREM:</string>
-    <string name="th_header_proof">PROOF:</string>
+    <string name="th_header_explanation">IN SIMPLE TERMS:</string>
+    <string name="th_header_proof">WHY IT IS TRUE (PROOF):</string>
     <string name="th_header_example">APPLICATION:</string>
+    <string name="th_header_hints">WHERE IT IS USED &amp; HINTS:</string>
     <string name="th_header_questions">QUESTIONS:</string>
 
     <string name="knowledge_check">KNOWLEDGE CHECK</string>
     <string name="type_answer">Type answer (number)</string>
     <string name="check_answer">Check</string>
+    <string name="next_question">Next question →</string>
     <string name="correct_answer">✅ Correct! Excellent job.</string>
+    <string name="correct_next">✅ Correct! Tap for the next question.</string>
+    <string name="all_correct">🎉 All correct! You\'ve mastered this theorem.</string>
     <string name="incorrect_answer">❌ Incorrect. Try again!</string>
+    <string name="enter_answer_prompt">Please enter an answer.</string>
 
     <string name="th_triangles">Triangles</string>
     <string name="th_triangles_desc">• Sum of angles is 180°.\n• Pythagorean theorem: a² + b² = c².\n• Area: ½ × base × height.\n• Law of Sines: a/sinA = b/sinB = c/sinC.\n• Law of Cosines: c² = a² + b² - 2ab·cosC.</string>
@@ -215,177 +309,339 @@
     <string name="th_3d_shapes_desc">• Prism volume: Base_Area × h.\n• Cylinder volume: πr²h.\n• Pyramid/Cone volume: ⅓ × Base_Area × h.\n• Sphere volume: ⁴/₃πr³.\n• Sphere surface area: 4πr².</string>
     <string name="loading_advanced">Advanced topics loading for grade %1$d...</string>
 
-    <!-- GRADE 7 -->
+    <!-- ================= GRADE 7 ================= -->
     <string name="th_title_7_1">1. Vertical Angles</string>
-    <string name="th_def_7_1">Vertical angles formed by intersecting lines are equal.</string>
-    <string name="th_proof_7_1">∠AOC and ∠COB are adjacent (sum = 180°). ∠BOD and ∠COB are adjacent (sum = 180°). Therefore, ∠AOC = 180° - ∠COB = ∠BOD. ∎</string>
-    <string name="th_ex_7_1">If one angle in a scissors mechanism is 40°, the opposite is exactly 40°.</string>
+    <string name="th_def_7_1">When two straight lines cross, the angles opposite each other (vertical angles) are equal.</string>
+    <string name="th_exp_7_1">Two crossing lines make four angles. The pair that sits “back to back” across the crossing point are mirror images, so they are the same size. The two angles next to each other always add up to 180°.</string>
+    <string name="th_proof_7_1">∠AOC and ∠COB lie on a straight line, so ∠AOC + ∠COB = 180°. Likewise ∠BOD + ∠COB = 180°. Subtracting the shared ∠COB gives ∠AOC = ∠BOD. ∎</string>
+    <string name="th_ex_7_1">• Scissors, railway crossings and the letter “X” all show equal vertical angles.\n• In problems: knowing one of the four angles tells you all four — the equal one, and 180° minus it for the two neighbours.\n• Lets you find unknown angles without measuring.</string>
     <string name="th_q_7_1">If an angle is 45°, what is its vertical angle?</string>
     <string name="th_a_7_1">45</string>
+    <string name="th_q2_7_1">Two lines cross; one angle is 110°. What is the angle right next to it?</string>
+    <string name="th_a2_7_1">70</string>
 
     <string name="th_title_7_2">2. Isosceles Base Angles</string>
-    <string name="th_def_7_2">In an isosceles triangle, the angles opposite the equal sides are equal.</string>
-    <string name="th_proof_7_2">Draw the angle bisector AD to the base. By SAS congruence, △ABD ≅ △ACD. Corresponding angles ∠B and ∠C must be equal. ∎</string>
-    <string name="th_ex_7_2">Roof trusses are built as isosceles triangles so the slope is equal on both sides.</string>
-    <string name="th_q_7_2">If the top vertex angle is 40°, what is ONE base angle?</string>
+    <string name="th_def_7_2">In an isosceles triangle (two equal sides), the two angles at the base are equal.</string>
+    <string name="th_exp_7_2">An isosceles triangle is symmetric. Fold it down the middle and the two equal sides land on each other, so the two base angles must match perfectly.</string>
+    <string name="th_proof_7_2">Draw the bisector AD from the apex to the base. Then AB = AC, AD is shared, and the split apex angles are equal, so △ABD ≅ △ACD by SAS. Hence the base angles ∠B and ∠C are equal. ∎</string>
+    <string name="th_ex_7_2">• Roof trusses, tents and bridges use isosceles triangles so both slopes match.\n• In problems: each base angle = (180° − apex) ÷ 2.\n• Reverse is also true — equal angles mean equal opposite sides.</string>
+    <string name="th_q_7_2">If the apex (top) angle is 40°, what is ONE base angle?</string>
     <string name="th_a_7_2">70</string>
+    <string name="th_q2_7_2">A base angle of an isosceles triangle is 50°. What is the apex angle?</string>
+    <string name="th_a2_7_2">80</string>
 
     <string name="th_title_7_3">3. Triangle Sum Theorem</string>
-    <string name="th_def_7_3">The sum of the interior angles of any triangle is 180°.</string>
-    <string name="th_proof_7_3">Draw a line through the top vertex parallel to the base. The alternate interior angles equal the base angles. The three angles form a straight 180° line. ∎</string>
-    <string name="th_ex_7_3">Finding a missing navigation angle: 180° - (α + β).</string>
-    <string name="th_q_7_3">If two angles are 50° and 60°, what is the third angle?</string>
+    <string name="th_def_7_3">The three interior angles of any triangle add up to 180°.</string>
+    <string name="th_exp_7_3">Whatever shape a triangle has, its corners always use up exactly half a full turn. So if you know two angles, the third is locked in.</string>
+    <string name="th_proof_7_3">Through the top vertex draw a line parallel to the base. The two alternate-interior angles equal the base angles, and together with the apex angle they form a straight line of 180°. ∎</string>
+    <string name="th_ex_7_3">• Find a missing angle in navigation, surveying or design: third = 180° − (α + β).\n• Lets you check whether three angles can even form a triangle.\n• It is the foundation of almost every other triangle theorem.</string>
+    <string name="th_q_7_3">Two angles are 50° and 60°. What is the third angle?</string>
     <string name="th_a_7_3">70</string>
+    <string name="th_q2_7_3">A right triangle has a 90° angle and a 25° angle. What is the third angle?</string>
+    <string name="th_a2_7_3">65</string>
 
     <string name="th_title_7_4">4. Triangle Inequality</string>
-    <string name="th_def_7_4">Any side of a triangle is strictly less than the sum of the other two sides (a &lt; b + c).</string>
-    <string name="th_proof_7_4">The shortest distance between two points is a straight line. Traveling from A to B via point C is always a longer path than line AB. ∎</string>
-    <string name="th_ex_7_4">It is physically impossible to construct a triangle with sides 2cm, 3cm, and 10cm.</string>
-    <string name="th_q_7_4">If two sides are 5 and 7, what is the MAXIMUM whole number length for the third side?</string>
+    <string name="th_def_7_4">Any side of a triangle is shorter than the sum of the other two sides (a &lt; b + c).</string>
+    <string name="th_exp_7_4">A straight line is the shortest path between two points. Detouring from A to B through a third corner C is always longer, so no side can ever reach the combined length of the other two.</string>
+    <string name="th_proof_7_4">The shortest distance between two points is the straight segment AB. Any path A→C→B is longer, so AB &lt; AC + CB. The same holds for every side. ∎</string>
+    <string name="th_ex_7_4">• Instantly tells you whether three lengths can form a triangle.\n• Same “shortest path” idea powers GPS and network routing.\n• In problems: the third side lies strictly between |b − c| and b + c.</string>
+    <string name="th_q_7_4">Two sides are 5 and 7. What is the MAXIMUM whole-number length of the third side?</string>
     <string name="th_a_7_4">11</string>
+    <string name="th_q2_7_4">Two sides are 5 and 7. What is the MINIMUM whole-number length of the third side?</string>
+    <string name="th_a2_7_4">3</string>
 
-    <!-- GRADE 8 -->
+    <string name="th_title_7_5">5. Exterior Angle Theorem</string>
+    <string name="th_def_7_5">An exterior angle of a triangle equals the sum of the two interior angles not next to it.</string>
+    <string name="th_exp_7_5">Extend one side of a triangle. The angle that sticks out is exactly as big as the two far corners added together — because that exterior angle and its neighbour make 180°, and so do the three interior angles.</string>
+    <string name="th_proof_7_5">Exterior angle + adjacent interior angle = 180°. The three interior angles also sum to 180°. Cancelling the shared adjacent angle gives: exterior = sum of the two remote interior angles. ∎</string>
+    <string name="th_ex_7_5">• A quick way to find an angle without first finding the third interior angle.\n• Used in star polygons and when tracking turning angles along a path.\n• Shows an exterior angle is always larger than either remote interior angle.</string>
+    <string name="th_q_7_5">The two remote interior angles are 50° and 70°. What is the exterior angle?</string>
+    <string name="th_a_7_5">120</string>
+    <string name="th_q2_7_5">An exterior angle is 110° and one remote interior angle is 45°. What is the other remote interior angle?</string>
+    <string name="th_a2_7_5">65</string>
+
+    <string name="th_title_7_6">6. Parallel Lines &amp; a Transversal</string>
+    <string name="th_def_7_6">When a transversal crosses two parallel lines, corresponding angles are equal and co-interior (same-side) angles add up to 180°.</string>
+    <string name="th_exp_7_6">Parallel lines have the same tilt, so a line crossing both makes the same angle pattern at each crossing. Matching (corresponding) angles are equal, and two angles on the same side between the lines complete a straight 180°.</string>
+    <string name="th_proof_7_6">Slide one crossing point along the transversal onto the other. Because the lines are parallel, the figure maps exactly onto itself, so corresponding angles coincide and are equal. Co-interior angles are supplementary to equal angles, so they sum to 180°. ∎</string>
+    <string name="th_ex_7_6">• Railways, ruled paper and ladder rungs all make equal angles this way.\n• Lets you “transfer” a known angle across a parallel line.\n• In problems: equal corresponding/alternate angles; supplementary co-interior angles.</string>
+    <string name="th_q_7_6">A transversal crosses two parallel lines. One angle is 65°. What is its corresponding angle?</string>
+    <string name="th_a_7_6">65</string>
+    <string name="th_q2_7_6">Two parallel lines are cut by a transversal. A co-interior angle is 120°. What is the other co-interior angle?</string>
+    <string name="th_a2_7_6">60</string>
+
+    <!-- ================= GRADE 8 ================= -->
     <string name="th_title_8_1">1. Parallelogram Properties</string>
-    <string name="th_def_8_1">In a parallelogram, opposite sides are equal and opposite angles are equal.</string>
-    <string name="th_proof_8_1">Draw diagonal AC. Alternate interior angles are equal. With the shared diagonal, △ABC ≅ △CDA by ASA. Corresponding sides and angles are equal. ∎</string>
-    <string name="th_ex_8_1">Mechanical drafting linkages.</string>
-    <string name="th_q_8_1">If one angle of a parallelogram is 60°, what is the adjacent angle?</string>
+    <string name="th_def_8_1">In a parallelogram, opposite sides are equal, opposite angles are equal, and neighbouring angles add up to 180°.</string>
+    <string name="th_exp_8_1">A parallelogram has two pairs of parallel sides. Because the sides run parallel, each opposite pair stays the same length, opposite corners match, and any two corners sharing a side complete a straight 180°.</string>
+    <string name="th_proof_8_1">Draw diagonal AC. Alternate interior angles are equal (parallel sides) and AC is shared, so △ABC ≅ △CDA by ASA. Hence opposite sides and opposite angles are equal. ∎</string>
+    <string name="th_ex_8_1">• Drafting linkages, gates and pantograph arms keep their shape using parallelograms.\n• In problems: opposite sides/angles equal, neighbours supplementary, diagonals bisect each other.</string>
+    <string name="th_q_8_1">One angle of a parallelogram is 60°. What is the neighbouring angle?</string>
     <string name="th_a_8_1">120</string>
+    <string name="th_q2_8_1">One angle of a parallelogram is 60°. What is the opposite angle?</string>
+    <string name="th_a2_8_1">60</string>
 
     <string name="th_title_8_2">2. Area of a Triangle</string>
-    <string name="th_def_8_2">S = ½ × base × height.</string>
-    <string name="th_proof_8_2">Duplicate the triangle to form a parallelogram. The area of a parallelogram is base × height. Since the triangle is exactly half of it, S = ½bh. ∎</string>
-    <string name="th_ex_8_2">Calculating fabric needed for a sail.</string>
-    <string name="th_q_8_2">If the base is 10 and height is 4, what is the area?</string>
+    <string name="th_def_8_2">The area of a triangle is S = ½ × base × height.</string>
+    <string name="th_exp_8_2">Any triangle is exactly half of a parallelogram with the same base and height. So take base × height and halve it. The height must be measured perpendicular to the base.</string>
+    <string name="th_proof_8_2">Copy the triangle and rotate it to join the original into a parallelogram of area base × height. The triangle is half of that, so S = ½ × b × h. ∎</string>
+    <string name="th_ex_8_2">• Estimating fabric for a triangular sail or the area of a triangular plot.\n• Any of the three sides can be the base — pick the one whose height you know.\n• In problems you can also work backwards to find a missing height.</string>
+    <string name="th_q_8_2">Base 10, height 4. What is the area?</string>
     <string name="th_a_8_2">20</string>
+    <string name="th_q2_8_2">A triangle has area 30 and base 12. What is its height?</string>
+    <string name="th_a2_8_2">5</string>
 
     <string name="th_title_8_3">3. Pythagorean Theorem</string>
-    <string name="th_def_8_3">In a right triangle, c² = a² + b².</string>
-    <string name="th_proof_8_3">Build a square of side (a+b). Place 4 identical right triangles in corners. Area = (a+b)². Area is also = 4(½ab) + c². Equating yields a² + b² = c². ∎</string>
-    <string name="th_ex_8_3">Finding the screen diagonal of a monitor.</string>
-    <string name="th_q_8_3">If legs are 3 and 4, what is the hypotenuse?</string>
+    <string name="th_def_8_3">In a right triangle, the square of the hypotenuse equals the sum of the squares of the legs: c² = a² + b².</string>
+    <string name="th_exp_8_3">The hypotenuse is the longest side, opposite the right angle. The squares built on the two legs add up exactly to the square built on the hypotenuse.</string>
+    <string name="th_proof_8_3">Place 4 copies of the right triangle inside a square of side (a+b). The empty middle is a square of side c. So (a+b)² = 4·(½ab) + c², which simplifies to a² + b² = c². ∎</string>
+    <string name="th_ex_8_3">• Screen/TV diagonals, ladder lengths, and the 3-4-5 trick for square corners.\n• Only works in right triangles.\n• In problems: find a missing side, or test whether a triangle is right-angled.</string>
+    <string name="th_q_8_3">Legs are 3 and 4. What is the hypotenuse?</string>
     <string name="th_a_8_3">5</string>
+    <string name="th_q2_8_3">A right triangle has hypotenuse 13 and one leg 5. What is the other leg?</string>
+    <string name="th_a2_8_3">12</string>
 
     <string name="th_title_8_4">4. Triangle Midsegment</string>
-    <string name="th_def_8_4">A segment connecting the midpoints of two sides is parallel to the base and equals half its length.</string>
-    <string name="th_proof_8_4">Extend the midsegment by its own length to form a parallelogram. The opposite side equals the base, proving the midsegment is exactly half. ∎</string>
-    <string name="th_ex_8_4">Finding unreachable distances across a lake.</string>
-    <string name="th_q_8_4">If the base is 24, what is the length of the midsegment?</string>
+    <string name="th_def_8_4">The segment joining the midpoints of two sides is parallel to the third side and half its length.</string>
+    <string name="th_exp_8_4">Connect the middles of two sides. That short segment runs parallel to the base and is exactly half as long, because it is a copy of the triangle scaled down by ½.</string>
+    <string name="th_proof_8_4">The midsegment and base form similar triangles with ratio 1:2 (two sides halved, shared included angle), so the midsegment is parallel to the base and half its length. ∎</string>
+    <string name="th_ex_8_4">• Measuring a distance you cannot reach, e.g. across a lake, using midpoints.\n• In problems: midsegment = base ÷ 2, and it splits the triangle into similar shapes.</string>
+    <string name="th_q_8_4">The base is 24. What is the midsegment?</string>
     <string name="th_a_8_4">12</string>
+    <string name="th_q2_8_4">A midsegment is 9. What is the base it is parallel to?</string>
+    <string name="th_a2_8_4">18</string>
 
     <string name="th_title_8_5">5. Right Triangle Altitude</string>
-    <string name="th_def_8_5">The altitude drawn to the hypotenuse divides it into segments (a_c and b_c) such that h² = a_c × b_c.</string>
-    <string name="th_proof_8_5">The altitude divides the right triangle into two similar right triangles. Setting up the ratio of their sides: a_c / h = h / b_c. Cross-multiplying gives h² = a_c × b_c. ∎</string>
-    <string name="th_ex_8_5">If the hypotenuse segments are 4 and 9, the height is √(4×9) = 6.</string>
-    <string name="th_q_8_5">If segments are 2 and 8, what is the altitude (h)?</string>
+    <string name="th_def_8_5">The altitude to the hypotenuse satisfies h² = a_c × b_c, where a_c and b_c are the two segments it cuts on the hypotenuse.</string>
+    <string name="th_exp_8_5">Dropping a height onto the hypotenuse splits the right triangle into two smaller triangles that are copies of the original. The height becomes the “geometric mean”: its square equals the product of the two hypotenuse pieces.</string>
+    <string name="th_proof_8_5">The altitude creates two triangles similar to the original. From the proportion a_c / h = h / b_c we get h² = a_c × b_c. ∎</string>
+    <string name="th_ex_8_5">• Find a height when only the hypotenuse divisions are known.\n• h is the geometric mean: h = √(a_c × b_c).\n• Each leg is also the geometric mean of the hypotenuse and its adjacent segment.</string>
+    <string name="th_q_8_5">The hypotenuse segments are 2 and 8. What is the altitude h?</string>
     <string name="th_a_8_5">4</string>
+    <string name="th_q2_8_5">The hypotenuse segments are 3 and 12. What is the altitude h?</string>
+    <string name="th_a2_8_5">6</string>
 
     <string name="th_title_8_6">6. Median to Hypotenuse</string>
-    <string name="th_def_8_6">The median drawn to the hypotenuse is exactly half the length of the hypotenuse (m = c/2).</string>
-    <string name="th_proof_8_6">The center of the circumscribed circle lies exactly at the midpoint of the hypotenuse. Therefore, the median is simply a radius (R) of this circle. ∎</string>
-    <string name="th_ex_8_6">If a right triangle has a hypotenuse of 10, the median to it is exactly 5.</string>
-    <string name="th_q_8_6">If the hypotenuse is 18, what is the length of the median?</string>
+    <string name="th_def_8_6">In a right triangle, the median to the hypotenuse is half the hypotenuse (m = c/2).</string>
+    <string name="th_exp_8_6">The midpoint of the hypotenuse is the same distance from all three corners — it is the centre of the circle through them. So the median to that midpoint is just a radius, half the hypotenuse.</string>
+    <string name="th_proof_8_6">The circumscribed circle of a right triangle has the hypotenuse as its diameter, so its centre is the hypotenuse midpoint. The median equals the radius = c/2. ∎</string>
+    <string name="th_ex_8_6">• Finding the centre of a right-angled shape.\n• In problems: median to hypotenuse = half the hypotenuse, and all three vertices lie on one circle.</string>
+    <string name="th_q_8_6">The hypotenuse is 18. What is the median to it?</string>
     <string name="th_a_8_6">9</string>
+    <string name="th_q2_8_6">The median to the hypotenuse is 7. What is the hypotenuse?</string>
+    <string name="th_a2_8_6">14</string>
 
     <string name="th_title_8_7">7. Intersection of Medians</string>
-    <string name="th_def_8_7">The three medians of a triangle intersect at a single point and divide each other in a 2:1 ratio.</string>
-    <string name="th_proof_8_7">Draw midsegments connecting the midpoints of the sides. Using similar triangles formed by the midsegments, the intersection point creates a 2:1 scale factor. ∎</string>
-    <string name="th_ex_8_7">If a whole median is 12cm long, the segment from the vertex is 8cm.</string>
-    <string name="th_q_8_7">If the short segment of a median is 4, what is the length of the whole median?</string>
+    <string name="th_def_8_7">The three medians meet at one point (the centroid) and each is divided in a 2:1 ratio from the vertex.</string>
+    <string name="th_exp_8_7">Every triangle has a balance point. All three medians pass through it, and it sits twice as far from each vertex as from the midpoint of the opposite side.</string>
+    <string name="th_proof_8_7">Midsegments create similar triangles; matching them shows the intersection divides each median in a 2:1 ratio. ∎</string>
+    <string name="th_ex_8_7">• The centroid is the centre of mass — a triangular plate balances on it.\n• In problems: vertex-to-centroid = ⅔ of the median; centroid-to-midpoint = ⅓.</string>
+    <string name="th_q_8_7">The short part of a median is 4. What is the whole median?</string>
     <string name="th_a_8_7">12</string>
+    <string name="th_q2_8_7">A median is 18 long. How long is the segment from the vertex to the centroid?</string>
+    <string name="th_a2_8_7">12</string>
 
-    <!-- GRADE 9 -->
+    <string name="th_title_8_8">8. Thales\' Intercept Theorem</string>
+    <string name="th_def_8_8">Parallel lines crossing two transversals cut them into proportional segments.</string>
+    <string name="th_exp_8_8">If several parallel lines cross two slanted lines, they slice both lines in the same ratio. Equal spacing on one line forces equal spacing on the other.</string>
+    <string name="th_proof_8_8">The parallels create similar triangles (equal corresponding angles). Similar triangles have proportional sides, so the intercepted segments share the same ratio. ∎</string>
+    <string name="th_ex_8_8">• Dividing a plank into equal parts with ruled parallel lines.\n• Scaling drawings and maps.\n• In problems: set up the proportion a/b = c/d and solve.</string>
+    <string name="th_q_8_8">A line parallel to a triangle\'s base splits one side into 3 (top) and 6 (bottom). It splits the other side into 4 (top) and x. What is x?</string>
+    <string name="th_a_8_8">8</string>
+    <string name="th_q2_8_8">Parallel lines cut one transversal into 2 and 4, and the other into 3 and x (same order). What is x?</string>
+    <string name="th_a2_8_8">6</string>
+
+    <string name="th_title_8_9">9. Trapezoid Midsegment</string>
+    <string name="th_def_8_9">The midsegment of a trapezoid is parallel to both bases and equals their average: m = (a + b)/2.</string>
+    <string name="th_exp_8_9">Join the midpoints of the two slanted sides. The segment is parallel to both bases, and its length lands right in the middle — the average of the long and short base.</string>
+    <string name="th_proof_8_9">A diagonal splits the trapezoid into two triangles. The midsegment is built from two triangle midsegments of length a/2 and b/2, so m = (a + b)/2. ∎</string>
+    <string name="th_ex_8_9">• Estimating the average width of a tapering field or beam.\n• In problems: simply average the two parallel sides.</string>
+    <string name="th_q_8_9">The bases are 8 and 12. What is the midsegment?</string>
+    <string name="th_a_8_9">10</string>
+    <string name="th_q2_8_9">The midsegment is 15 and one base is 10. What is the other base?</string>
+    <string name="th_a2_8_9">20</string>
+
+    <!-- ================= GRADE 9 ================= -->
     <string name="th_title_9_1">1. Law of Cosines</string>
-    <string name="th_def_9_1">c² = a² + b² - 2ab·cos(γ).</string>
-    <string name="th_proof_9_1">Drop an altitude to divide the triangle. Apply Pythagoras to both smaller right triangles and substitute the projection segment (b·cosγ). ∎</string>
-    <string name="th_ex_9_1">Calculating flight distance between two diverted planes.</string>
-    <string name="th_q_9_1">If a=3, b=4, and angle is 90°, what is c?</string>
+    <string name="th_def_9_1">c² = a² + b² − 2ab·cos(γ), where γ is the angle between sides a and b.</string>
+    <string name="th_exp_9_1">It is the Pythagorean theorem with a correction term. If γ = 90° then cos 90° = 0 and it becomes c² = a² + b². For other angles the extra term adjusts for how “open” the triangle is.</string>
+    <string name="th_proof_9_1">Drop an altitude to split the triangle and apply Pythagoras to both right pieces, substituting the projection b·cos γ. ∎</string>
+    <string name="th_ex_9_1">• Find the distance between two points from two distances and the angle between them (flight paths, surveying).\n• Works for any triangle, not only right ones.</string>
+    <string name="th_q_9_1">a = 3, b = 4, angle = 90°. What is c?</string>
     <string name="th_a_9_1">5</string>
+    <string name="th_q2_9_1">a = 5, b = 8, angle = 60° (cos 60° = 0.5). What is c²?</string>
+    <string name="th_a2_9_1">49</string>
 
     <string name="th_title_9_2">2. Law of Sines</string>
-    <string name="th_def_9_2">a/sin(A) = b/sin(B) = c/sin(C) = 2R.</string>
-    <string name="th_proof_9_2">Express Area S = ½ab·sinC = ½bc·sinA. Divide all by ½abc to get sinC/c = sinA/a. ∎</string>
-    <string name="th_ex_9_2">GPS satellite triangulation.</string>
-    <string name="th_q_9_2">If side a=10 and sinA=0.5, what is the diameter (2R) of the circumscribed circle?</string>
+    <string name="th_def_9_2">a/sin(A) = b/sin(B) = c/sin(C) = 2R, where R is the circumradius.</string>
+    <string name="th_exp_9_2">In any triangle each side is proportional to the sine of the angle facing it. The shared ratio equals the diameter of the circle through all three vertices.</string>
+    <string name="th_proof_9_2">Area S = ½ab·sin C = ½bc·sin A. Dividing by ½abc gives sin A/a = sin C/c, and so on for all sides. ∎</string>
+    <string name="th_ex_9_2">• Triangulation and GPS positioning.\n• Best when you know an angle and the side opposite it.</string>
+    <string name="th_q_9_2">Side a = 10 and sin A = 0.5. What is the diameter 2R of the circumscribed circle?</string>
     <string name="th_a_9_2">20</string>
+    <string name="th_q2_9_2">a = 6, sin A = 0.5, sin B = 0.25. What is side b?</string>
+    <string name="th_a2_9_2">3</string>
 
     <string name="th_title_9_3">3. Inscribed Angle Theorem</string>
-    <string name="th_def_9_3">An inscribed angle equals half the measure of the central angle subtending the same arc.</string>
+    <string name="th_def_9_3">An inscribed angle is half the central angle that subtends the same arc.</string>
+    <string name="th_exp_9_3">An angle with its vertex on the circle “sees” an arc at half the size the centre sees it. So every inscribed angle standing on the same arc is equal.</string>
     <string name="th_proof_9_3">Draw a radius to form an isosceles triangle. By the exterior angle theorem, the central angle is twice the inscribed angle. ∎</string>
-    <string name="th_ex_9_3">Theater viewing angles.</string>
-    <string name="th_q_9_3">If the central angle is 80°, what is the inscribed angle?</string>
+    <string name="th_ex_9_3">• Equal viewing angles in theatres and stadiums.\n• An angle inscribed in a semicircle is always 90° (Thales\' circle theorem).</string>
+    <string name="th_q_9_3">The central angle is 80°. What is the inscribed angle on the same arc?</string>
     <string name="th_a_9_3">40</string>
+    <string name="th_q2_9_3">An inscribed angle is 35°. What is the central angle on the same arc?</string>
+    <string name="th_a2_9_3">70</string>
 
     <string name="th_title_9_4">4. Tangent and Secant</string>
-    <string name="th_def_9_4">If a tangent (AB) and secant (AC) are drawn to a circle from an exterior point, AB² = BD × BC.</string>
-    <string name="th_proof_9_4">Draw chords AD and AC. △ABD and △ABC are similar because they share ∠B, and the angle between the tangent and chord equals the inscribed angle. AB/BC = BD/AB. ∎</string>
-    <string name="th_ex_9_4">If the exterior secant segment is 4 and the whole secant is 9, the tangent is 6.</string>
-    <string name="th_q_9_4">If tangent=6 and exterior secant segment=4, what is the length of the whole secant?</string>
+    <string name="th_def_9_4">From a point outside a circle, tangent² = (external segment) × (whole secant).</string>
+    <string name="th_exp_9_4">From a point outside a circle, the straight tangent touch-length, squared, equals the product of the near and far distances along any secant line through the circle. This is the “power of a point”.</string>
+    <string name="th_proof_9_4">The tangent-chord angle equals the inscribed angle, making the two triangles similar. Their proportional sides give tangent² = external × whole secant. ∎</string>
+    <string name="th_ex_9_4">• Distance to the horizon from a height (a tangent to the Earth).\n• In problems: solve tangent² = external × whole for the missing piece.</string>
+    <string name="th_q_9_4">Tangent = 6 and external secant segment = 4. What is the whole secant?</string>
     <string name="th_a_9_4">9</string>
+    <string name="th_q2_9_4">Tangent = 8 and the whole secant = 16. What is the external part?</string>
+    <string name="th_a2_9_4">4</string>
 
     <string name="th_title_9_5">5. Circumscribed Quadrilateral</string>
-    <string name="th_def_9_5">A circle can be inscribed inside a convex quadrilateral if and only if opposite sides sum equally (a + c = b + d).</string>
-    <string name="th_proof_9_5">Tangents drawn from an external point to a circle are equal in length. By adding up the 8 tangent segments making the 4 sides, opposite pairs balance perfectly. ∎</string>
-    <string name="th_ex_9_5">If opposite sides are 10 and 15, the other two must also sum to 25.</string>
-    <string name="th_q_9_5">If sides are 5, 8, 7, and X (in order around the shape), what must X be for a circle to fit inside?</string>
+    <string name="th_def_9_5">A circle fits inside a convex quadrilateral exactly when opposite sides have equal sums: a + c = b + d.</string>
+    <string name="th_exp_9_5">For a circle to touch all four sides, the tangent lengths from each corner must balance. That balance is precisely the condition that the two pairs of opposite sides add up to the same total.</string>
+    <string name="th_proof_9_5">Tangents from a point are equal. Summing the 8 tangent pieces that make up the 4 sides shows a + c = b + d. ∎</string>
+    <string name="th_ex_9_5">• Designing rounded inscribed fittings.\n• In problems: use a + c = b + d to find a missing side.</string>
+    <string name="th_q_9_5">Sides in order are 5, 8, 7, x. What must x be for a circle to fit inside?</string>
     <string name="th_a_9_5">4</string>
+    <string name="th_q2_9_5">Sides in order are 9, 6, 4, x. What must x be for a circle to fit inside?</string>
+    <string name="th_a2_9_5">7</string>
 
-    <!-- GRADE 10 -->
+    <string name="th_title_9_6">6. Intersecting Chords</string>
+    <string name="th_def_9_6">When two chords cross inside a circle, the products of their two segments are equal: a × b = c × d.</string>
+    <string name="th_exp_9_6">Cross two chords inside a circle. The crossing point cuts each chord into two pieces. Multiply the pieces of one chord and you get the same number as multiplying the pieces of the other.</string>
+    <string name="th_proof_9_6">The two triangles formed share equal inscribed angles (same arcs), so they are similar. Matching their sides gives a × b = c × d. ∎</string>
+    <string name="th_ex_9_6">• Another “power of a point”, now for a point inside the circle.\n• In problems: solve a × b = c × d for the unknown segment.</string>
+    <string name="th_q_9_6">One chord is cut into 4 and 6. The other is cut into 8 and x. What is x?</string>
+    <string name="th_a_9_6">3</string>
+    <string name="th_q2_9_6">One chord is cut into 3 and 12. The other into 6 and x. What is x?</string>
+    <string name="th_a2_9_6">6</string>
+
+    <string name="th_title_9_7">7. Ptolemy\'s Theorem</string>
+    <string name="th_def_9_7">In a cyclic quadrilateral, the product of the diagonals equals the sum of the products of opposite sides: d₁·d₂ = a·c + b·d.</string>
+    <string name="th_exp_9_7">For a quadrilateral whose corners lie on a circle, multiply the two diagonals together — you get the same total as adding up the products of the two pairs of opposite sides.</string>
+    <string name="th_proof_9_7">Pick a point on a diagonal that makes equal angles with the sides. The resulting similar triangles give two proportions which add to Ptolemy\'s relation. ∎</string>
+    <string name="th_ex_9_7">• Historically used to build the first trigonometric (chord) tables.\n• In problems: find a diagonal or a side in a quadrilateral inscribed in a circle.</string>
+    <string name="th_q_9_7">A cyclic quadrilateral has a·c = 20 and b·d = 16. One diagonal is 6. What is the other diagonal?</string>
+    <string name="th_a_9_7">6</string>
+    <string name="th_q2_9_7">In a cyclic quadrilateral a·c = 15, b·d = 9, and one diagonal is 4. What is the other diagonal?</string>
+    <string name="th_a2_9_7">6</string>
+
+    <!-- ================= GRADE 10 ================= -->
     <string name="th_title_10_1">1. Line &amp; Plane Parallelism</string>
-    <string name="th_def_10_1">If a line outside a plane is parallel to a line in the plane, it is parallel to the plane.</string>
-    <string name="th_proof_10_1">Assume the line intersects the plane. It must intersect the parallel line inside the plane. But parallel lines never intersect. Contradiction. ∎</string>
-    <string name="th_ex_10_1">Powerlines running parallel to the ground.</string>
-    <string name="th_q_10_1">How many points do a parallel line and plane share?</string>
+    <string name="th_def_10_1">If a line outside a plane is parallel to some line lying in the plane, then it is parallel to the whole plane.</string>
+    <string name="th_exp_10_1">If a line never meets a line that lives in the floor, and it is not in the floor itself, then it never touches the floor at all — it runs parallel to it.</string>
+    <string name="th_proof_10_1">Suppose the line met the plane. Then it would also meet the parallel line inside the plane — but parallel lines never meet. Contradiction. ∎</string>
+    <string name="th_ex_10_1">• Power lines parallel to the ground; a shelf edge parallel to the floor.\n• A line parallel to a plane shares 0 points with it.</string>
+    <string name="th_q_10_1">How many points does a line parallel to a plane share with it?</string>
     <string name="th_a_10_1">0</string>
+    <string name="th_q2_10_1">A line outside a plane is parallel to a line inside it. How many points does the outside line share with the plane?</string>
+    <string name="th_a2_10_1">0</string>
 
     <string name="th_title_10_2">2. Parallel Planes</string>
-    <string name="th_def_10_2">If two intersecting lines in one plane are parallel to two intersecting lines in another, the planes are parallel.</string>
-    <string name="th_proof_10_2">If the planes intersect, they form a line. This line must be parallel to intersecting lines, which is impossible. ∎</string>
-    <string name="th_ex_10_2">Floors in a multi-story building.</string>
+    <string name="th_def_10_2">If two intersecting lines in one plane are parallel to two intersecting lines in another plane, the planes are parallel.</string>
+    <string name="th_exp_10_2">Two flat sheets are parallel if each contains a matching pair of crossing directions that line up. Once they do, the sheets never meet.</string>
+    <string name="th_proof_10_2">If the planes intersected, the intersection line could not be parallel to both crossing pairs — which is impossible. So the planes are parallel. ∎</string>
+    <string name="th_ex_10_2">• Floors of a building; shelves in a cabinet.\n• Parallel planes share 0 points.</string>
     <string name="th_q_10_2">How many points do two parallel planes share?</string>
     <string name="th_a_10_2">0</string>
+    <string name="th_q2_10_2">A cube\'s top and bottom faces are parallel. How many common points do they have?</string>
+    <string name="th_a2_10_2">0</string>
 
-    <!-- GRADE 11 -->
+    <string name="th_title_10_3">3. Line Perpendicular to a Plane</string>
+    <string name="th_def_10_3">A line is perpendicular to a plane if it is perpendicular to two intersecting lines in that plane; then it is perpendicular to every line in the plane.</string>
+    <string name="th_exp_10_3">To stand a pole truly upright, it is enough to make it square to two different floor directions that cross. Then it is automatically square to every direction in the floor.</string>
+    <string name="th_proof_10_3">If the line is perpendicular to two intersecting lines through its foot, then by the perpendicularity criterion it is perpendicular to their whole plane. ∎</string>
+    <string name="th_ex_10_3">• Flagpoles, table legs and skyscrapers standing vertically.\n• The angle between a line perpendicular to a plane and any line in the plane is 90°.</string>
+    <string name="th_q_10_3">A line is perpendicular to a plane. What angle (in degrees) does it make with a line in the plane?</string>
+    <string name="th_a_10_3">90</string>
+    <string name="th_q2_10_3">At least how many intersecting lines in a plane must a line be perpendicular to, to be perpendicular to the whole plane?</string>
+    <string name="th_a2_10_3">2</string>
+
+    <!-- ================= GRADE 11 ================= -->
     <string name="th_title_11_1">1. Three Perpendiculars Theorem</string>
-    <string name="th_def_11_1">If a line in a plane is perpendicular to a slant\'s projection, it is perpendicular to the slant itself.</string>
-    <string name="th_proof_11_1">The line is perpendicular to the projection and the height. Since it is perpendicular to two intersecting lines, it is perpendicular to the entire slanted plane. ∎</string>
-    <string name="th_ex_11_1">Aligning slanted roof rafters.</string>
-    <string name="th_q_11_1">If the angle between the height and projection is 90°, what is the angle between the line and projection?</string>
+    <string name="th_def_11_1">If a line in a plane is perpendicular to the projection of a slant, then it is perpendicular to the slant itself.</string>
+    <string name="th_exp_11_1">A slanted line casts a shadow (its projection) on the floor. A floor line that is square to the shadow is also square to the slanted line above it.</string>
+    <string name="th_proof_11_1">The floor line is perpendicular to both the projection and the vertical height, hence to their plane, hence to the slant lying in that plane. ∎</string>
+    <string name="th_ex_11_1">• Aligning slanted rafters and guy-wires.\n• In problems: switch perpendicularity between a slant and its projection.</string>
+    <string name="th_q_11_1">A line in a plane is perpendicular to the projection of a slant. What angle does it make with the slant itself?</string>
     <string name="th_a_11_1">90</string>
+    <string name="th_q2_11_1">A line in a plane is perpendicular to a slant. What angle does it make with the slant\'s projection?</string>
+    <string name="th_a2_11_1">90</string>
 
     <string name="th_title_11_2">2. Prism Volume</string>
-    <string name="th_def_11_2">V = Base_Area × Height.</string>
-    <string name="th_proof_11_2">By Cavalieri\'s Principle, integral of constant cross-sectional area over height h yields S·h.</string>
-    <string name="th_ex_11_2">Calculating water capacity of a hexagonal pool.</string>
-    <string name="th_q_11_2">If base area is 20 and height is 5, what is the volume?</string>
+    <string name="th_def_11_2">V = base area × height.</string>
+    <string name="th_exp_11_2">A prism is a stack of identical flat layers. Multiply the area of one layer (the base) by how tall the stack is.</string>
+    <string name="th_proof_11_2">By Cavalieri\'s principle, summing equal cross-sections of area S over height h gives V = S·h. ∎</string>
+    <string name="th_ex_11_2">• Water capacity of a pool; concrete in a beam.\n• Works for any straight prism, whatever the base shape.</string>
+    <string name="th_q_11_2">Base area 20, height 5. What is the volume?</string>
     <string name="th_a_11_2">100</string>
+    <string name="th_q2_11_2">A prism has volume 84 and base area 12. What is its height?</string>
+    <string name="th_a2_11_2">7</string>
 
     <string name="th_title_11_3">3. Pyramid Volume</string>
-    <string name="th_def_11_3">V = ⅓ × Base_Area × Height.</string>
-    <string name="th_proof_11_3">A triangular prism can be perfectly sliced into three triangular pyramids of equal volume. ∎</string>
-    <string name="th_ex_11_3">Volume of the Great Pyramid of Giza.</string>
-    <string name="th_q_11_3">If base area is 30 and height is 10, what is the volume?</string>
+    <string name="th_def_11_3">V = ⅓ × base area × height.</string>
+    <string name="th_exp_11_3">A pyramid holds exactly one-third of the prism with the same base and height — the rest tapers away towards the apex.</string>
+    <string name="th_proof_11_3">A triangular prism can be sliced into three pyramids of equal volume, so each pyramid is ⅓ of the prism. ∎</string>
+    <string name="th_ex_11_3">• Volume of the Great Pyramid, tents and hoppers.\n• Remember the ⅓ factor compared with a prism.</string>
+    <string name="th_q_11_3">Base area 30, height 10. What is the volume?</string>
     <string name="th_a_11_3">100</string>
+    <string name="th_q2_11_3">A pyramid has base area 12 and height 5. What is its volume?</string>
+    <string name="th_a2_11_3">20</string>
 
-    <!-- GRADE 12 -->
+    <string name="th_title_11_4">4. Diagonal of a Cube</string>
+    <string name="th_def_11_4">The space diagonal of a cube with edge a is d = a√3 (so d² = 3a²).</string>
+    <string name="th_exp_11_4">To cross a cube from corner to corner you combine three perpendicular edges. Applying the Pythagorean theorem twice gives the long diagonal as the edge times √3.</string>
+    <string name="th_proof_11_4">A face diagonal is a√2 (Pythagoras). Combine it with the vertical edge a: d² = (a√2)² + a² = 3a², so d = a√3. ∎</string>
+    <string name="th_ex_11_4">• The longest straight object that fits inside a cubic box.\n• In problems: d² = 3a² for the space diagonal, and face diagonal² = 2a².</string>
+    <string name="th_q_11_4">A cube has edge 2. What is the SQUARE of its space diagonal?</string>
+    <string name="th_a_11_4">12</string>
+    <string name="th_q2_11_4">A cube has edge 5. What is the square of its face diagonal?</string>
+    <string name="th_a2_11_4">50</string>
+
+    <!-- ================= GRADE 12 ================= -->
     <string name="th_title_12_1">1. Cylinder Volume</string>
     <string name="th_def_12_1">V = πR²H.</string>
-    <string name="th_proof_12_1">A cylinder is a prism with a circular base. By Cavalieri\'s principle, V = Sh = (πR²)H. ∎</string>
-    <string name="th_ex_12_1">Volume of a water pipe.</string>
-    <string name="th_q_12_1">If R=2 and H=10, what is the volume divided by π?</string>
+    <string name="th_exp_12_1">A cylinder is a prism with a circular base. Multiply the circle\'s area (πR²) by the height H.</string>
+    <string name="th_proof_12_1">A cylinder is a prism with a circular base. By Cavalieri\'s principle, V = S·H = (πR²)H. ∎</string>
+    <string name="th_ex_12_1">• Capacity of pipes, cans and tanks.\n• In problems the answer is often left as a multiple of π.</string>
+    <string name="th_q_12_1">R = 2, H = 10. What is the volume divided by π?</string>
     <string name="th_a_12_1">40</string>
+    <string name="th_q2_12_1">R = 3, H = 5. What is the volume divided by π?</string>
+    <string name="th_a2_12_1">45</string>
 
     <string name="th_title_12_2">2. Cone Volume</string>
-    <string name="th_def_12_2">V = ⅓ πR²H.</string>
-    <string name="th_proof_12_2">A cone is a pyramid with a circular base. Using the pyramid formula, V = ⅓Sh = ⅓(πR²)H. ∎</string>
-    <string name="th_ex_12_2">Ice cream cone capacity.</string>
-    <string name="th_q_12_2">If R=3 and H=10, what is the volume divided by π?</string>
+    <string name="th_def_12_2">V = ⅓πR²H.</string>
+    <string name="th_exp_12_2">A cone is a pyramid with a circular base, so it holds one-third of the cylinder with the same base and height.</string>
+    <string name="th_proof_12_2">Using the pyramid formula with circular base area πR²: V = ⅓·(πR²)·H. ∎</string>
+    <string name="th_ex_12_2">• Ice-cream cones, funnels and piles of sand.\n• Remember the ⅓ factor compared with a cylinder.</string>
+    <string name="th_q_12_2">R = 3, H = 10. What is the volume divided by π?</string>
     <string name="th_a_12_2">30</string>
+    <string name="th_q2_12_2">R = 2, H = 9. What is the volume divided by π?</string>
+    <string name="th_a2_12_2">12</string>
 
     <string name="th_title_12_3">3. Sphere Area &amp; Volume</string>
-    <string name="th_def_12_3">Area = 4πR². Volume = ⁴/₃πR³.</string>
-    <string name="th_proof_12_3">Archimedes\' proof: A sphere\'s surface area equals the lateral area of its circumscribing cylinder. Integrating area yields the volume. ∎</string>
-    <string name="th_ex_12_3">Material needed for a soccer ball.</string>
-    <string name="th_q_12_3">If radius is 3, what is the surface area divided by π?</string>
+    <string name="th_def_12_3">Surface area = 4πR². Volume = ⁴/₃πR³.</string>
+    <string name="th_exp_12_3">A sphere\'s surface matches the side area of the cylinder that just wraps around it, and its volume is two-thirds of that cylinder.</string>
+    <string name="th_proof_12_3">Archimedes\' proof: the sphere\'s surface area equals the lateral area of its circumscribing cylinder; integrating that area yields the volume. ∎</string>
+    <string name="th_ex_12_3">• Material needed for a ball; fuel in a spherical tank.\n• In problems the answer is often a multiple of π.</string>
+    <string name="th_q_12_3">Radius 3. What is the surface area divided by π?</string>
     <string name="th_a_12_3">36</string>
+    <string name="th_q2_12_3">Radius 3. What is the volume divided by π?</string>
+    <string name="th_a2_12_3">36</string>
+
+    <string name="th_title_12_4">4. Cylinder Lateral Surface</string>
+    <string name="th_def_12_4">The lateral (side) surface area of a cylinder is A = 2πRH.</string>
+    <string name="th_exp_12_4">Unroll the curved side of a cylinder and it becomes a rectangle: its width is the base circumference (2πR) and its height is H, so the area is 2πRH.</string>
+    <string name="th_proof_12_4">Cut the side along a vertical line and flatten it. You get a rectangle of width 2πR and height H, whose area is 2πRH. ∎</string>
+    <string name="th_ex_12_4">• Label area on a can or bottle; paint for a pillar.\n• Total surface adds the two circles: 2πRH + 2πR².</string>
+    <string name="th_q_12_4">R = 2, H = 5. What is the lateral surface area divided by π?</string>
+    <string name="th_a_12_4">20</string>
+    <string name="th_q2_12_4">R = 3, H = 4. What is the lateral surface area divided by π?</string>
+    <string name="th_a2_12_4">24</string>
 </resources>

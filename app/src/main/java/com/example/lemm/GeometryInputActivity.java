@@ -49,6 +49,7 @@ public class GeometryInputActivity extends AppCompatActivity {
 
     private static final String TAG = "GeometryInput";
     private GeometryCanvas3D canvas3D;
+    private boolean proCloudRefreshed = false; // guards the one-shot cloud Pro re-check per solve
     private EditText etDescription, etExtra;
     private TextView tvZoom;
     private LinearLayout inputArea, rotationControls, stepsContainer, solutionControls;
@@ -220,6 +221,7 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         findViewById(R.id.btnSolveProblem).setOnClickListener(v -> {
             String prob = etDescription.getText().toString().trim();
+            proCloudRefreshed = false; // allow one fresh cloud Pro check for this attempt
             if (!prob.isEmpty() || !selectedImages.isEmpty()) solveWithAI(prob);
             else Toast.makeText(this, getString(R.string.enter_problem_or_image), Toast.LENGTH_SHORT).show();
         });
@@ -234,6 +236,19 @@ public class GeometryInputActivity extends AppCompatActivity {
         });
 
         canvas3D.setOnZoomChangeListener(pct -> tvZoom.setText(pct + "%"));
+
+        // Tap a point/line/plane/angle in the 3D figure to inspect it — a "stock" card slides out
+        // with everything about that element. Tapping empty space hides it.
+        final android.widget.TextView tvElementInfo = findViewById(R.id.tvElementInfo);
+        canvas3D.setOnElementSelectedListener(info -> {
+            if (tvElementInfo == null) return;
+            if (info == null || info.isEmpty()) {
+                tvElementInfo.setVisibility(View.GONE);
+            } else {
+                tvElementInfo.setText(info);
+                tvElementInfo.setVisibility(View.VISIBLE);
+            }
+        });
 
         findViewById(R.id.btnBack).setOnClickListener(v -> confirmExit());
 
@@ -306,7 +321,13 @@ public class GeometryInputActivity extends AppCompatActivity {
                 "   (Explanation)\n" +
                 "   FINAL ANSWER:\n" +
                 "   (The final result)\n" +
-                "5. End with 'FINAL ANSWER:'.\n\n" +
+                "5. End with 'FINAL ANSWER:'.\n" +
+                "QUALITY RULES (make the solution easy to follow):\n" +
+                " - In each step, NAME the theorem or formula you use (e.g. 'By the Pythagorean theorem'), then write the formula, then substitute the numbers, then compute.\n" +
+                " - Keep each step short and about ONE idea. Don't merge several computations into one step.\n" +
+                " - Always carry UNITS through the working and in the FINAL ANSWER (cm, cm², °, etc.). If a problem has no units, say so.\n" +
+                " - FINAL ANSWER must be the clean final value (rounded sensibly), not an expression to simplify.\n" +
+                " - Do not invent data. If something needed is missing, state the assumption you make.\n\n" +
                 "SYSTEM: You are a CAD Geometry Engine. You MUST output DRAWING COMMANDS for any shape mentioned.\n" +
                 "TASK: Analyze the problem and output DRAWING COMMANDS followed by the step-by-step solution.\n\n" +
                 "RULE 1: Use ONLY these exact commands. Do NOT use 'point3d' or 'cad' or any other words.\n" +
@@ -332,7 +353,17 @@ public class GeometryInputActivity extends AppCompatActivity {
                 "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
                 "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
                 "SPHERE3D:Label,x,y,z,radius\n" +
-                "PLANE3D:Label,v1,v2,v3,v4 (Four labels for a face)\n\n" +
+                "PLANE3D:Label,v1,v2,v3,v4 (Four labels for a face)\n" +
+                "PRISM3D:Label,height,x1,z1,x2,z2,x3,z3[,x4,z4,...]   (EXTRUDED SOLID: give a flat base " +
+                "polygon as (x,z) pairs on the ground, then it is extruded straight up by 'height'. Use this for " +
+                "boxes/cuboids, triangular prisms, hexagonal prisms, L-shapes — any flat shape pushed to a constant " +
+                "thickness. Y is UP; the base sits at y=0. Example, a 100×60 box 150 tall: " +
+                "PRISM3D:Box,150,-50,-30,50,-30,50,30,-50,30)\n" +
+                "ANGLE3D:Vertex,A,B[,degrees]   (Marks the angle A-Vertex-B: it auto-draws an ARC at the " +
+                "vertex with the angle's VALUE in degrees shown next to it, and auto-draws the two rays " +
+                "Vertex→A and Vertex→B if they are missing. ALWAYS use ANGLE3D for any angle the solution " +
+                "mentions (e.g. a right angle, a base angle, an angle between a slant and the base) so the " +
+                "student sees the value on the figure. Give the degrees if you know them, e.g. ANGLE3D:B,A,C,90.)\n\n" +
                 "CONE RULES:\n" +
                 "- curvature 1.0 is a sharp cone.\n" +
                 "- Center is (0,0,0). Y is UP. Height should be 100-300.\n\n" +
@@ -387,6 +418,17 @@ public class GeometryInputActivity extends AppCompatActivity {
         boolean isProUser = userPrefs.getBoolean("is_pro_user", false);
         boolean privileged = username.equals("Admin_Teacher") || isProUser;
 
+        // A user who activated Pro elsewhere may not have had the flag synced to THIS device yet
+        // (the cloud pull on launch is async). Before refusing, pull the account's Pro status once
+        // and retry — so a logged-in Pro user is recognised instead of being told to upgrade.
+        if (!privileged && !proCloudRefreshed) {
+            proCloudRefreshed = true;
+            ProStatusManager.syncFromCloud(this, () -> {
+                if (!isFinishing() && !isDestroyed()) solveWithAI(problem);
+            });
+            return;
+        }
+
         // Build the ordered rotation list (the gate is "do we have any primary key?").
         // Subscribers start on the built-in subscription key; if it's out of quota the solver
         // automatically falls through to the user's own personal key(s), then app backups.
@@ -405,6 +447,17 @@ public class GeometryInputActivity extends AppCompatActivity {
         if (usePersonal) {
             for (String k : ApiKeyStore.getKeys(this)) {
                 if (!solveKeys.contains(k)) { solveKeys.add(k); solveKeyKinds.add(KIND_USER); }
+            }
+        }
+
+        // Pro/privileged users are entitled to the app's keys. The built-in subscription key may be
+        // empty in some builds (the app keys live in GEMINI_BACKUP_KEYS instead), so grant the backup
+        // keys to privileged users BEFORE the gate — otherwise a Pro user with no personal key would
+        // be wrongly told to pay even though Settings shows Pro active.
+        if (privileged) {
+            for (String bk : BuildConfig.GEMINI_BACKUP_KEYS.split(",")) {
+                String k = bk.trim();
+                if (!k.isEmpty() && !solveKeys.contains(k)) { solveKeys.add(k); solveKeyKinds.add(KIND_BACKUP); }
             }
         }
 
@@ -448,14 +501,18 @@ public class GeometryInputActivity extends AppCompatActivity {
         runSolveAttempt(0, 0);
     }
 
-    private void runSolveAttempt(int keyIndex) { runSolveAttempt(keyIndex, 0); }
+    private void runSolveAttempt(int keyIndex) { runSolveAttempt(keyIndex, 0, 0); }
+    private void runSolveAttempt(int keyIndex, int retry) { runSolveAttempt(keyIndex, retry, 0); }
 
     /**
-     * @param retry how many transient (503-class) retries on THIS key have already been attempted.
-     *              Reset to 0 when rotating to a different key.
+     * @param retry      how many transient (503-class) retries on THIS key+model have been attempted.
+     *                   Reset to 0 when rotating to a different key or model.
+     * @param modelIndex which entry of {@link GeminiAI#SOLVE_MODELS} to use. We bump this when the
+     *                   preferred (Gemini 3) model is persistently overloaded, falling back to 2.5.
      */
-    private void runSolveAttempt(int keyIndex, int retry) {
-        geminiAI = new GeminiAI(solveKeys.get(keyIndex));
+    private void runSolveAttempt(int keyIndex, int retry, int modelIndex) {
+        int safeModel = Math.min(modelIndex, GeminiAI.SOLVE_MODELS.length - 1);
+        geminiAI = new GeminiAI(solveKeys.get(keyIndex), GeminiAI.SOLVE_MODELS[safeModel]);
         com.google.common.util.concurrent.ListenableFuture<GenerateContentResponse> future =
                 (solveImages != null && !solveImages.isEmpty())
                         ? geminiAI.getSolutionWithImages(solveImages, solvePrompt)
@@ -513,8 +570,21 @@ public class GeometryInputActivity extends AppCompatActivity {
                             Toast.makeText(GeometryInputActivity.this, R.string.servers_busy_retry, Toast.LENGTH_SHORT).show();
                     });
                     new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
-                            () -> { if (!isFinishing() && !isDestroyed()) runSolveAttempt(keyIndex, retry + 1); },
+                            () -> { if (!isFinishing() && !isDestroyed()) runSolveAttempt(keyIndex, retry + 1, modelIndex); },
                             delay);
+                    return;
+                }
+
+                // Preferred model failed for a non-key reason (overloaded 503, OR the model id isn't
+                // available/supported on this key) -> fall back to the next model (Gemini 3 -> 2.5) on
+                // the same key. This is NOT gated on "transient" so an unavailable preview model id
+                // can't hard-fail the whole solve.
+                if (!exhausted && modelIndex + 1 < GeminiAI.SOLVE_MODELS.length) {
+                    runOnUiThread(() -> {
+                        if (!isFinishing() && !isDestroyed())
+                            Toast.makeText(GeometryInputActivity.this, R.string.servers_busy_retry, Toast.LENGTH_SHORT).show();
+                        runSolveAttempt(keyIndex, 0, modelIndex + 1); // fresh retry counter on the fallback model
+                    });
                     return;
                 }
 
@@ -528,7 +598,7 @@ public class GeometryInputActivity extends AppCompatActivity {
                                     : R.string.switching_backup_key;
                             Toast.makeText(GeometryInputActivity.this, getString(msgRes), Toast.LENGTH_SHORT).show();
                         }
-                        runSolveAttempt(keyIndex + 1, 0); // fresh retry counter on a different key
+                        runSolveAttempt(keyIndex + 1, 0, 0); // fresh retry counter + preferred model on a different key
                     });
                     return;
                 }
@@ -699,7 +769,8 @@ public class GeometryInputActivity extends AppCompatActivity {
             if (cleanLine.startsWith("DRAW3D:") || cleanLine.startsWith("LINE3D:") ||
                     cleanLine.startsWith("PLANE3D:") || cleanLine.startsWith("CONE3D:") ||
                     cleanLine.startsWith("PYRAMID3D:") || cleanLine.startsWith("CYLINDER3D:") ||
-                    cleanLine.startsWith("SPHERE3D:") || cleanLine.startsWith("CIRCLE3D:")) {
+                    cleanLine.startsWith("SPHERE3D:") || cleanLine.startsWith("CIRCLE3D:") ||
+                    cleanLine.startsWith("PRISM3D:") || cleanLine.startsWith("ANGLE3D:")) {
 
                 parseCadCommand(cleanLine);
             } else {
@@ -784,6 +855,27 @@ public class GeometryInputActivity extends AppCompatActivity {
                     break;
                 case "CIRCLE3D":
                     if (args.length >= 5) canvas3D.addCircle(args[0].trim(), f(args[1]), f(args[2]), f(args[3]), f(args[4]));
+                    break;
+                case "PRISM3D":
+                    // PRISM3D:Label,height,x1,z1,x2,z2,... -> extrude a flat base polygon upward.
+                    if (args.length >= 8) {
+                        float height = f(args[1]);
+                        int pairs = (args.length - 2) / 2;
+                        float[] xs = new float[pairs];
+                        float[] zs = new float[pairs];
+                        for (int i = 0; i < pairs; i++) {
+                            xs[i] = f(args[2 + i * 2]);
+                            zs[i] = f(args[3 + i * 2]);
+                        }
+                        canvas3D.addPrism(args[0].trim(), xs, zs, 0f, height);
+                    }
+                    break;
+                case "ANGLE3D":
+                    // ANGLE3D:Vertex,A,B[,degrees] -> draw an arc + value at the angle A-Vertex-B.
+                    if (args.length >= 3) {
+                        Float deg = (args.length >= 4) ? f(args[3]) : null;
+                        canvas3D.addAngle(args[0].trim(), args[1].trim(), args[2].trim(), deg);
+                    }
                     break;
             }
         } catch (Exception e) {
@@ -1227,14 +1319,21 @@ public class GeometryInputActivity extends AppCompatActivity {
         return text;
     }
     private void showPaymentDialog () {
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.access_denied)
-                .setMessage(R.string.access_denied_msg)
-                .setPositiveButton(R.string.upgrade_pro, (dialog, which) -> {
-                    startActivity(new Intent(this, SettingsActivity.class));
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .show();
+        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean privileged = userPrefs.getString("username", "").equals("Admin_Teacher")
+                || userPrefs.getBoolean("is_pro_user", false);
+
+        AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle(R.string.access_denied);
+        if (privileged) {
+            // Already Pro, but there's no usable key (the app's built-in AI key isn't configured in
+            // this build). Don't tell them to "upgrade" — point them at adding a personal key.
+            b.setMessage(R.string.access_no_key_pro)
+                    .setPositiveButton(R.string.open_settings, (d, w) -> startActivity(new Intent(this, SettingsActivity.class)));
+        } else {
+            b.setMessage(R.string.access_denied_msg)
+                    .setPositiveButton(R.string.upgrade_pro, (d, w) -> startActivity(new Intent(this, SettingsActivity.class)));
+        }
+        b.setNegativeButton(R.string.cancel, null).show();
     }
 
     private void showSaveDialog(boolean exitAfter) {

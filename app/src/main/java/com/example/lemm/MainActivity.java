@@ -46,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
     private Uri photoUri;
     private String currentPhotoPath;
     private com.google.firebase.database.ValueEventListener apiKeyAutoSync;
+    private com.google.firebase.database.ValueEventListener proAutoSync;
+    private BillingManager proRestoreBilling;
 
     private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         setupUser();
         setupListeners();
+        maybeShowOnboarding();
 
         // Fetch this account's personal API keys from the cloud so they're ready to use on this
         // device (e.g. right after logging in on a new phone).
@@ -72,12 +75,27 @@ public class MainActivity extends AppCompatActivity {
         // Realtime autosync: whenever the same account's keys/toggle change on ANOTHER device,
         // the change lands in this device's local prefs in ~1s — no need to reopen Settings.
         apiKeyAutoSync = ApiKeyStore.attachRealtimeListener(this, null);
+
+        // Subscription/Pro status follows the account too: pull it now and keep it live across devices.
+        ProStatusManager.syncFromCloud(this, null);
+        proAutoSync = ProStatusManager.attachRealtimeListener(this, null);
+
+        // Restore Google Play purchases app-wide (previously this only happened when Settings opened),
+        // so a paid user is recognised on launch — including a new device signed into the same Google account.
+        proRestoreBilling = new BillingManager(this, new BillingManager.BillingListener() {
+            @Override public void onBillingReady() {}
+            @Override public void onPriceFetched(String price) {}
+            @Override public void onPurchaseSuccess() {}
+            @Override public void onBillingError() {}
+        });
+        proRestoreBilling.startConnection();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         ApiKeyStore.detachRealtimeListener(apiKeyAutoSync);
+        ProStatusManager.detachRealtimeListener(proAutoSync);
     }
 
     private void initViews() {
@@ -90,6 +108,14 @@ public class MainActivity extends AppCompatActivity {
         cardDrawProblem = findViewById(R.id.cardDrawProblem);
         cardHistory = findViewById(R.id.cardHistory);
         cardTheorems = findViewById(R.id.cardTheorems);
+    }
+
+    /** Shows the animated how-to guide once, on the first launch after login. */
+    private void maybeShowOnboarding() {
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        if (!pref.getBoolean(OnboardingActivity.PREF_DONE, false)) {
+            startActivity(new Intent(this, OnboardingActivity.class));
+        }
     }
 
     private void setupUser() {
@@ -193,13 +219,13 @@ public class MainActivity extends AppCompatActivity {
                     .setCancelable(false).show();
 
             GeminiAI geminiAI = new GeminiAI(apiKey);
-            String prompt = "You are a strict classifier for a GEOMETRY tutoring app. Examine the image. "
-                    + "If it clearly contains a GEOMETRY problem (triangles, circles, polygons, angles, areas, perimeters, "
-                    + "volumes, coordinates, geometric proofs or constructions), transcribe the FULL problem text EXACTLY as "
-                    + "written and output ONLY that text. "
-                    + "If the image is NOT a geometry problem (for example: plain text, pure arithmetic/algebra/calculus with no "
-                    + "figure, a photo of a person/object/scene, a screenshot, or anything unreadable), output EXACTLY this single "
-                    + "token and nothing else: INVALID_IMAGE";
+            String prompt = "You are the scanner for a math/geometry tutoring app. Examine the image. "
+                    + "If it contains ANY math problem — geometry, trigonometry, mensuration, algebra, equations, "
+                    + "coordinates, a proof/construction, or a math word problem (with or without a figure) — transcribe the "
+                    + "FULL problem text EXACTLY as written, preserving numbers, symbols and labels, and output ONLY that text. "
+                    + "Read handwriting and slightly blurry text as best you can. "
+                    + "ONLY if the image clearly has NO math at all (e.g. a photo of a person/object/scene, a non-math screenshot, "
+                    + "or it is completely unreadable) output EXACTLY this single token and nothing else: INVALID_IMAGE";
 
             Futures.addCallback(geminiAI.extractTextFromImage(safeBitmap, prompt), new FutureCallback<GenerateContentResponse>() {
                 @Override
