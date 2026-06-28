@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Built APKs belong in GitHub Releases, never in the source tree
+*.apk
