@@ -91,7 +91,7 @@ public class LoginActivity extends AppCompatActivity {
                                         // Sync offline local data to cloud on login
                                         CloudSyncManager.syncLocalToCloud(dbHelper, localUsername);
 
-                                        sendLoginAlert(identifier, localUsername);
+                                        AuthManager.sendLoginAlert(identifier, localUsername);
                                         Toast.makeText(LoginActivity.this, "Welcome " + localUsername + "!", Toast.LENGTH_SHORT).show();
                                         saveSessionAndGoMain(localUsername, false);
                                     } else {
@@ -102,7 +102,7 @@ public class LoginActivity extends AppCompatActivity {
                                         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                                             if (!hasResponded[0]) {
                                                 hasResponded[0] = true; // Block the cloud from triggering later
-                                                String fallback = identifier.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "_");
+                                                String fallback = AuthManager.fallbackUsernameFromEmail(identifier);
                                                 try { dbHelper.addUser(fallback, identifier, pass); } catch (Exception ignored) {}
 
                                                 // Sync offline data using fallback name
@@ -124,7 +124,7 @@ public class LoginActivity extends AppCompatActivity {
 
                                                         String cloudUsername = snapshot.getValue(String.class);
                                                         if (cloudUsername == null || cloudUsername.isEmpty() || cloudUsername.contains("@")) {
-                                                            cloudUsername = identifier.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "_");
+                                                            cloudUsername = AuthManager.fallbackUsernameFromEmail(identifier);
                                                             try {
                                                                 FirebaseManager.getDatabase().getReference("users_info")
                                                                         .child(uid).child("username").setValue(cloudUsername);
@@ -136,7 +136,7 @@ public class LoginActivity extends AppCompatActivity {
                                                         // Sync offline data using correct cloud name
                                                         CloudSyncManager.syncLocalToCloud(dbHelper, cloudUsername);
 
-                                                        sendLoginAlert(identifier, cloudUsername);
+                                                        AuthManager.sendLoginAlert(identifier, cloudUsername);
                                                         Toast.makeText(LoginActivity.this, "Welcome " + cloudUsername + "!", Toast.LENGTH_SHORT).show();
                                                         saveSessionAndGoMain(cloudUsername, false);
                                                     }
@@ -145,7 +145,7 @@ public class LoginActivity extends AppCompatActivity {
                                                     public void onCancelled(com.google.firebase.database.DatabaseError error) {
                                                         if (hasResponded[0]) return;
                                                         hasResponded[0] = true;
-                                                        String fallback = identifier.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "_");
+                                                        String fallback = AuthManager.fallbackUsernameFromEmail(identifier);
 
                                                         // Sync offline data using fallback name
                                                         CloudSyncManager.syncLocalToCloud(dbHelper, fallback);
@@ -179,7 +179,7 @@ public class LoginActivity extends AppCompatActivity {
                                     // Sync offline local data to cloud on login
                                     CloudSyncManager.syncLocalToCloud(dbHelper, identifier);
 
-                                    sendLoginAlert(linkedEmail, identifier);
+                                    AuthManager.sendLoginAlert(linkedEmail, identifier);
                                     Toast.makeText(LoginActivity.this, "Password synced! Welcome back.", Toast.LENGTH_SHORT).show();
                                     saveSessionAndGoMain(identifier, false);
                                 } else {
@@ -209,16 +209,6 @@ public class LoginActivity extends AppCompatActivity {
 
         tvSignUp.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, RegisterActivity.class)));
         tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
-    }
-
-    private void sendLoginAlert(String email, String username) {
-        String subject = "New Login Detected";
-        String headline = "Security Alert";
-        String body = "Hello <b>" + username + "</b>,\n\n" +
-                "A successful login to your <b>Lemma</b> account was detected on <b>" + FirebaseManager.getCurrentDate() + "</b>.\n\n" +
-                "If this was you, you can safely ignore this email.\n\n" +
-                "If you did not authorize this login, please reset your password immediately inside the app.";
-        EmailSender.sendOfficialEmail(email, subject, headline, body);
     }
 
     private void showForgotPasswordDialog() {
@@ -296,28 +286,8 @@ public class LoginActivity extends AppCompatActivity {
             } catch (ApiException e) {
                 android.util.Log.e("GoogleSignIn", "ApiException code=" + e.getStatusCode() + " "
                         + com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.getStatusCodeString(e.getStatusCode()), e);
-                Toast.makeText(this, googleSignInError(e.getStatusCode()), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, AuthManager.googleSignInError(e.getStatusCode()), Toast.LENGTH_LONG).show();
             }
-        }
-    }
-
-    /** Human-readable explanation for the most common Google Sign-In status codes. */
-    private String googleSignInError(int code) {
-        switch (code) {
-            case 10: // DEVELOPER_ERROR
-                return "Google Sign-In failed (10): this build's SHA-1 or the Web client ID isn't registered for this Firebase project. "
-                        + "Add your SHA-1 in Firebase Console, re-download google-services.json, then uninstall & reinstall.";
-            case 12500: // SIGN_IN_FAILED
-                return "Google Sign-In failed (12500): update Google Play Services and make sure a Google account is added on this device.";
-            case 12501: // SIGN_IN_CANCELLED
-                return "Google Sign-In was canceled.";
-            case 12502: // SIGN_IN_CURRENTLY_IN_PROGRESS
-                return "A Google Sign-In is already in progress.";
-            case 7:     // NETWORK_ERROR
-                return "Network error during Google Sign-In. Check your connection.";
-            default:
-                return "Google Sign-In failed (code " + code + "): "
-                        + com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.getStatusCodeString(code);
         }
     }
 
@@ -349,17 +319,7 @@ public class LoginActivity extends AppCompatActivity {
                                             CloudSyncManager.syncLocalToCloud(dbHelper, finalUsername);
                                         } catch (Exception ignored) {}
 
-                                        if (email != null && !email.isEmpty()) {
-                                            String subject = "Welcome to Lemma!";
-                                            String headline = "Account Linked Successfully";
-                                            String body = "Hello <b>" + finalUsername + "</b>,\n\n" +
-                                                    "Your account via Google Sign-In has been successfully registered!\n\n" +
-                                                    "<b>Your Account Details:</b>\n" +
-                                                    "Username: " + finalUsername + "\n" +
-                                                    "Email: " + email + "\n\n" +
-                                                    "You can now scan math problems, draw 2D shapes, and sync your solutions securely to the cloud.";
-                                            EmailSender.sendOfficialEmail(email, subject, headline, body);
-                                        }
+                                        AuthManager.sendGoogleWelcome(email, finalUsername);
 
                                         Toast.makeText(LoginActivity.this, getString(R.string.welcome, finalUsername), Toast.LENGTH_SHORT).show();
                                         saveSessionAndGoMain(finalUsername, false);
@@ -382,11 +342,8 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void saveSessionAndGoMain(String username, boolean isGuest) {
-        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        pref.edit().putString("username", username).putBoolean("is_guest", isGuest).apply();
-
-        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-        startActivity(intent);
+        AuthManager.saveSession(this, username, isGuest);
+        startActivity(new Intent(LoginActivity.this, MainActivity.class));
         finish();
     }
 

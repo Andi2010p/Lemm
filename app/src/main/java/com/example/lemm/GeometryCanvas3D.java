@@ -92,9 +92,15 @@ public class GeometryCanvas3D extends View {
     private int selectedAngleIndex = -1;
     private int selectedPlaneIndex = -1;
     private int selectedMidLineIndex = -1; // a tapped line MIDPOINT
-    private Paint anglePaint, angleTextPaint, gradientPaint, midPaint;
+    private Paint anglePaint, angleTextPaint, gradientPaint, midPaint, dimTextPaint;
+    private Paint autoAnglePaint, autoAngleTextPaint; // every corner's angle, shown automatically
     private int colBg3dTop, colBg3dBottom;
     private boolean showMidpoints = true;
+    private boolean showDimensions = false; // length labels on every edge (like the 2D editor)
+
+    /** Show/hide the length label drawn on each edge. */
+    public void setShowDimensions(boolean show) { this.showDimensions = show; invalidate(); }
+    public boolean isShowingDimensions() { return showDimensions; }
 
     // Interaction mode: SELECT inspects/picks; DRAW drops points on the sketch plane (hand drawing).
     public static final int MODE_SELECT = 0;
@@ -130,6 +136,9 @@ public class GeometryCanvas3D extends View {
         angleTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); angleTextPaint.setColor(0xFFE91E63); angleTextPaint.setTextSize(26f); angleTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
         gradientPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         midPaint = new Paint(Paint.ANTI_ALIAS_FLAG); midPaint.setColor(0xFF80DEEA); midPaint.setStyle(Paint.Style.STROKE); midPaint.setStrokeWidth(3f);
+        dimTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); dimTextPaint.setColor(0xFF66BB6A); dimTextPaint.setTextSize(22f); dimTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
+        autoAnglePaint = new Paint(Paint.ANTI_ALIAS_FLAG); autoAnglePaint.setColor(0xFF26A69A); autoAnglePaint.setStrokeWidth(3f); autoAnglePaint.setStyle(Paint.Style.STROKE);
+        autoAngleTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); autoAngleTextPaint.setColor(0xFF00897B); autoAngleTextPaint.setTextSize(22f); autoAngleTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
 
         // A subtle vertical gradient backdrop derived from the theme canvas colour (lighter top → deeper bottom).
         colBg3dTop = lighten(colBg3d, 0.10f);
@@ -357,15 +366,19 @@ public class GeometryCanvas3D extends View {
             }
         }
 
-        // Midpoint markers on every line (CAD reference points you can snap to / inspect).
-        if (showMidpoints) {
+        // Midpoint markers + edge length labels (like the 2D editor's dimensions).
+        if (showMidpoints || showDimensions) {
             for (Line3D l : lines) {
                 Point3D p1 = findPt(l.a), p2 = findPt(l.b);
-                if (p1 != null && p2 != null) {
-                    canvas.drawCircle((p1.sx + p2.sx) / 2f, (p1.sy + p2.sy) / 2f, 5f, midPaint);
-                }
+                if (p1 == null || p2 == null) continue;
+                float mx = (p1.sx + p2.sx) / 2f, my = (p1.sy + p2.sy) / 2f;
+                if (showMidpoints) canvas.drawCircle(mx, my, 5f, midPaint);
+                if (showDimensions) canvas.drawText(fmt((float) dist(p1, p2)), mx + 8, my - 8, dimTextPaint);
             }
         }
+
+        // Auto angles: every corner shows its value with an arc (drawn under the manual ones).
+        drawAutoAngles(canvas);
 
         // Angle arcs + their values (drawn after lines so they sit on top of the edges).
         for (int ai = 0; ai < angles.size(); ai++) {
@@ -392,7 +405,11 @@ public class GeometryCanvas3D extends View {
         if (selectedMidLineIndex >= 0 && selectedMidLineIndex < lines.size()) {
             Line3D l = lines.get(selectedMidLineIndex);
             Point3D p1 = findPt(l.a), p2 = findPt(l.b);
-            if (p1 != null && p2 != null) canvas.drawCircle((p1.sx + p2.sx) / 2f, (p1.sy + p2.sy) / 2f, 12, selPaint);
+            if (p1 != null && p2 != null) {
+                float mx = (p1.sx + p2.sx) / 2f, my = (p1.sy + p2.sy) / 2f;
+                canvas.drawCircle(mx, my, 12, selPaint);
+                canvas.drawText("M", mx + 14, my - 8, textPaint); // mark the midpoint as M
+            }
         }
     }
 
@@ -444,6 +461,85 @@ public class GeometryCanvas3D extends View {
             angleTextPaint.setColor(selected ? 0xFFFF8C00 : 0xFFE91E63);
             canvas.drawText(txt, mid.sx + 6, mid.sy - 6, angleTextPaint);
         }
+    }
+
+    /**
+     * Automatically annotates every corner of the figure: for each vertex with two or more incident
+     * edges, draws an arc + value for each pair of edges. Corners already covered by a manually added
+     * angle are skipped so the two never overlap. Computed on the fly — never stored or saved.
+     */
+    private void drawAutoAngles(Canvas canvas) {
+        for (Point3D v : points) {
+            if (!v.isVertex || v.label == null || v.label.isEmpty()) continue;
+            // Distinct neighbours connected to this vertex by an edge.
+            List<Point3D> nbrs = new ArrayList<>();
+            for (Line3D l : lines) {
+                Point3D other = null;
+                if (v.label.equalsIgnoreCase(l.a)) other = findPt(l.b);
+                else if (v.label.equalsIgnoreCase(l.b)) other = findPt(l.a);
+                if (other != null && other != v && !nbrs.contains(other)) nbrs.add(other);
+            }
+            // If this corner also carries a manual angle (radius 0.28), push the auto arcs outside it so
+            // the teal and pink arcs never overlap; otherwise keep them compact.
+            double base = vertexHasManualAngle(v.label) ? 0.40 : 0.20;
+            int nest = 0;
+            for (int i = 0; i < nbrs.size(); i++) {
+                for (int j = i + 1; j < nbrs.size(); j++) {
+                    if (hasManualAngle(v.label, nbrs.get(i).label, nbrs.get(j).label)) continue;
+                    drawCornerAngle(canvas, v, nbrs.get(i), nbrs.get(j), base + 0.10 * nest++);
+                }
+            }
+        }
+    }
+
+    /** True if the user has already added a manual angle at {@code vertex} between arms {@code a} and {@code b}. */
+    private boolean hasManualAngle(String vertex, String a, String b) {
+        if (a == null || b == null) return false;
+        for (Angle3D ag : angles) {
+            if (ag.vertex.equalsIgnoreCase(vertex)
+                    && ((ag.a.equalsIgnoreCase(a) && ag.b.equalsIgnoreCase(b))
+                     || (ag.a.equalsIgnoreCase(b) && ag.b.equalsIgnoreCase(a)))) return true;
+        }
+        return false;
+    }
+
+    /** True if the user has added any manual angle whose vertex is {@code vertex}. */
+    private boolean vertexHasManualAngle(String vertex) {
+        for (Angle3D ag : angles) if (ag.vertex.equalsIgnoreCase(vertex)) return true;
+        return false;
+    }
+
+    /** Draws a single auto-angle arc at radius {@code radiusFrac} of the shorter arm (nested per corner). */
+    private void drawCornerAngle(Canvas canvas, Point3D v, Point3D a, Point3D b, double radiusFrac) {
+        double[] u = {a.x - v.x, a.y - v.y, a.z - v.z};
+        double[] w = {b.x - v.x, b.y - v.y, b.z - v.z};
+        double lu = Math.sqrt(u[0]*u[0]+u[1]*u[1]+u[2]*u[2]);
+        double lw = Math.sqrt(w[0]*w[0]+w[1]*w[1]+w[2]*w[2]);
+        if (lu < 1e-3 || lw < 1e-3) return;
+        for (int i = 0; i < 3; i++) { u[i] /= lu; w[i] /= lw; }
+        double dot = Math.max(-1, Math.min(1, u[0]*w[0]+u[1]*w[1]+u[2]*w[2]));
+        double theta = Math.acos(dot);
+        if (theta < 1e-3 || Math.abs(theta - Math.PI) < 1e-3) return; // straight / degenerate — nothing to show
+
+        double r = radiusFrac * Math.min(lu, lw);
+        double sinT = Math.sin(theta);
+        Path arc = new Path();
+        Point3D mid = null;
+        int seg = 18;
+        for (int i = 0; i <= seg; i++) {
+            double t = (double) i / seg;
+            double c1 = Math.sin((1 - t) * theta) / sinT;
+            double c2 = Math.sin(t * theta) / sinT;
+            Point3D pt = new Point3D("",
+                    (float) (v.x + r * (c1 * u[0] + c2 * w[0])),
+                    (float) (v.y + r * (c1 * u[1] + c2 * w[1])),
+                    (float) (v.z + r * (c1 * u[2] + c2 * w[2])));
+            projectCurrent(pt);
+            if (i == 0) arc.moveTo(pt.sx, pt.sy); else arc.lineTo(pt.sx, pt.sy);
+            if (i == seg / 2) mid = pt;
+        }
+        canvas.drawPath(arc, autoAnglePaint);
+        if (mid != null) canvas.drawText(Math.round(Math.toDegrees(theta)) + "°", mid.sx + 4, mid.sy - 4, autoAngleTextPaint);
     }
 
     /** Projects a single point with the CURRENT view parameters (matches onDraw). */
@@ -562,52 +658,88 @@ public class GeometryCanvas3D extends View {
         return inside;
     }
 
-    /** Builds a localized, ready-to-display description of the current selection (or null). */
+    /** Builds a localized, descriptive (CAD-style) description of the current selection (or null). */
     private String buildSelectionInfo() {
         Context ctx = getContext();
+
         if (selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
             Point3D p = points.get(selectedPointIndex);
             String name = (p.label == null || p.label.isEmpty()) ? "?" : p.label;
-            return ctx.getString(R.string.info_point) + " " + name + "\n"
-                    + "(" + fmt(p.x) + ", " + fmt(p.y) + ", " + fmt(p.z) + ")";
+            String neighbours = connectedNeighbours(name);
+            String s = ctx.getString(R.string.info_point) + " " + name + "\n"
+                    + ctx.getString(R.string.info_position) + ": (" + fmt(p.x) + ", " + fmt(p.y) + ", " + fmt(p.z) + ")";
+            if (!neighbours.isEmpty()) s += "\n" + ctx.getString(R.string.info_connects) + ": " + neighbours;
+            return s;
         }
+
         if (selectedLineIndex >= 0 && selectedLineIndex < lines.size()) {
             Line3D l = lines.get(selectedLineIndex);
             Point3D a = findPt(l.a), b = findPt(l.b);
             if (a != null && b != null) {
-                double len = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
+                double len = dist(a, b);
+                float mx = (a.x + b.x) / 2f, my = (a.y + b.y) / 2f, mz = (a.z + b.z) / 2f;
                 return ctx.getString(R.string.info_edge) + " " + l.a + "–" + l.b + "\n"
                         + ctx.getString(R.string.info_length) + ": " + fmt((float) len) + "\n"
                         + l.a + " (" + fmt(a.x) + ", " + fmt(a.y) + ", " + fmt(a.z) + ")\n"
-                        + l.b + " (" + fmt(b.x) + ", " + fmt(b.y) + ", " + fmt(b.z) + ")";
+                        + l.b + " (" + fmt(b.x) + ", " + fmt(b.y) + ", " + fmt(b.z) + ")\n"
+                        + ctx.getString(R.string.info_midpoint) + " " + l.a + l.b + ": (" + fmt(mx) + ", " + fmt(my) + ", " + fmt(mz) + ")";
             }
         }
+
         if (selectedMidLineIndex >= 0 && selectedMidLineIndex < lines.size()) {
             Line3D l = lines.get(selectedMidLineIndex);
             Point3D a = findPt(l.a), b = findPt(l.b);
             if (a != null && b != null) {
                 float mx = (a.x + b.x) / 2f, my = (a.y + b.y) / 2f, mz = (a.z + b.z) / 2f;
-                return ctx.getString(R.string.info_midpoint) + " " + l.a + "–" + l.b + "\n"
-                        + "(" + fmt(mx) + ", " + fmt(my) + ", " + fmt(mz) + ")";
+                // e.g. "M  —  midpoint of A–B"
+                return "M  —  " + ctx.getString(R.string.info_midpoint) + " " + l.a + "–" + l.b + "\n"
+                        + ctx.getString(R.string.info_position) + ": (" + fmt(mx) + ", " + fmt(my) + ", " + fmt(mz) + ")\n"
+                        + ctx.getString(R.string.info_length) + " (" + l.a + l.b + "): " + fmt((float) dist(a, b));
             }
         }
+
         if (selectedAngleIndex >= 0 && selectedAngleIndex < angles.size()) {
             Angle3D ag = angles.get(selectedAngleIndex);
-            return ctx.getString(R.string.info_angle) + " " + ag.a + ag.vertex + ag.b + "\n"
-                    + ctx.getString(R.string.info_angle) + ": " + Math.round(ag.value) + "°\n"
+            return "∠" + ag.a + ag.vertex + ag.b + " = " + Math.round(ag.value) + "°\n"
                     + ctx.getString(R.string.info_vertex_at) + " " + ag.vertex + "\n"
                     + ctx.getString(R.string.info_rays) + ": " + ag.vertex + "→" + ag.a + ", " + ag.vertex + "→" + ag.b;
         }
+
         if (selectedPlaneIndex >= 0 && selectedPlaneIndex < planes.size()) {
             Plane3D pl = planes.get(selectedPlaneIndex);
             StringBuilder verts = new StringBuilder();
-            double area = planeArea(pl);
-            for (String s : pl.labels) { if (verts.length() > 0) verts.append(", "); verts.append(s); }
+            for (String s : pl.labels) { if (verts.length() > 0) verts.append("–"); verts.append(s); }
             return ctx.getString(R.string.info_plane) + " " + verts + "\n"
                     + ctx.getString(R.string.info_vertices) + ": " + pl.labels.size() + "\n"
-                    + ctx.getString(R.string.info_area) + ": " + fmt((float) area);
+                    + ctx.getString(R.string.info_area) + ": " + fmt((float) planeArea(pl)) + "\n"
+                    + ctx.getString(R.string.info_perimeter) + ": " + fmt((float) planePerimeter(pl));
         }
         return null;
+    }
+
+    private static double dist(Point3D a, Point3D b) {
+        return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
+    }
+
+    /** Comma-separated list of the labels each edge connects this point to. */
+    private String connectedNeighbours(String label) {
+        StringBuilder sb = new StringBuilder();
+        for (Line3D l : lines) {
+            String other = null;
+            if (label.equalsIgnoreCase(l.a)) other = l.b;
+            else if (label.equalsIgnoreCase(l.b)) other = l.a;
+            if (other != null) { if (sb.length() > 0) sb.append(", "); sb.append(other); }
+        }
+        return sb.toString();
+    }
+
+    private double planePerimeter(Plane3D pl) {
+        java.util.List<Point3D> pts = new ArrayList<>();
+        for (String s : pl.labels) { Point3D p = findPt(s); if (p != null) pts.add(p); }
+        if (pts.size() < 2) return 0;
+        double per = 0;
+        for (int i = 0; i < pts.size(); i++) per += dist(pts.get(i), pts.get((i + 1) % pts.size()));
+        return per;
     }
 
     /** Area of a (planar) 3D polygon via the Newell/cross-product method. */
@@ -741,6 +873,95 @@ public class GeometryCanvas3D extends View {
         return null;
     }
 
+    // ---- Editing the values of the selected object (the 3D analog of the 2D "Dimension" editing) ----
+    public static final int KIND_NONE = 0, KIND_POINT = 1, KIND_EDGE = 2, KIND_ANGLE = 3, KIND_MIDPOINT = 4, KIND_PLANE = 5;
+
+    /** What kind of object is currently selected (so the editor opens the right value dialog). */
+    public int getSelectionKind() {
+        if (selectedPointIndex >= 0) return KIND_POINT;
+        if (selectedLineIndex >= 0) return KIND_EDGE;
+        if (selectedAngleIndex >= 0) return KIND_ANGLE;
+        if (selectedMidLineIndex >= 0) return KIND_MIDPOINT;
+        if (selectedPlaneIndex >= 0) return KIND_PLANE;
+        return KIND_NONE;
+    }
+
+    /** Coordinates of the selected point (for pre-filling the edit dialog), or null. */
+    public float[] getSelectedPointCoords() {
+        if (selectedPointIndex < 0 || selectedPointIndex >= points.size()) return null;
+        Point3D p = points.get(selectedPointIndex);
+        return new float[]{p.x, p.y, p.z};
+    }
+
+    /** Moves the selected point; everything attached to it (edges, faces, angles) follows by label. */
+    public boolean setSelectedPointCoords(float x, float y, float z) {
+        if (selectedPointIndex < 0 || selectedPointIndex >= points.size()) return false;
+        Point3D p = points.get(selectedPointIndex);
+        p.x = x; p.y = y; p.z = z;
+        invalidate();
+        return true;
+    }
+
+    public float getSelectedEdgeLength() {
+        if (selectedLineIndex < 0 || selectedLineIndex >= lines.size()) return 0;
+        Line3D l = lines.get(selectedLineIndex);
+        Point3D a = findPt(l.a), b = findPt(l.b);
+        return (a != null && b != null) ? (float) dist(a, b) : 0;
+    }
+
+    /** Sets the selected edge's length by sliding its second endpoint along the edge direction. */
+    public boolean setSelectedEdgeLength(float len) {
+        if (selectedLineIndex < 0 || selectedLineIndex >= lines.size() || len <= 0) return false;
+        Line3D l = lines.get(selectedLineIndex);
+        Point3D a = findPt(l.a), b = findPt(l.b);
+        if (a == null || b == null) return false;
+        double dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+        double cur = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (cur < 1e-4) return false;
+        double s = len / cur;
+        b.x = (float) (a.x + dx * s); b.y = (float) (a.y + dy * s); b.z = (float) (a.z + dz * s);
+        invalidate();
+        return true;
+    }
+
+    public float getSelectedAngleValue() {
+        if (selectedAngleIndex < 0 || selectedAngleIndex >= angles.size()) return 0;
+        Angle3D ag = angles.get(selectedAngleIndex);
+        Point3D v = findPt(ag.vertex), a = findPt(ag.a), b = findPt(ag.b);
+        if (v == null || a == null || b == null) return Math.round(ag.value);
+        double[] u = {a.x - v.x, a.y - v.y, a.z - v.z}, w = {b.x - v.x, b.y - v.y, b.z - v.z};
+        double lu = norm(u), lw = norm(w);
+        if (lu < 1e-4 || lw < 1e-4) return 0;
+        double dot = (u[0] * w[0] + u[1] * w[1] + u[2] * w[2]) / (lu * lw);
+        return (float) Math.round(Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, dot)))));
+    }
+
+    /** Sets the selected angle to {@code deg} by rotating its second arm in the arms' plane. */
+    public boolean setSelectedAngleValue(float deg) {
+        if (selectedAngleIndex < 0 || selectedAngleIndex >= angles.size()) return false;
+        Angle3D ag = angles.get(selectedAngleIndex);
+        Point3D v = findPt(ag.vertex), a = findPt(ag.a), b = findPt(ag.b);
+        if (v == null || a == null || b == null) return false;
+        double[] u = {a.x - v.x, a.y - v.y, a.z - v.z}, w = {b.x - v.x, b.y - v.y, b.z - v.z};
+        double lu = norm(u), lw = norm(w);
+        if (lu < 1e-4 || lw < 1e-4) return false;
+        for (int i = 0; i < 3; i++) u[i] /= lu;
+        double dot = w[0] * u[0] + w[1] * u[1] + w[2] * u[2];
+        double[] perp = {w[0] - dot * u[0], w[1] - dot * u[1], w[2] - dot * u[2]};
+        double lp = norm(perp);
+        if (lp < 1e-4) return false; // arms are collinear — no rotation plane
+        for (int i = 0; i < 3; i++) perp[i] /= lp;
+        double r = Math.toRadians(deg), c = Math.cos(r), s = Math.sin(r);
+        b.x = (float) (v.x + lw * (c * u[0] + s * perp[0]));
+        b.y = (float) (v.y + lw * (c * u[1] + s * perp[1]));
+        b.z = (float) (v.z + lw * (c * u[2] + s * perp[2]));
+        ag.fixedDeg = null; // the drawn value now equals the real geometry
+        invalidate();
+        return true;
+    }
+
+    private static double norm(double[] v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); }
+
     // ---- Save / load the editable 3D model (points, edges, faces, angles) ----
 
     /** Serializes the current model to JSON (tagged "3d" so History can tell it apart from 2D drawings). */
@@ -779,6 +1000,22 @@ public class GeometryCanvas3D extends View {
                 ang.put(o);
             }
             root.put("angles", ang);
+            org.json.JSONArray cir = new org.json.JSONArray();
+            for (Circle3D c : circles) {
+                org.json.JSONObject o = new org.json.JSONObject();
+                o.put("l", c.label == null ? "" : c.label);
+                o.put("x", c.cx); o.put("y", c.cy); o.put("z", c.cz); o.put("r", c.r);
+                cir.put(o);
+            }
+            root.put("circles", cir);
+            org.json.JSONArray sph = new org.json.JSONArray();
+            for (Sphere3D s : spheres) {
+                org.json.JSONObject o = new org.json.JSONObject();
+                o.put("l", s.label == null ? "" : s.label);
+                o.put("x", s.x); o.put("y", s.y); o.put("z", s.z); o.put("r", s.r);
+                sph.put(o);
+            }
+            root.put("spheres", sph);
             return root.toString();
         } catch (Exception e) {
             return "{\"type\":\"3d\"}";
@@ -815,6 +1052,16 @@ public class GeometryCanvas3D extends View {
                 Float d = o.has("d") ? (float) o.getDouble("d") : null;
                 angles.add(new Angle3D(o.getString("v"), o.getString("a"), o.getString("b"), d));
             }
+            org.json.JSONArray cir = root.optJSONArray("circles");
+            if (cir != null) for (int i = 0; i < cir.length(); i++) {
+                org.json.JSONObject o = cir.getJSONObject(i);
+                addCircle(o.optString("l", ""), (float) o.optDouble("x"), (float) o.optDouble("y"), (float) o.optDouble("z"), (float) o.optDouble("r"));
+            }
+            org.json.JSONArray sph = root.optJSONArray("spheres");
+            if (sph != null) for (int i = 0; i < sph.length(); i++) {
+                org.json.JSONObject o = sph.getJSONObject(i);
+                addSphere(o.optString("l", ""), (float) o.optDouble("x"), (float) o.optDouble("y"), (float) o.optDouble("z"), (float) o.optDouble("r"));
+            }
             invalidate();
         } catch (Exception e) {
             android.util.Log.e("GeometryCanvas3D", "loadFromJson failed: " + e.getMessage());
@@ -824,6 +1071,52 @@ public class GeometryCanvas3D extends View {
     /** True if the given saved-drawing data is a 3D model (vs. a 2D CAD drawing). */
     public static boolean isJson3d(String data) {
         return data != null && data.contains("\"type\":\"3d\"");
+    }
+
+    // ---- Undo / redo (snapshots of the model JSON; the camera is kept across steps) ----
+    private final List<String> history = new ArrayList<>();
+    private int historyIndex = -1;
+    private static final int HISTORY_CAP = 60;
+
+    /** Sets the current model as the undo baseline. Call once after the initial figure is built. */
+    public void initHistory() {
+        history.clear();
+        history.add(toJson());
+        historyIndex = 0;
+    }
+
+    /** Records the current model as a new undoable step (call after each user edit). */
+    public void recordHistory() {
+        if (historyIndex < 0) { initHistory(); return; }
+        while (history.size() > historyIndex + 1) history.remove(history.size() - 1); // drop redo tail
+        history.add(toJson());
+        historyIndex = history.size() - 1;
+        while (history.size() > HISTORY_CAP) { history.remove(0); historyIndex--; }
+    }
+
+    public boolean canUndo() { return historyIndex > 0; }
+    public boolean canRedo() { return historyIndex >= 0 && historyIndex < history.size() - 1; }
+
+    public boolean undo() {
+        if (!canUndo()) return false;
+        historyIndex--;
+        restoreState(history.get(historyIndex));
+        return true;
+    }
+
+    public boolean redo() {
+        if (!canRedo()) return false;
+        historyIndex++;
+        restoreState(history.get(historyIndex));
+        return true;
+    }
+
+    /** Rebuilds the model from a snapshot while preserving the current camera. */
+    private void restoreState(String json) {
+        float rx = rotateX, ry = rotateY, rz = rotateZ, sf = scaleFactor, tx = translateX, ty = translateY;
+        loadFromJson(json);
+        rotateX = rx; rotateY = ry; rotateZ = rz; scaleFactor = sf; translateX = tx; translateY = ty;
+        invalidate();
     }
 
     private String nextVertexLabel() {

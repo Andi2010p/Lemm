@@ -25,6 +25,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+
+import androidx.lifecycle.ViewModelProvider;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -60,6 +62,7 @@ public class HistoryActivity extends AppCompatActivity {
 
     private List<GenericItem> displayList = new ArrayList<>();
     private GenericAdapter adapter;
+    private HistoryViewModel historyViewModel;
     private boolean showingSolutions = true;
     private DatabaseHelper dbHelper;
     private String currentUsername;
@@ -105,6 +108,15 @@ public class HistoryActivity extends AppCompatActivity {
 
         rvHistory.setAdapter(adapter);
 
+        // MVVM: observe the ViewModel's LiveData; any loadLocalHistoryOnly() refreshes the list here.
+        historyViewModel = new ViewModelProvider(this).get(HistoryViewModel.class);
+        historyViewModel.getItems().observe(this, records -> {
+            displayList.clear();
+            for (HistoryRecord r : records) displayList.add(new GenericItem(r.id, r.title, r.subtext, r.data, r.date));
+            adapter.setSolutions(showingSolutions);
+            adapter.notifyDataSetChanged();
+        });
+
         attachSwipeToDelete();
         maybeShowSwipeHint();
 
@@ -138,40 +150,17 @@ public class HistoryActivity extends AppCompatActivity {
         }
     }
 
+    /** MVVM: ask the ViewModel to (re)load; the observer wired in onCreate updates the list. */
     private void loadLocalHistoryOnly() {
-        List<GenericItem> fresh = queryLocalHistory(showingSolutions);
-        displayList.clear();
-        displayList.addAll(fresh);
-        adapter.setSolutions(showingSolutions);
-        adapter.notifyDataSetChanged();
+        historyViewModel.load(currentUsername, showingSolutions);
     }
 
-    /** Reads the local DB into a sorted list. Safe to call from a background thread. */
+    /** Reads the local DB into a sorted list (via the Repository). Safe to call from any thread. */
     private List<GenericItem> queryLocalHistory(boolean solutions) {
         List<GenericItem> out = new ArrayList<>();
-        Cursor cursor = solutions ? dbHelper.getHistory(currentUsername) : dbHelper.getDrawings(currentUsername);
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                do {
-                    if (solutions) {
-                        String id = String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow("hist_id")));
-                        String title = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                        String prob = cursor.getString(cursor.getColumnIndexOrThrow("problem"));
-                        String raw = cursor.getString(cursor.getColumnIndexOrThrow("raw_response"));
-                        String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
-                        out.add(new GenericItem(id, title, prob, raw, date));
-                    } else {
-                        String id = String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow("drw_id")));
-                        String title = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                        String data = cursor.getString(cursor.getColumnIndexOrThrow("data"));
-                        String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
-                        out.add(new GenericItem(id, title, "Date: " + date, data, date));
-                    }
-                } while (cursor.moveToNext());
-            }
-            cursor.close();
+        for (HistoryRecord r : ServiceLocator.historyRepository(this).load(currentUsername, solutions)) {
+            out.add(new GenericItem(r.id, r.title, r.subtext, r.data, r.date));
         }
-        Collections.sort(out, (o1, o2) -> o2.date.compareTo(o1.date));
         return out;
     }
 
@@ -197,12 +186,20 @@ public class HistoryActivity extends AppCompatActivity {
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(HistoryActivity.this, "Cloud Sync Blocked: Check Firebase Rules", Toast.LENGTH_LONG).show();
-                Log.e("FirebaseSync", "Cloud sync blocked: " + error.getMessage());
+                int msg = NetworkUtil.isOnline(HistoryActivity.this)
+                        ? R.string.history_sync_failed
+                        : R.string.history_weak_internet;
+                Toast.makeText(HistoryActivity.this, msg, Toast.LENGTH_LONG).show();
+                Log.e("FirebaseSync", "Cloud sync failed: " + error.getMessage());
                 loadLocalHistoryOnly(); // Fallback to offline
             }
         };
         cloudRef.addValueEventListener(cloudListener);
+
+        // No connection: tell the user we're showing saved data; it'll sync when they reconnect.
+        if (!NetworkUtil.isOnline(this)) {
+            Toast.makeText(this, R.string.history_weak_internet, Toast.LENGTH_LONG).show();
+        }
 
         // Show offline items immediately while waiting for cloud
         loadLocalHistoryOnly();

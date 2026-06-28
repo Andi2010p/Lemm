@@ -130,6 +130,7 @@ public class DrawingActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> confirmExit());
         findViewById(R.id.btnOpen3D).setOnClickListener(v -> startActivity(new android.content.Intent(this, Drawing3DActivity.class)));
+        findViewById(R.id.btnHelp2D).setOnClickListener(v -> HelpDialog.show(this, R.string.help_title, R.string.help_2d_body));
         findViewById(R.id.btnExtrude3D).setOnClickListener(v -> extrudeSelectedTo3D());
         findViewById(R.id.btnToolMove).setOnClickListener(v -> selectTool("MOVE"));
         findViewById(R.id.btnToolSelect).setOnClickListener(v -> selectTool("SELECT"));
@@ -438,12 +439,17 @@ public class DrawingActivity extends AppCompatActivity {
     /** Extrudes the selected closed 2D shape into a 3D solid and opens it in the 3D editor. */
     private void extrudeSelectedTo3D() {
         Geometry g = drawingCanvas.getSelectedGeometry();
-        if (g == null) return;
-        if (!(g instanceof Polygon)) {
+
+        // The shape to extrude is either a closed Polygon, OR a closed loop assembled from the
+        // separate connected line segments the user drew (e.g. a triangle made of 3 lines). The
+        // polygonizer stitches the lines into a polygon so you only need to select ONE of them.
+        Polygon poly = (g instanceof Polygon) ? (Polygon) g : buildPolygonFromLines(g);
+        if (poly == null) {
             Toast.makeText(this, getString(R.string.extrude_need_closed), Toast.LENGTH_SHORT).show();
             return;
         }
-        Coordinate[] ring = g.getCoordinates();
+
+        Coordinate[] ring = poly.getExteriorRing().getCoordinates();
         int n = ring.length;
         if (n > 1 && ring[0].equals2D(ring[n - 1])) n--; // drop the duplicated closing vertex
         if (n < 3) {
@@ -480,6 +486,28 @@ public class DrawingActivity extends AppCompatActivity {
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
+    }
+
+    /**
+     * Stitches the drawing's separate line segments into closed polygons. Returns the polygon whose
+     * boundary contains the selected line (so the user can select just one edge of the shape), or the
+     * largest polygon found, or null if the lines don't enclose any region.
+     */
+    private Polygon buildPolygonFromLines(Geometry selected) {
+        org.locationtech.jts.operation.polygonize.Polygonizer pg = new org.locationtech.jts.operation.polygonize.Polygonizer();
+        for (Geometry geom : engine.getGeometries()) {
+            if (geom instanceof LineString && geom.getNumPoints() >= 2) pg.add(geom);
+        }
+        Polygon best = null;
+        double bestScore = -1;
+        for (Object o : pg.getPolygons()) {
+            if (!(o instanceof Polygon)) continue;
+            Polygon p = (Polygon) o;
+            double score = p.getArea();
+            if (selected != null && p.getExteriorRing().distance(selected) < 1.0) score += 1e12; // the loop on this line
+            if (score > bestScore) { bestScore = score; best = p; }
+        }
+        return best;
     }
 
     private String identifyGeometryType(Geometry g) {

@@ -88,6 +88,7 @@ public class CadGeometryCanvas extends View {
             }
             textPaint.setTextSize(40f/scale);
             for (CadEngine2d.AngleAnnotation ann : engine.getAngleAnnotations()) drawAngleArc(canvas, ann);
+            drawAutoAngles(canvas); // every corner shows its value with an arc
         }
         if (showPointLabels && engine != null) {
             textPaint.setTextSize(40f/scale);
@@ -170,6 +171,149 @@ public class CadGeometryCanvas extends View {
         // Show the ACTUAL angle between the two lines (the arc's own sweep), so the number always
         // matches what's drawn — a stored target value could drift from the real geometry after edits.
         canvas.drawText(String.format("%.1f°", Math.abs(sweep)), textX, textY, textPaint);
+    }
+
+    /**
+     * Always-on: annotates every corner in the drawing with an arc + its value — polygon vertices
+     * (e.g. a rectangle's four right angles), internal corners of multi-segment lines, and junctions
+     * where two separate lines share an endpoint. Junctions already carrying a manual angle are skipped.
+     */
+    private void drawAutoAngles(Canvas canvas) {
+        if (engine == null) return;
+        List<Geometry> geos = engine.getGeometries();
+
+        for (Geometry geo : geos) {
+            if (geo instanceof Polygon) {
+                if (isCircleLike(geo)) continue; // circles are buffer polygons — don't annotate every segment
+                Coordinate[] c = geo.getCoordinates();
+                int n = c.length - 1; // closed ring: last == first
+                if (n < 3) continue;
+                // Ring winding (signed area): lets us show the true INTERIOR angle, which is reflex (>180°)
+                // at a concave corner — otherwise an L-shape's 270° corner would read as 90°.
+                double area2 = 0;
+                for (int i = 0; i < n; i++) { Coordinate p = c[i], q = c[(i + 1) % n]; area2 += p.x * q.y - q.x * p.y; }
+                boolean ccw = area2 > 0;
+                for (int i = 0; i < n; i++) {
+                    Coordinate prev = c[(i - 1 + n) % n], cur = c[i], next = c[(i + 1) % n];
+                    double cross = (cur.x - prev.x) * (next.y - cur.y) - (cur.y - prev.y) * (next.x - cur.x);
+                    boolean reflex = ccw ? (cross < 0) : (cross > 0);
+                    drawCornerArc(canvas, cur, prev, next, reflex);
+                }
+            } else if (geo instanceof LineString) {
+                Coordinate[] c = geo.getCoordinates();
+                for (int i = 1; i < c.length - 1; i++) // internal corners of an open polyline
+                    drawCornerArc(canvas, c[i], c[i - 1], c[i + 1]);
+            }
+        }
+
+        // Junctions where two separate lines meet at a shared endpoint.
+        for (int i = 0; i < geos.size(); i++) {
+            if (!(geos.get(i) instanceof LineString)) continue;
+            Coordinate[] ci = geos.get(i).getCoordinates();
+            if (ci.length < 2) continue;
+            for (int j = i + 1; j < geos.size(); j++) {
+                if (!(geos.get(j) instanceof LineString)) continue;
+                Coordinate[] cj = geos.get(j).getCoordinates();
+                if (cj.length < 2) continue;
+                if (hasManualAnnotation((LineString) geos.get(i), (LineString) geos.get(j))) continue;
+                Coordinate shared = sharedEndpoint(ci, cj);
+                if (shared != null) drawCornerArc(canvas, shared, neighborOf(ci, shared), neighborOf(cj, shared));
+            }
+        }
+    }
+
+    /** Draws the smaller (≤180°) angle between pivot→p1 and pivot→p2 — for line junctions & open corners. */
+    private void drawCornerArc(Canvas canvas, Coordinate pivot, Coordinate p1, Coordinate p2) {
+        drawCornerArc(canvas, pivot, p1, p2, false);
+    }
+
+    /**
+     * Draws one corner angle: the arc between pivot→p1 and pivot→p2, plus the value in degrees.
+     * When {@code reflex} is true the interior angle is the major one (&gt;180°), so the value and the
+     * arc are taken the long way round — used for concave polygon corners.
+     */
+    private void drawCornerArc(Canvas canvas, Coordinate pivot, Coordinate p1, Coordinate p2, boolean reflex) {
+        double v1x = p1.x - pivot.x, v1y = p1.y - pivot.y;
+        double v2x = p2.x - pivot.x, v2y = p2.y - pivot.y;
+        double l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y);
+        if (l1 < 1e-6 || l2 < 1e-6) return;
+        float a1 = (float) Math.toDegrees(Math.atan2(v1y, v1x));
+        float a2 = (float) Math.toDegrees(Math.atan2(v2y, v2x));
+        float sweep = a2 - a1; if (sweep > 180) sweep -= 360; if (sweep < -180) sweep += 360;
+        double deg = Math.abs(sweep);
+        if (deg < 0.5 || Math.abs(deg - 180) < 0.5) return; // straight / degenerate — nothing to show
+        if (reflex) { // take the major arc through the polygon interior
+            sweep = sweep > 0 ? sweep - 360 : sweep + 360;
+            deg = 360 - deg;
+        }
+
+        float radius = 38f / scale;
+        double maxR = 0.42 * Math.min(l1, l2);
+        if (radius > maxR) radius = (float) maxR;
+        dimensionPaint.setStrokeWidth(2f / scale);
+        RectF oval = new RectF((float) pivot.x - radius, (float) pivot.y - radius,
+                (float) pivot.x + radius, (float) pivot.y + radius);
+        canvas.drawArc(oval, a1, sweep, false, dimensionPaint);
+
+        float labelR = radius + 24f / scale;
+        float tx = (float) (pivot.x + labelR * Math.cos(Math.toRadians(a1 + sweep / 2)));
+        float ty = (float) (pivot.y + labelR * Math.sin(Math.toRadians(a1 + sweep / 2)));
+        textPaint.setTextSize(26f / scale);
+        textPaint.setColor(colDimension);
+        canvas.drawText(String.format("%.0f°", deg), tx, ty, textPaint);
+        textPaint.setColor(colText);
+    }
+
+    /**
+     * Mirrors the engine's circle test: a polygon is treated as a circle (buffer with many segments)
+     * when it has more than 12 sides or is tagged "R:" by a dimension, and the WORKSPACE frame is also
+     * excluded. Such shapes must NOT get a per-segment angle annotation.
+     */
+    private boolean isCircleLike(Geometry g) {
+        Object ud = g.getUserData();
+        if (ud != null) {
+            String s = ud.toString().trim();
+            if ("WORKSPACE".equals(s)) return true;
+            if (s.toUpperCase(java.util.Locale.US).startsWith("R")) return true;
+        }
+        return Math.max(0, g.getCoordinates().length - 1) > 12;
+    }
+
+    /**
+     * True if the user already added a manual angle annotation between these two lines. Matched by
+     * COORDINATES, not reference: a parametric edit rebuilds line instances (so the annotation may hold
+     * a stale object), and matching geometry keeps the auto layer from drawing a duplicate arc on top.
+     */
+    private boolean hasManualAnnotation(LineString a, LineString b) {
+        for (CadEngine2d.AngleAnnotation ann : engine.getAngleAnnotations())
+            if ((sameLine(ann.line1, a) && sameLine(ann.line2, b)) || (sameLine(ann.line1, b) && sameLine(ann.line2, a)))
+                return true;
+        return false;
+    }
+
+    /** Two lines are "the same" when their vertices coincide (within tolerance), regardless of instance. */
+    private boolean sameLine(LineString p, LineString q) {
+        if (p == q) return true;
+        if (p == null || q == null) return false;
+        Coordinate[] pc = p.getCoordinates(), qc = q.getCoordinates();
+        if (pc.length != qc.length) return false;
+        for (int i = 0; i < pc.length; i++) if (pc[i].distance(qc[i]) > 0.1) return false;
+        return true;
+    }
+
+    /** The endpoint shared by two lines (within tolerance), or null if they don't meet at an end. */
+    private Coordinate sharedEndpoint(Coordinate[] a, Coordinate[] b) {
+        Coordinate[] ae = { a[0], a[a.length - 1] };
+        Coordinate[] be = { b[0], b[b.length - 1] };
+        for (Coordinate p : ae) for (Coordinate q : be) if (p.distance(q) < 0.1) return p;
+        return null;
+    }
+
+    /** The vertex adjacent to {@code shared} along line {@code c} (gives the arm direction at the junction). */
+    private Coordinate neighborOf(Coordinate[] c, Coordinate shared) {
+        if (c[0].distance(shared) < 0.1) return c[1];
+        if (c[c.length - 1].distance(shared) < 0.1) return c[c.length - 2];
+        return c[1];
     }
 
     private void drawPreview(Canvas canvas) {

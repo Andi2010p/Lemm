@@ -251,6 +251,7 @@ public class GeometryInputActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnBack).setOnClickListener(v -> confirmExit());
+        findViewById(R.id.btnHelpInput).setOnClickListener(v -> HelpDialog.show(this, R.string.help_title, R.string.help_input_body));
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override

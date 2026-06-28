@@ -12,6 +12,7 @@ public class TheoremsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_theorems);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        findViewById(R.id.btnHelpTheorems).setOnClickListener(v -> HelpDialog.show(this, R.string.help_title, R.string.help_theorems_body));
 
         // Now these open the Theorem List instead of the Canvas directly
         findViewById(R.id.btnGrade7).setOnClickListener(v -> openGrade(7));

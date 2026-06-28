@@ -211,6 +211,18 @@
     <string name="onb_leave_yes">Yes, skip</string>
     <string name="onb_leave_no">Keep reading</string>
     <string name="how_to_use">How to use Lemma</string>
+    <string name="help_watch_guide">Watch the guide</string>
+    <string name="history_weak_internet">Weak or no internet connection. Showing your saved data — it will sync when you reconnect.</string>
+    <string name="history_sync_failed">Couldn\'t sync with the cloud right now. Showing your saved data.</string>
+    <string name="help_title">How to use this screen</string>
+
+    <string name="help_3d_body">3D Sketch Editor — pick a tool, then tap the figure.\n\n• Select — tap a point, line, midpoint, angle or face to see its details (length, coordinates…).\n• Draw — tap the grid to drop points and join them by hand; tap the first point to close a face.\n• Dim — show or hide the length on each edge.\n• Angle — tap a corner point, then the two arm points, to mark an angle with its value.\n• Finish — end the current sketch.\n• + Point — add a point by typing its X, Y, Z.\n• + Line — connect two existing points.\n• Extrude — turn a closed shape into a 3D solid (a rectangle becomes a box with 8 points).\n• Delete — remove the selected element. Clear — empty the canvas.\n• Save — save your 3D drawing to History.\n• Undo / Redo — step back or forward.\n• Rotate/Pan — orbit or move the view; Reset re-centres it; +/− zoom.</string>
+
+    <string name="help_2d_body">Drawing board — pick a tool, then draw on the canvas.\n\n• VIEW ▸ Pan — drag to move the canvas.\n• DRAW ▸ Line / Rectangle / Circle — drag to draw the shape.\n• EDIT ▸ Select — tap a shape to see its size; tap an edge to pick just that side.\n• EDIT ▸ Ortho — lock drawing to 90°.\n• EDIT ▸ Undo / Redo / Clear.\n• When a shape is selected: Dim sets the exact size, Angle sets the angle between two lines, Extrude turns it into a 3D solid, Delete removes it.\n• FILE ▸ 3D opens the 3D editor; Save stores your drawing.</string>
+
+    <string name="help_input_body">Geometry solver — get step-by-step answers.\n\n• Type your problem in the box, tap the camera to scan it, or the microphone to say it.\n• Add Image attaches a photo of the figure.\n• Press Analyze &amp; Visualize — Lemma shows the steps and a 3D figure.\n• Tap any point or line in the 3D figure to see its measurements.\n• Rotate / zoom the figure with the controls; Save keeps the solution in History.</string>
+
+    <string name="help_theorems_body">Theorems — learn the rules of geometry.\n\n• Pick your grade, then a theorem.\n• Each page shows a drawing, the theorem, a simple explanation, a proof, where it is used, and a short quiz.\n• Type your answer to the quiz and press Check.\n• Use the canvas controls to zoom or rotate the figure.</string>
 
     <string name="onb_t_welcome">Welcome to Lemma!</string>
     <string name="onb_d_welcome">Lemma helps you learn geometry and solve problems. Let\'s take a quick tour to see what it can do!</string>
@@ -247,6 +259,9 @@
     <string name="info_plane">Plane</string>
     <string name="info_vertex_at">Vertex at</string>
     <string name="info_rays">Rays</string>
+    <string name="info_position">Position</string>
+    <string name="info_connects">Connects to</string>
+    <string name="d3_select">Select</string>
 
     <!-- ================= 3D SKETCH EDITOR ================= -->
     <string name="editor3d_title">3D Sketch Editor</string>
@@ -278,6 +293,17 @@
     <string name="d3_angle_pick2">Tap the first arm point</string>
     <string name="d3_angle_pick3">Tap the second arm point</string>
     <string name="d3_angle_added">Angle added</string>
+    <string name="d3_dim">Dim</string>
+    <string name="d3_edit">Edit</string>
+    <string name="d3_edit_point">Edit point (X, Y, Z)</string>
+    <string name="d3_edit_length">Edit length</string>
+    <string name="d3_edit_angle">Edit angle (degrees)</string>
+    <string name="d3_edit_none">Select a point, edge or angle first, then Edit.</string>
+    <string name="d3_circle">Circle</string>
+    <string name="d3_sphere">Sphere</string>
+    <string name="d3_circle_title">New circle (X, Y, Z, R)</string>
+    <string name="d3_sphere_title">New sphere (X, Y, Z, R)</string>
+    <string name="d3_shape_added">Shape added</string>
 
     <!-- ================= THEOREMS & QUIZZES ================= -->
     <string name="theorems_title">Theorems &amp; Formulas</string>
