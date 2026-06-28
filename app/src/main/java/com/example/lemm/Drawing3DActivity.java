@@ -38,6 +38,8 @@ public class Drawing3DActivity extends AppCompatActivity {
     private static final int TOOL_DRAW = 1;
     private static final int TOOL_LINE = 2;
     private static final int TOOL_ANGLE = 3;
+    private static final int TOOL_CIRCLE = 4; // finger-draw: tap centre, drag radius
+    private static final int TOOL_SPHERE = 5;
 
     private GeometryCanvas3D canvas3D;
     private TextView tvInfo;
@@ -81,6 +83,13 @@ public class Drawing3DActivity extends AppCompatActivity {
         canvas3D.setShowDimensions(true); // show edge lengths on the figure, like the 2D editor
         canvas3D.setOnElementSelectedListener(this::onElementSelected);
         canvas3D.setOnSketchPointListener(this::onSketchPoint);
+        canvas3D.setOnRadiusShapeListener((isCircle, cx, cy, cz, r) -> {
+            String label = (isCircle ? "C" : "S") + (++roundShapeCount);
+            if (isCircle) canvas3D.addCircle(label, cx, cy, cz, r, true); // flat on the ground plane
+            else canvas3D.addSphere(label, cx, cy, cz, r);
+            canvas3D.recordHistory();
+            toast(getString(R.string.d3_shape_added));
+        });
 
         ((MaterialButton) findViewById(R.id.btnDimToggle)).setOnClickListener(v ->
                 canvas3D.setShowDimensions(!canvas3D.isShowingDimensions()));
@@ -92,8 +101,12 @@ public class Drawing3DActivity extends AppCompatActivity {
         ((MaterialButton) findViewById(R.id.btnAngleTool)).setOnClickListener(v -> setTool(TOOL_ANGLE));
         ((MaterialButton) findViewById(R.id.btnFinishSketch)).setOnClickListener(v -> finishSketch());
         ((MaterialButton) findViewById(R.id.btnAddPoint)).setOnClickListener(v -> promptForPoint());
-        ((MaterialButton) findViewById(R.id.btnAddCircle)).setOnClickListener(v -> promptForCircle());
-        ((MaterialButton) findViewById(R.id.btnAddSphere)).setOnClickListener(v -> promptForSphere());
+        MaterialButton btnCircle = findViewById(R.id.btnAddCircle);
+        btnCircle.setOnClickListener(v -> setTool(TOOL_CIRCLE));          // finger-draw
+        btnCircle.setOnLongClickListener(v -> { promptForCircle(); return true; }); // precise X/Y/Z/R
+        MaterialButton btnSphere = findViewById(R.id.btnAddSphere);
+        btnSphere.setOnClickListener(v -> setTool(TOOL_SPHERE));
+        btnSphere.setOnLongClickListener(v -> { promptForSphere(); return true; });
         ((MaterialButton) findViewById(R.id.btnExtrude)).setOnClickListener(v -> promptForExtrude());
         ((MaterialButton) findViewById(R.id.btnSave3D)).setOnClickListener(v -> promptForSave());
         ((MaterialButton) findViewById(R.id.btnDelete)).setOnClickListener(v -> {
@@ -142,12 +155,21 @@ public class Drawing3DActivity extends AppCompatActivity {
         sketchChain.clear();
         anglePicks.clear();
         pendingLineStart = null;
-        canvas3D.setInteractionMode(t == TOOL_DRAW ? GeometryCanvas3D.MODE_DRAW : GeometryCanvas3D.MODE_SELECT);
+        int mode;
         switch (t) {
-            case TOOL_DRAW:  tvInfo.setText(R.string.d3_draw_hint); break;
-            case TOOL_LINE:  toast(getString(R.string.d3_tap_first)); break;
-            case TOOL_ANGLE: toast(getString(R.string.d3_angle_pick1)); break;
-            default:         tvInfo.setText(R.string.info_tap_hint); break;
+            case TOOL_DRAW:   mode = GeometryCanvas3D.MODE_DRAW; break;
+            case TOOL_CIRCLE: mode = GeometryCanvas3D.MODE_DRAW_CIRCLE; break;
+            case TOOL_SPHERE: mode = GeometryCanvas3D.MODE_DRAW_SPHERE; break;
+            default:          mode = GeometryCanvas3D.MODE_SELECT; break;
+        }
+        canvas3D.setInteractionMode(mode);
+        switch (t) {
+            case TOOL_DRAW:   tvInfo.setText(R.string.d3_draw_hint); break;
+            case TOOL_LINE:   toast(getString(R.string.d3_tap_first)); break;
+            case TOOL_ANGLE:  toast(getString(R.string.d3_angle_pick1)); break;
+            case TOOL_CIRCLE: tvInfo.setText(R.string.d3_circle_drag_hint); toast(getString(R.string.d3_circle_drag_hint)); break;
+            case TOOL_SPHERE: tvInfo.setText(R.string.d3_sphere_drag_hint); toast(getString(R.string.d3_sphere_drag_hint)); break;
+            default:          tvInfo.setText(R.string.info_tap_hint); break;
         }
     }
 

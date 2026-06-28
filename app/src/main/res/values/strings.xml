@@ -304,6 +304,39 @@
     <string name="d3_circle_title">New circle (X, Y, Z, R)</string>
     <string name="d3_sphere_title">New sphere (X, Y, Z, R)</string>
     <string name="d3_shape_added">Shape added</string>
+    <string name="d3_circle_drag_hint">Circle: tap the centre, then drag to set the radius. Long-press the button for exact values.</string>
+    <string name="d3_sphere_drag_hint">Sphere: tap the centre, then drag to set the radius. Long-press the button for exact values.</string>
+
+    <!-- ============ TOOL GUIDE (animated instructions) ============ -->
+    <string name="tg_got_it">Got it</string>
+    <string name="tg2_pan_t">Pan</string>
+    <string name="tg2_pan_d">Drag with one finger to move around the canvas. Pinch to zoom in and out.</string>
+    <string name="tg2_line_t">Line</string>
+    <string name="tg2_line_d">Tap to set the start point, then tap again to drop the end — a straight line connects them.</string>
+    <string name="tg2_rect_t">Rectangle</string>
+    <string name="tg2_rect_d">Touch one corner and drag to the opposite corner. Side lengths are shown automatically.</string>
+    <string name="tg2_circle_t">Circle</string>
+    <string name="tg2_circle_d">Touch the centre and drag outwards to set the radius. The radius is shown as you draw.</string>
+    <string name="tg2_select_t">Select &amp; measure</string>
+    <string name="tg2_select_d">Tap any shape or edge to select it. Its length, area or angle appears so you can read or edit it.</string>
+    <string name="tg2_ortho_t">Right-angle (Ortho)</string>
+    <string name="tg2_ortho_d">Turn on Ortho to snap lines to clean horizontal, vertical and 90° angles while you draw.</string>
+    <string name="tg2_angle_t">Set angle</string>
+    <string name="tg2_angle_d">Select two connected lines, then set the exact angle between them — the second line rotates to match.</string>
+    <string name="tg2_extrude_t">Extrude to 3D</string>
+    <string name="tg2_extrude_d">Select a closed shape and extrude it to lift it into a solid 3D figure you can rotate.</string>
+    <string name="tg2_undo_t">Undo</string>
+    <string name="tg2_undo_d">Step back and undo your last action. You can undo several times in a row.</string>
+    <string name="tg2_redo_t">Redo</string>
+    <string name="tg2_redo_d">Bring back an action you just undid.</string>
+    <string name="tg2_delete_t">Delete</string>
+    <string name="tg2_delete_d">Select a shape or edge, then delete to remove just that part of the drawing.</string>
+    <string name="tg2_clear_t">Clear</string>
+    <string name="tg2_clear_d">Erase the whole canvas and start fresh. Use Undo if you change your mind.</string>
+    <string name="tg2_open3d_t">Open 3D editor</string>
+    <string name="tg2_open3d_d">Switch to the 3D sketch editor to build and explore solids in three dimensions.</string>
+    <string name="tg2_save_t">Save</string>
+    <string name="tg2_save_d">Save your drawing to History so you can open and continue it later on any device.</string>
 
     <!-- ================= THEOREMS & QUIZZES ================= -->
     <string name="theorems_title">Theorems &amp; Formulas</string>

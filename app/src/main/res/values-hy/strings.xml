@@ -301,6 +301,39 @@
     <string name="d3_circle_title">Նոր շրջան (X, Y, Z, R)</string>
     <string name="d3_sphere_title">Նոր գունդ (X, Y, Z, R)</string>
     <string name="d3_shape_added">Պատկերն ավելացված է</string>
+    <string name="d3_circle_drag_hint">Շրջան՝ սեղմեք կենտրոնին, ապա քաշեք՝ շառավիղը սահմանելու համար: Սեղմած պահեք կոճակը՝ ճշգրիտ արժեքների համար:</string>
+    <string name="d3_sphere_drag_hint">Գունդ՝ սեղմեք կենտրոնին, ապա քաշեք՝ շառավիղը սահմանելու համար: Սեղմած պահեք կոճակը՝ ճշգրիտ արժեքների համար:</string>
+
+    <!-- ============ TOOL GUIDE (animated instructions) ============ -->
+    <string name="tg_got_it">Հասկացա</string>
+    <string name="tg2_pan_t">Տեղափոխում</string>
+    <string name="tg2_pan_d">Քաշեք մեկ մատով՝ կտավով տեղաշարժվելու համար: Սեղմեք երկու մատով՝ մասշտաբի համար:</string>
+    <string name="tg2_line_t">Գիծ</string>
+    <string name="tg2_line_d">Սեղմեք սկզբնակետին, ապա վերջնակետին — դրանց միջև կգծվի ուղիղ գիծ:</string>
+    <string name="tg2_rect_t">Ուղղանկյուն</string>
+    <string name="tg2_rect_d">Սեղմեք մի անկյունին և քաշեք դեպի հակառակ անկյունը: Կողմերի երկարությունները ցուցադրվում են ինքնաբերաբար:</string>
+    <string name="tg2_circle_t">Շրջան</string>
+    <string name="tg2_circle_d">Սեղմեք կենտրոնին և քաշեք դեպի դուրս՝ շառավիղը սահմանելու համար: Շառավիղը ցուցադրվում է գծելիս:</string>
+    <string name="tg2_select_t">Ընտրել և չափել</string>
+    <string name="tg2_select_d">Սեղմեք պատկերին կամ կողին՝ ընտրելու համար: Կհայտնվեն երկարությունը, մակերեսը կամ անկյունը՝ կարդալու կամ փոխելու համար:</string>
+    <string name="tg2_ortho_t">Ուղիղ անկյուն (Օրթո)</string>
+    <string name="tg2_ortho_d">Միացրեք Օրթոն՝ գծերը հորիզոնական, ուղղահայաց և 90° անկյունների կպցնելու համար:</string>
+    <string name="tg2_angle_t">Սահմանել անկյուն</string>
+    <string name="tg2_angle_d">Ընտրեք երկու միացված գիծ և սահմանեք դրանց միջև ճշգրիտ անկյունը — երկրորդ գիծը կպտտվի:</string>
+    <string name="tg2_extrude_t">Արտաձգել 3D</string>
+    <string name="tg2_extrude_d">Ընտրեք փակ պատկեր և արտաձգեք այն ծավալային 3D մարմնի, որը կարող եք պտտել:</string>
+    <string name="tg2_undo_t">Հետարկել</string>
+    <string name="tg2_undo_d">Վերադարձեք մեկ քայլ հետ և չեղարկեք վերջին գործողությունը: Կարող եք մի քանի անգամ:</string>
+    <string name="tg2_redo_t">Կրկնել</string>
+    <string name="tg2_redo_d">Վերադարձրեք գործողությունը, որը նոր եք չեղարկել:</string>
+    <string name="tg2_delete_t">Ջնջել</string>
+    <string name="tg2_delete_d">Ընտրեք պատկեր կամ կող և ջնջեք միայն այդ մասը:</string>
+    <string name="tg2_clear_t">Մաքրել</string>
+    <string name="tg2_clear_d">Ջնջեք ամբողջ կտավը և սկսեք նորից: Եթե փոխեցիք միտքը՝ սեղմեք Հետարկել:</string>
+    <string name="tg2_open3d_t">Բացել 3D խմբագրիչ</string>
+    <string name="tg2_open3d_d">Անցեք 3D խմբագրիչ՝ ծավալային մարմիններ կառուցելու և ուսումնասիրելու համար:</string>
+    <string name="tg2_save_t">Պահպանել</string>
+    <string name="tg2_save_d">Պահպանեք գծագիրը Պատմության մեջ՝ ցանկացած սարքում շարունակելու համար:</string>
 
     <string name="theorems_title">Թեորեմներ և Բանաձևեր</string>
     <string name="grade_title">%1$d-րդ դասարան</string>

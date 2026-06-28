@@ -130,7 +130,9 @@ public class DrawingActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> confirmExit());
         findViewById(R.id.btnOpen3D).setOnClickListener(v -> startActivity(new android.content.Intent(this, Drawing3DActivity.class)));
-        findViewById(R.id.btnHelp2D).setOnClickListener(v -> HelpDialog.show(this, R.string.help_title, R.string.help_2d_body));
+        View btnHelp2D = findViewById(R.id.btnHelp2D);
+        btnHelp2D.setOnClickListener(v -> ToolGuide.showTour(this, ToolGuide.drawing2d())); // animated walkthrough
+        btnHelp2D.setOnLongClickListener(v -> { HelpDialog.show(this, R.string.help_title, R.string.help_2d_body); return true; }); // text help
         findViewById(R.id.btnExtrude3D).setOnClickListener(v -> extrudeSelectedTo3D());
         findViewById(R.id.btnToolMove).setOnClickListener(v -> selectTool("MOVE"));
         findViewById(R.id.btnToolSelect).setOnClickListener(v -> selectTool("SELECT"));
@@ -155,6 +157,22 @@ public class DrawingActivity extends AppCompatActivity {
             btnToolSaveTop.setOnClickListener(v -> showSaveDialog());
             if (isViewOnly) btnToolSaveTop.setVisibility(View.GONE);
         }
+
+        // Long-press any tool for an animated "how to use it" coach-mark (full tour is on the Help button).
+        coach(R.id.btnToolMove,       ToolAnimationView.TYPE_PAN,     R.string.tg2_pan_t,     R.string.tg2_pan_d);
+        coach(R.id.btnToolLine,       ToolAnimationView.TYPE_LINE,    R.string.tg2_line_t,    R.string.tg2_line_d);
+        coach(R.id.btnToolRect,       ToolAnimationView.TYPE_RECT,    R.string.tg2_rect_t,    R.string.tg2_rect_d);
+        coach(R.id.btnToolCircle,     ToolAnimationView.TYPE_CIRCLE,  R.string.tg2_circle_t,  R.string.tg2_circle_d);
+        coach(R.id.btnToolSelect,     ToolAnimationView.TYPE_SELECT,  R.string.tg2_select_t,  R.string.tg2_select_d);
+        coach(R.id.btnToolOrtho,      ToolAnimationView.TYPE_ORTHO,   R.string.tg2_ortho_t,   R.string.tg2_ortho_d);
+        coach(R.id.btnUndo,           ToolAnimationView.TYPE_UNDO,    R.string.tg2_undo_t,    R.string.tg2_undo_d);
+        coach(R.id.btnRedo,           ToolAnimationView.TYPE_REDO,    R.string.tg2_redo_t,    R.string.tg2_redo_d);
+        coach(R.id.btnToolClear,      ToolAnimationView.TYPE_CLEAR,   R.string.tg2_clear_t,   R.string.tg2_clear_d);
+        coach(R.id.btnOpen3D,         ToolAnimationView.TYPE_EXTRUDE, R.string.tg2_open3d_t,  R.string.tg2_open3d_d);
+        coach(R.id.btnExtrude3D,      ToolAnimationView.TYPE_EXTRUDE, R.string.tg2_extrude_t, R.string.tg2_extrude_d);
+        coach(R.id.btnSetAngleAction, ToolAnimationView.TYPE_ANGLE,   R.string.tg2_angle_t,   R.string.tg2_angle_d);
+        coach(R.id.btnDeleteShape,    ToolAnimationView.TYPE_DELETE,  R.string.tg2_delete_t,  R.string.tg2_delete_d);
+        coach(R.id.btnToolSaveTop,    ToolAnimationView.TYPE_SAVE,    R.string.tg2_save_t,    R.string.tg2_save_d);
 
         View btnDontSave = findViewById(R.id.btnDontSave);
         if (btnDontSave != null) btnDontSave.setOnClickListener(v -> finish());
@@ -212,6 +230,15 @@ public class DrawingActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Select a second line first", Toast.LENGTH_SHORT).show();
             }
+        });
+    }
+
+    /** Attaches an animated coach-mark (long-press) to a tool button, if present in this layout. */
+    private void coach(int viewId, int anim, int titleRes, int descRes) {
+        View v = findViewById(viewId);
+        if (v != null) v.setOnLongClickListener(x -> {
+            ToolGuide.showSingle(this, new ToolGuide.Tutorial(anim, titleRes, descRes));
+            return true;
         });
     }
 

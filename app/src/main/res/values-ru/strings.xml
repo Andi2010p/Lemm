@@ -301,6 +301,39 @@
     <string name="d3_circle_title">Новый круг (X, Y, Z, R)</string>
     <string name="d3_sphere_title">Новая сфера (X, Y, Z, R)</string>
     <string name="d3_shape_added">Фигура добавлена</string>
+    <string name="d3_circle_drag_hint">Круг: коснитесь центра, затем потяните, чтобы задать радиус. Удерживайте кнопку для точных значений.</string>
+    <string name="d3_sphere_drag_hint">Сфера: коснитесь центра, затем потяните, чтобы задать радиус. Удерживайте кнопку для точных значений.</string>
+
+    <!-- ============ TOOL GUIDE (animated instructions) ============ -->
+    <string name="tg_got_it">Понятно</string>
+    <string name="tg2_pan_t">Перемещение</string>
+    <string name="tg2_pan_d">Проведите одним пальцем, чтобы перемещаться по холсту. Сводите пальцы для масштаба.</string>
+    <string name="tg2_line_t">Линия</string>
+    <string name="tg2_line_d">Коснитесь начальной точки, затем конечной — между ними появится прямая линия.</string>
+    <string name="tg2_rect_t">Прямоугольник</string>
+    <string name="tg2_rect_d">Коснитесь одного угла и протяните к противоположному. Длины сторон показываются автоматически.</string>
+    <string name="tg2_circle_t">Круг</string>
+    <string name="tg2_circle_d">Коснитесь центра и потяните наружу, чтобы задать радиус. Радиус отображается при рисовании.</string>
+    <string name="tg2_select_t">Выбор и измерение</string>
+    <string name="tg2_select_d">Коснитесь фигуры или ребра, чтобы выбрать. Появятся длина, площадь или угол — их можно прочитать или изменить.</string>
+    <string name="tg2_ortho_t">Прямой угол (Орто)</string>
+    <string name="tg2_ortho_d">Включите Орто, чтобы линии привязывались к горизонтали, вертикали и углам 90°.</string>
+    <string name="tg2_angle_t">Задать угол</string>
+    <string name="tg2_angle_d">Выберите две соединённые линии и задайте точный угол между ними — вторая линия повернётся.</string>
+    <string name="tg2_extrude_t">Выдавить в 3D</string>
+    <string name="tg2_extrude_d">Выберите замкнутую фигуру и выдавите её в объёмное 3D-тело, которое можно вращать.</string>
+    <string name="tg2_undo_t">Отменить</string>
+    <string name="tg2_undo_d">Вернитесь на шаг назад и отмените последнее действие. Можно отменять несколько раз.</string>
+    <string name="tg2_redo_t">Повторить</string>
+    <string name="tg2_redo_d">Верните действие, которое только что отменили.</string>
+    <string name="tg2_delete_t">Удалить</string>
+    <string name="tg2_delete_d">Выберите фигуру или ребро и удалите только эту часть рисунка.</string>
+    <string name="tg2_clear_t">Очистить</string>
+    <string name="tg2_clear_d">Сотрите весь холст и начните заново. Если передумали — нажмите Отменить.</string>
+    <string name="tg2_open3d_t">Открыть 3D-редактор</string>
+    <string name="tg2_open3d_d">Перейдите в 3D-редактор, чтобы строить и исследовать объёмные тела.</string>
+    <string name="tg2_save_t">Сохранить</string>
+    <string name="tg2_save_d">Сохраните рисунок в Историю, чтобы открыть и продолжить позже на любом устройстве.</string>
 
     <string name="theorems_title">Теоремы и Формулы</string>
     <string name="grade_title">Программа %1$d класса</string>

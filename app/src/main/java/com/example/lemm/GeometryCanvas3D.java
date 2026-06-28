@@ -73,7 +73,7 @@ public class GeometryCanvas3D extends View {
     private static class Cone3D { String label; float cx, cy, cz, r, h, curvature; Cone3D(String l, float x, float y, float z, float r, float h, float cur) { this.label = l; this.cx = x; this.cy = y; this.cz = z; this.r = r; this.h = h; this.curvature = cur; } }
     private static class Pyramid3D { String label; float cx, cy, cz, w, d, h; Pyramid3D(String l, float x, float y, float z, float w, float d, float h) { this.label = l; this.cx = x; this.cy = y; this.cz = z; this.w = w; this.d = d; this.h = h; } }
     private static class Cylinder3D { String label; float cx, cy, cz, r, h; Cylinder3D(String l, float x, float y, float z, float r, float h) { this.label = l; this.cx = x; this.cy = y; this.cz = z; this.r = r; this.h = h; } }
-    private static class Circle3D { String label; float cx, cy, cz, r; Circle3D(String l, float x, float y, float z, float r) { this.label = l; this.cx = x; this.cy = y; this.cz = z; this.r = r; } }
+    private static class Circle3D { String label; float cx, cy, cz, r; boolean ground; Circle3D(String l, float x, float y, float z, float r, boolean ground) { this.label = l; this.cx = x; this.cy = y; this.cz = z; this.r = r; this.ground = ground; } }
     private static class Sphere3D { String label; float x, y, z, r; Sphere3D(String l, float x, float y, float z, float r) { this.label = l; this.x = x; this.y = y; this.z = z; this.r = r; } }
     /** A 2D profile (in the XZ plane at baseY) extruded by `height` along +Y — the result of an Extrude. */
     private static class Prism3D { String label; float[] xs, zs; float baseY, height; Prism3D(String l, float[] xs, float[] zs, float baseY, float h) { this.label = l; this.xs = xs; this.zs = zs; this.baseY = baseY; this.height = h; } }
@@ -102,17 +102,30 @@ public class GeometryCanvas3D extends View {
     public void setShowDimensions(boolean show) { this.showDimensions = show; invalidate(); }
     public boolean isShowingDimensions() { return showDimensions; }
 
-    // Interaction mode: SELECT inspects/picks; DRAW drops points on the sketch plane (hand drawing).
+    // Interaction mode: SELECT inspects/picks; DRAW drops points on the sketch plane (hand drawing);
+    // DRAW_CIRCLE / DRAW_SPHERE let the user pick a centre on the ground and drag out the radius by finger.
     public static final int MODE_SELECT = 0;
     public static final int MODE_DRAW = 1;
+    public static final int MODE_DRAW_CIRCLE = 2;
+    public static final int MODE_DRAW_SPHERE = 3;
     private int interactionMode = MODE_SELECT;
     public void setInteractionMode(int m) { interactionMode = m; }
     public int getInteractionMode() { return interactionMode; }
+
+    // Live "tap centre, drag radius" state for the finger-drawn circle / sphere.
+    private boolean isRadiusDragging = false;
+    private float pendingCx, pendingCy, pendingCz, pendingRadius;
+    private Paint previewPaint;
 
     /** Fired when the user taps in DRAW mode: gives the label of the snapped/created point (or null if the tap couldn't be placed on the plane). */
     public interface OnSketchPointListener { void onSketchPoint(String label); }
     private OnSketchPointListener sketchListener;
     public void setOnSketchPointListener(OnSketchPointListener l) { this.sketchListener = l; }
+
+    /** Fired when a finger-drawn circle/sphere is finished: gives its centre (on the ground plane) and radius. */
+    public interface OnRadiusShapeListener { void onRadiusShape(boolean isCircle, float cx, float cy, float cz, float r); }
+    private OnRadiusShapeListener radiusShapeListener;
+    public void setOnRadiusShapeListener(OnRadiusShapeListener l) { this.radiusShapeListener = l; }
 
     public GeometryCanvas3D(Context context, AttributeSet attrs) { super(context, attrs); init(context); }
 
@@ -139,6 +152,8 @@ public class GeometryCanvas3D extends View {
         dimTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); dimTextPaint.setColor(0xFF66BB6A); dimTextPaint.setTextSize(22f); dimTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
         autoAnglePaint = new Paint(Paint.ANTI_ALIAS_FLAG); autoAnglePaint.setColor(0xFF26A69A); autoAnglePaint.setStrokeWidth(3f); autoAnglePaint.setStyle(Paint.Style.STROKE);
         autoAngleTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); autoAngleTextPaint.setColor(0xFF00897B); autoAngleTextPaint.setTextSize(22f); autoAngleTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
+        previewPaint = new Paint(Paint.ANTI_ALIAS_FLAG); previewPaint.setColor(0xFFFB8C00); previewPaint.setStrokeWidth(3f); previewPaint.setStyle(Paint.Style.STROKE);
+        previewPaint.setPathEffect(new android.graphics.DashPathEffect(new float[]{14f, 10f}, 0f));
 
         // A subtle vertical gradient backdrop derived from the theme canvas colour (lighter top → deeper bottom).
         colBg3dTop = lighten(colBg3d, 0.10f);
@@ -198,7 +213,9 @@ public class GeometryCanvas3D extends View {
         }
     }
     public void addPlane(List<String> labels) { planes.add(new Plane3D(labels)); invalidate(); }
-    public void addCircle(String l, float x, float y, float z, float r) { circles.add(new Circle3D(l, x, y, z, r)); invalidate(); }
+    public void addCircle(String l, float x, float y, float z, float r) { addCircle(l, x, y, z, r, false); }
+    /** Add a circle; {@code ground} true lays it flat on the XZ plane (finger-drawn footprint), false stands it up in XY. */
+    public void addCircle(String l, float x, float y, float z, float r, boolean ground) { circles.add(new Circle3D(l, x, y, z, r, ground)); invalidate(); }
     public void addSphere(String l, float x, float y, float z, float r) { spheres.add(new Sphere3D(l, x, y, z, r)); invalidate(); }
     public void addCone(String l, float x, float y, float z, float r, float h, float cur) { cones.add(new Cone3D(l, x, y, z, r, h, cur)); invalidate(); }
     public void addPyramid(String l, float x, float y, float z, float w, float d, float h) { pyramids.add(new Pyramid3D(l, x, y, z, w, d, h)); invalidate(); }
@@ -331,6 +348,22 @@ public class GeometryCanvas3D extends View {
         for (Pyramid3D p : pyramids) drawPyramid(canvas, p, radX, radY, radZ, centerX, centerY, sceneScale);
         for (Circle3D c : circles) drawCircle(canvas, c, radX, radY, radZ, centerX, centerY, sceneScale);
         for (Sphere3D s : spheres) drawSphere(canvas, s, radX, radY, radZ, centerX, centerY, sceneScale);
+
+        // Live preview while the user is dragging out a finger-drawn circle / sphere.
+        if (isRadiusDragging && pendingRadius > 0) {
+            if (interactionMode == MODE_DRAW_SPHERE) {
+                Point3D pc = new Point3D("", pendingCx, pendingCy, pendingCz);
+                projectPoint(pc, radX, radY, radZ, centerX, centerY, sceneScale);
+                canvas.drawCircle(pc.sx, pc.sy, pendingRadius * sceneScale, previewPaint);
+            } else {
+                drawCircleShape(canvas, pendingCx, pendingCy, pendingCz, pendingRadius, true, previewPaint,
+                        radX, radY, radZ, centerX, centerY, sceneScale);
+            }
+            // a small dot at the chosen centre
+            Point3D pc = new Point3D("", pendingCx, pendingCy, pendingCz);
+            projectPoint(pc, radX, radY, radZ, centerX, centerY, sceneScale);
+            canvas.drawCircle(pc.sx, pc.sy, 6f, pointPaint);
+        }
 
         for (int pi = 0; pi < planes.size(); pi++) {
             Plane3D pl = planes.get(pi);
@@ -1005,6 +1038,7 @@ public class GeometryCanvas3D extends View {
                 org.json.JSONObject o = new org.json.JSONObject();
                 o.put("l", c.label == null ? "" : c.label);
                 o.put("x", c.cx); o.put("y", c.cy); o.put("z", c.cz); o.put("r", c.r);
+                o.put("g", c.ground);
                 cir.put(o);
             }
             root.put("circles", cir);
@@ -1055,7 +1089,7 @@ public class GeometryCanvas3D extends View {
             org.json.JSONArray cir = root.optJSONArray("circles");
             if (cir != null) for (int i = 0; i < cir.length(); i++) {
                 org.json.JSONObject o = cir.getJSONObject(i);
-                addCircle(o.optString("l", ""), (float) o.optDouble("x"), (float) o.optDouble("y"), (float) o.optDouble("z"), (float) o.optDouble("r"));
+                addCircle(o.optString("l", ""), (float) o.optDouble("x"), (float) o.optDouble("y"), (float) o.optDouble("z"), (float) o.optDouble("r"), o.optBoolean("g", false));
             }
             org.json.JSONArray sph = root.optJSONArray("spheres");
             if (sph != null) for (int i = 0; i < sph.length(); i++) {
@@ -1215,19 +1249,25 @@ public class GeometryCanvas3D extends View {
 
     // --- FIXED: Circle now draws vertically on the XY plane (facing the camera) ---
     private void drawCircle(Canvas canvas, Circle3D c, double rx, double ry, double rz, float cx, float cy, float scale) {
+        drawCircleShape(canvas, c.cx, c.cy, c.cz, c.r, c.ground, linePaint, rx, ry, rz, cx, cy, scale);
+    }
+
+    /** Draws a circle of radius {@code r} centred at (ccx,ccy,ccz). {@code ground} lays it on the XZ plane, else XY. */
+    private void drawCircleShape(Canvas canvas, float ccx, float ccy, float ccz, float r, boolean ground, Paint paint,
+                                 double rx, double ry, double rz, float cx, float cy, float scale) {
         int segments = 36;
-        Point3D prev = null;
-        Point3D first = null;
-        for(int i=0; i<segments; i++) {
+        Point3D prev = null, first = null;
+        for (int i = 0; i < segments; i++) {
             double ang = 2 * Math.PI * i / segments;
-            // Changed: Uses c.cy + Math.sin instead of c.cz + Math.sin
-            Point3D curr = new Point3D("", c.cx + (float)Math.cos(ang)*c.r, c.cy + (float)Math.sin(ang)*c.r, c.cz);
+            Point3D curr = ground
+                    ? new Point3D("", ccx + (float) Math.cos(ang) * r, ccy, ccz + (float) Math.sin(ang) * r)
+                    : new Point3D("", ccx + (float) Math.cos(ang) * r, ccy + (float) Math.sin(ang) * r, ccz);
             projectPoint(curr, rx, ry, rz, cx, cy, scale);
-            if (prev != null) canvas.drawLine(prev.sx, prev.sy, curr.sx, curr.sy, linePaint);
+            if (prev != null) canvas.drawLine(prev.sx, prev.sy, curr.sx, curr.sy, paint);
             else first = curr;
             prev = curr;
         }
-        if (prev != null && first != null) canvas.drawLine(prev.sx, prev.sy, first.sx, first.sy, linePaint);
+        if (prev != null && first != null) canvas.drawLine(prev.sx, prev.sy, first.sx, first.sy, paint);
     }
 
     private void drawSphere(Canvas canvas, Sphere3D s, double rx, double ry, double rz, float cx, float cy, float scale) {
@@ -1332,8 +1372,49 @@ public class GeometryCanvas3D extends View {
         return null;
     }
 
+    /**
+     * Finger-draws a circle/sphere: ACTION_DOWN drops the centre on the ground plane, ACTION_MOVE drags
+     * the radius, ACTION_UP commits it. Returns true when it consumed the gesture; false (e.g. the view is
+     * edge-on so the centre can't be placed) lets the normal orbit/zoom handling run instead.
+     */
+    private boolean handleRadiusDrag(MotionEvent e) {
+        switch (e.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN: {
+                float[] g = screenToGround(e.getX(), e.getY());
+                if (g == null) { isRadiusDragging = false; return false; } // edge-on: fall back to orbit
+                pendingCx = g[0]; pendingCy = 0f; pendingCz = g[1];
+                pendingRadius = 0f; isRadiusDragging = true;
+                invalidate();
+                return true;
+            }
+            case MotionEvent.ACTION_MOVE: {
+                if (!isRadiusDragging) return false;
+                float[] g = screenToGround(e.getX(), e.getY());
+                if (g != null) {
+                    float dx = g[0] - pendingCx, dz = g[1] - pendingCz;
+                    pendingRadius = (float) Math.hypot(dx, dz);
+                    invalidate();
+                }
+                return true;
+            }
+            case MotionEvent.ACTION_UP: {
+                if (!isRadiusDragging) return false;
+                isRadiusDragging = false;
+                boolean isCircle = interactionMode == MODE_DRAW_CIRCLE;
+                if (pendingRadius >= 5f && radiusShapeListener != null)
+                    radiusShapeListener.onRadiusShape(isCircle, pendingCx, pendingCy, pendingCz, pendingRadius);
+                invalidate();
+                return true;
+            }
+            case MotionEvent.ACTION_CANCEL:
+                isRadiusDragging = false; invalidate(); return true;
+        }
+        return false;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent e) {
+        if ((interactionMode == MODE_DRAW_CIRCLE || interactionMode == MODE_DRAW_SPHERE) && handleRadiusDrag(e)) return true;
         scaleDetector.onTouchEvent(e);
         int action = e.getActionMasked();
 
