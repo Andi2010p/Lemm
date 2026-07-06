@@ -219,11 +219,15 @@ public class MainActivity extends AppCompatActivity {
                     .setCancelable(false).show();
 
             GeminiAI geminiAI = new GeminiAI(apiKey);
-            String prompt = "You are the scanner for a math/geometry tutoring app. Examine the image. "
-                    + "If it contains ANY math problem — geometry, trigonometry, mensuration, algebra, equations, "
-                    + "coordinates, a proof/construction, or a math word problem (with or without a figure) — transcribe the "
-                    + "FULL problem text EXACTLY as written, preserving numbers, symbols and labels, and output ONLY that text. "
-                    + "Read handwriting and slightly blurry text as best you can. "
+            String prompt = "You are the scanner for a math/geometry tutoring app. Examine the image, which may be a photo "
+                    + "of a handwritten or printed math problem AND/OR a hand-drawn geometry figure. "
+                    + "If it contains ANY math — geometry, trigonometry, mensuration, algebra, equations, coordinates, a "
+                    + "proof/construction, a labelled figure, or a math word problem (with or without a figure) — do BOTH:\n"
+                    + "1) Transcribe any problem text EXACTLY as written, preserving numbers, symbols and labels.\n"
+                    + "2) If there is a figure or drawing, describe it precisely under a line that starts with 'FIGURE:' — name "
+                    + "the shapes, list every labelled point/side/angle, all given measurements, and every marked relationship "
+                    + "(right angles, equal or parallel marks, tangents, midpoints, etc.).\n"
+                    + "Read handwriting and slightly blurry marks as best you can. "
                     + "ONLY if the image clearly has NO math at all (e.g. a photo of a person/object/scene, a non-math screenshot, "
                     + "or it is completely unreadable) output EXACTLY this single token and nothing else: INVALID_IMAGE";
 
@@ -243,6 +247,9 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             Intent intent = new Intent(MainActivity.this, GeometryInputActivity.class);
                             intent.putExtra("SCANNED_TEXT", text.trim());
+                            // Also carry the actual drawing so the solver can SEE it (Gemini vision),
+                            // not just the transcription — the figure often holds what the text can't.
+                            if (currentPhotoPath != null) intent.putExtra("SCANNED_IMAGE_PATH", currentPhotoPath);
                             startActivity(intent);
                         }
                     });

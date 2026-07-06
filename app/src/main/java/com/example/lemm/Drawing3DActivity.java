@@ -44,6 +44,7 @@ public class Drawing3DActivity extends AppCompatActivity {
     private GeometryCanvas3D canvas3D;
     private TextView tvInfo;
     private MaterialButton btnModeToggle;
+    private MaterialButton btnPlane;
 
     private int tool = TOOL_INSPECT;
     private boolean panMode = false; // false = rotate (default), true = pan
@@ -96,6 +97,9 @@ public class Drawing3DActivity extends AppCompatActivity {
 
         ((MaterialButton) findViewById(R.id.btnInspect)).setOnClickListener(v -> setTool(TOOL_INSPECT));
         ((MaterialButton) findViewById(R.id.btnEditValue)).setOnClickListener(v -> promptForEditValue());
+        btnPlane = findViewById(R.id.btnPlane);
+        btnPlane.setOnClickListener(v -> promptForPlane());
+        updatePlaneButton();
         ((MaterialButton) findViewById(R.id.btnDraw)).setOnClickListener(v -> setTool(TOOL_DRAW));
         ((MaterialButton) findViewById(R.id.btnAddLine)).setOnClickListener(v -> setTool(TOOL_LINE));
         ((MaterialButton) findViewById(R.id.btnAngleTool)).setOnClickListener(v -> setTool(TOOL_ANGLE));
@@ -109,6 +113,7 @@ public class Drawing3DActivity extends AppCompatActivity {
         btnSphere.setOnLongClickListener(v -> { promptForSphere(); return true; });
         ((MaterialButton) findViewById(R.id.btnExtrude)).setOnClickListener(v -> promptForExtrude());
         ((MaterialButton) findViewById(R.id.btnSave3D)).setOnClickListener(v -> promptForSave());
+        ((MaterialButton) findViewById(R.id.btnExport3D)).setOnClickListener(v -> promptForExport());
         ((MaterialButton) findViewById(R.id.btnDelete)).setOnClickListener(v -> {
             if (canvas3D.deleteSelected()) { tvInfo.setText(R.string.info_tap_hint); toast(getString(R.string.d3_deleted)); canvas3D.recordHistory(); }
         });
@@ -316,6 +321,75 @@ public class Drawing3DActivity extends AppCompatActivity {
         }
     }
 
+    /** Lets the user pick the datum plane (Top / Front / Right) that Draw and Extrude operate on. */
+    private void promptForPlane() {
+        CharSequence[] items = {
+                getString(R.string.plane_top),
+                getString(R.string.plane_front),
+                getString(R.string.plane_right),
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.plane_choose)
+                .setItems(items, (d, which) -> {
+                    canvas3D.setActivePlane(which); // 0/1/2 == PLANE_TOP/FRONT/RIGHT
+                    canvas3D.faceActivePlane();      // orient the camera so the plane isn't edge-on
+                    updatePlaneButton();
+                    toast(getString(R.string.plane_now, items[which]));
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void updatePlaneButton() {
+        if (btnPlane != null) btnPlane.setText(getString(R.string.plane_label, planeName(canvas3D.getActivePlane())));
+    }
+
+    private String planeName(int p) {
+        switch (p) {
+            case GeometryCanvas3D.PLANE_FRONT: return getString(R.string.plane_front);
+            case GeometryCanvas3D.PLANE_RIGHT: return getString(R.string.plane_right);
+            default: return getString(R.string.plane_top);
+        }
+    }
+
+    /**
+     * Exports the current 3D scene to a neutral mesh file (STL or OBJ) that opens in SolidWorks
+     * (as a mesh body), Blender, Fusion, Unity, three.js, AR viewers, etc. The user picks the format
+     * and whether to share it or drop it into Documents/Lemma. A note makes clear it is a mesh, not
+     * an editable feature model.
+     */
+    private void promptForExport() {
+        com.example.lemm.io.Cad3DExporter.ModelSnapshot snap = canvas3D.snapshot();
+        if (snap == null || snap.isEmpty()) { toast(getString(R.string.export_3d_empty)); return; }
+
+        CharSequence[] items = {
+                getString(R.string.export_3d_stl_share),
+                getString(R.string.export_3d_obj_share),
+                getString(R.string.export_3d_stl_save),
+                getString(R.string.export_3d_obj_save),
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.export_3d_title)
+                .setMessage(R.string.export_3d_note)
+                .setItems(items, (d, which) -> {
+                    com.example.lemm.io.Cad3DExporter.Format fmt =
+                            (which == 1 || which == 3)
+                                    ? com.example.lemm.io.Cad3DExporter.Format.OBJ
+                                    : com.example.lemm.io.Cad3DExporter.Format.STL;
+                    String base = "Lemma_3D";
+                    if (which <= 1) {
+                        if (!com.example.lemm.io.Cad3DExporter.share(this, snap, fmt, base)) {
+                            toast(getString(R.string.export_failed));
+                        }
+                    } else {
+                        String saved = com.example.lemm.io.Cad3DExporter.saveToDocuments(this, snap, fmt, base);
+                        toast(saved != null ? getString(R.string.export_3d_saved) : getString(R.string.export_failed));
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     private void promptForExtrude() {
         final EditText input = coordField(getString(R.string.extrude_height));
         input.setText("150");
@@ -325,7 +399,7 @@ public class Drawing3DActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.extrude, (d, w) -> {
                     float h = parse(input);
                     if (h <= 0) h = 150f;
-                    if (!canvas3D.extrudeGroundProfile(h)) toast(getString(R.string.d3_need_profile));
+                    if (!canvas3D.extrudeActiveProfile(h)) toast(getString(R.string.d3_need_profile));
                     else canvas3D.recordHistory();
                 })
                 .setNegativeButton(R.string.cancel, null)

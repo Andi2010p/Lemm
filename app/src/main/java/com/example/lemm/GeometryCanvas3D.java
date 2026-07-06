@@ -112,10 +112,57 @@ public class GeometryCanvas3D extends View {
     public void setInteractionMode(int m) { interactionMode = m; }
     public int getInteractionMode() { return interactionMode; }
 
+    // --- Datum planes (SolidWorks-style): the active plane is what DRAW / Extrude operate on. ---
+    public static final int PLANE_TOP = 0;   // XZ plane, normal +Y (this is the original ground plane)
+    public static final int PLANE_FRONT = 1; // XY plane, normal +Z
+    public static final int PLANE_RIGHT = 2; // YZ plane, normal +X
+    private int activePlane = PLANE_TOP;
+    private boolean showActivePlane = true;
+
+    public void setActivePlane(int p) { activePlane = p; invalidate(); }
+    public int getActivePlane() { return activePlane; }
+    public void setShowActivePlane(boolean show) { showActivePlane = show; invalidate(); }
+
+    /** Unit normal of a datum plane in model space (planes pass through the origin). */
+    private float[] planeNormal(int plane) {
+        switch (plane) {
+            case PLANE_FRONT: return new float[]{0, 0, 1};
+            case PLANE_RIGHT: return new float[]{1, 0, 0};
+            default:          return new float[]{0, 1, 0};
+        }
+    }
+
+    /** The two in-plane unit axes (u, v) used to draw the datum square and lay out sketches. */
+    private float[][] planeAxes(int plane) {
+        switch (plane) {
+            case PLANE_FRONT: return new float[][]{{1, 0, 0}, {0, 1, 0}};
+            case PLANE_RIGHT: return new float[][]{{0, 0, 1}, {0, 1, 0}};
+            default:          return new float[][]{{1, 0, 0}, {0, 0, 1}};
+        }
+    }
+
+    /** Absolute distance from a point to a datum plane through the origin. */
+    private float distToPlane(Point3D p, int plane) {
+        float[] n = planeNormal(plane);
+        return Math.abs(p.x * n[0] + p.y * n[1] + p.z * n[2]);
+    }
+
+    /** Orients the camera to a comfortable 3/4 view of the active plane (so it isn't edge-on to sketch on). */
+    public void faceActivePlane() {
+        switch (activePlane) {
+            case PLANE_FRONT: rotateX = -20f; rotateY = 25f;  break;
+            case PLANE_RIGHT: rotateX = -20f; rotateY = 110f; break;
+            default:          rotateX = -30f; rotateY = 45f;  break;
+        }
+        rotateZ = 0f;
+        invalidate();
+    }
+
     // Live "tap centre, drag radius" state for the finger-drawn circle / sphere.
     private boolean isRadiusDragging = false;
     private float pendingCx, pendingCy, pendingCz, pendingRadius;
     private Paint previewPaint;
+    private Paint datumFillPaint, datumStrokePaint, datumGridPaint;
 
     /** Fired when the user taps in DRAW mode: gives the label of the snapped/created point (or null if the tap couldn't be placed on the plane). */
     public interface OnSketchPointListener { void onSketchPoint(String label); }
@@ -154,6 +201,10 @@ public class GeometryCanvas3D extends View {
         autoAngleTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG); autoAngleTextPaint.setColor(0xFF00897B); autoAngleTextPaint.setTextSize(22f); autoAngleTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
         previewPaint = new Paint(Paint.ANTI_ALIAS_FLAG); previewPaint.setColor(0xFFFB8C00); previewPaint.setStrokeWidth(3f); previewPaint.setStyle(Paint.Style.STROKE);
         previewPaint.setPathEffect(new android.graphics.DashPathEffect(new float[]{14f, 10f}, 0f));
+        datumFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG); datumFillPaint.setStyle(Paint.Style.FILL); datumFillPaint.setColor(0x220288D1);
+        datumStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG); datumStrokePaint.setStyle(Paint.Style.STROKE); datumStrokePaint.setStrokeWidth(2f); datumStrokePaint.setColor(0x660288D1);
+        datumStrokePaint.setPathEffect(new android.graphics.DashPathEffect(new float[]{12f, 8f}, 0f));
+        datumGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG); datumGridPaint.setStyle(Paint.Style.STROKE); datumGridPaint.setStrokeWidth(1f); datumGridPaint.setColor(0x330288D1);
 
         // A subtle vertical gradient backdrop derived from the theme canvas colour (lighter top → deeper bottom).
         colBg3dTop = lighten(colBg3d, 0.10f);
@@ -339,6 +390,9 @@ public class GeometryCanvas3D extends View {
         double radZ = Math.toRadians(rotateZ);
 
         drawAxesCube(canvas, radX, radY, radZ, 120f, 350f);
+
+        // The active datum plane (translucent grid) — shows the user which plane DRAW/Extrude use.
+        drawActivePlane(canvas, radX, radY, radZ, centerX, centerY, sceneScale);
 
         for (Point3D p : points) projectPoint(p, radX, radY, radZ, centerX, centerY, sceneScale);
 
@@ -866,6 +920,35 @@ public class GeometryCanvas3D extends View {
     }
 
     /**
+     * Extrudes the vertices lying on the ACTIVE datum plane (in insertion order) into a solid, pushed
+     * along that plane's normal. Generalises {@link #extrudeGroundProfile} to the Front/Right planes:
+     * a profile sketched on Front (XY) extrudes along +Z, on Right (YZ) along +X, on Top (XZ) along +Y.
+     */
+    public boolean extrudeActiveProfile(float height) {
+        float[] nrm = planeNormal(activePlane);
+        List<Point3D> base = new ArrayList<>();
+        for (Point3D p : points) if (p.isVertex && distToPlane(p, activePlane) < 0.5f) base.add(p);
+        if (base.size() < 3) return false;
+
+        int n = base.size();
+        String[] bottom = new String[n], top = new String[n];
+        for (int i = 0; i < n; i++) {
+            Point3D b = base.get(i);
+            bottom[i] = b.label;
+            top[i] = addVertex(b.x + nrm[0] * height, b.y + nrm[1] * height, b.z + nrm[2] * height);
+        }
+        for (int i = 0; i < n; i++) {
+            int j = (i + 1) % n;
+            ensureLine(bottom[i], bottom[j]);
+            ensureLine(top[i], top[j]);
+            ensureLine(bottom[i], top[i]);
+        }
+        addFaces(bottom, top);
+        invalidate();
+        return true;
+    }
+
+    /**
      * Extrudes a raw profile (no pre-existing points) into a full solid with real lettered vertices.
      * Used by the 2D editor's Extrude: a rectangle profile becomes an 8-point box.
      */
@@ -1056,6 +1139,32 @@ public class GeometryCanvas3D extends View {
         }
     }
 
+    /**
+     * Builds a View-free, plain-data copy of the current model for the file exporter
+     * (com.example.lemm.io.Cad3DExporter). Kept here because Point3D/Plane3D/etc. are private with
+     * package-private fields, so only code inside this class can read them.
+     */
+    public com.example.lemm.io.Cad3DExporter.ModelSnapshot snapshot() {
+        com.example.lemm.io.Cad3DExporter.ModelSnapshot s = new com.example.lemm.io.Cad3DExporter.ModelSnapshot();
+        for (Point3D p : points) {
+            if (p.label != null && !p.label.isEmpty()) {
+                s.pointsByLabel.put(p.label.toLowerCase(java.util.Locale.US), new float[]{p.x, p.y, p.z});
+            }
+        }
+        for (Plane3D pl : planes) s.faces.add(pl.labels.toArray(new String[0]));
+        for (Prism3D pr : prisms) {
+            float[] a = new float[3 + 2 * pr.xs.length];
+            a[0] = pr.baseY; a[1] = pr.height; a[2] = pr.xs.length;
+            for (int i = 0; i < pr.xs.length; i++) { a[3 + 2 * i] = pr.xs[i]; a[4 + 2 * i] = pr.zs[i]; }
+            s.prisms.add(a);
+        }
+        for (Cylinder3D c : cylinders) s.cylinders.add(new float[]{c.cx, c.cy, c.cz, c.r, c.h});
+        for (Cone3D c : cones)         s.cones.add(new float[]{c.cx, c.cy, c.cz, c.r, c.h});
+        for (Sphere3D sp : spheres)    s.spheres.add(new float[]{sp.x, sp.y, sp.z, sp.r});
+        for (Circle3D ci : circles)    s.circles.add(new float[]{ci.cx, ci.cy, ci.cz, ci.r});
+        return s;
+    }
+
     /** Rebuilds the model from {@link #toJson()} output. */
     public void loadFromJson(String json) {
         clear();
@@ -1181,9 +1290,9 @@ public class GeometryCanvas3D extends View {
 
         String label = snap;
         if (label == null) {
-            float[] g = screenToGround(sx, sy);
+            float[] g = screenToPlane(sx, sy, activePlane);
             if (g == null) { if (sketchListener != null) sketchListener.onSketchPoint(null); return; }
-            label = addVertex(g[0], 0f, g[1]);
+            label = addVertex(g[0], g[1], g[2]);
         }
         if (sketchListener != null) sketchListener.onSketchPoint(label);
     }
@@ -1213,6 +1322,43 @@ public class GeometryCanvas3D extends View {
         return new float[]{(float) px, (float) pz};
     }
 
+    /**
+     * General inverse of the orthographic projection onto any datum plane through the origin.
+     * Returns the world {x, y, z} for a screen tap, or null when that plane is viewed too edge-on to
+     * place a point. Derivation validated by a round-trip against {@link #projectPoint} (error ~0).
+     */
+    public float[] screenToPlane(float sx, float sy, int plane) {
+        double rx = Math.toRadians(rotateX), ry = Math.toRadians(rotateY), rz = Math.toRadians(rotateZ);
+        float centerX = getWidth() / 2f + translateX;
+        float centerY = getHeight() / 2f + translateY;
+        float sceneScale = (Math.min(getWidth(), getHeight()) / 500f) * scaleFactor;
+        if (sceneScale <= 0) return null;
+        double x3 = (sx - centerX) / sceneScale;
+        double y3 = (sy - centerY) / sceneScale;
+
+        double cx = Math.cos(rx), sinx = Math.sin(rx), cy = Math.cos(ry), sy_ = Math.sin(ry);
+        // View direction in world space (the ray along which screen-depth varies for a fixed tap).
+        double[] dir = {-cx * sy_, -sinx, cx * cy};
+
+        float[] N = planeNormal(plane);
+        double denom = N[0] * dir[0] + N[1] * dir[1] + N[2] * dir[2];
+        if (Math.abs(denom) < 0.12) return null; // plane edge-on — can't sketch on it
+
+        // Unproject the tap at depth 0 to get a point P0 on the view ray.
+        double crz = Math.cos(rz), srz = Math.sin(rz);
+        double x2 = x3 * crz + y3 * srz;
+        double y2 = -x3 * srz + y3 * crz;
+        double y1 = y2 * cx, z1 = -y2 * sinx, x1 = x2;
+        double ax = x1 * cy - z1 * sy_;
+        double az = x1 * sy_ + z1 * cy;
+        double ay = y1;
+        double[] p0 = {ax, -ay, az};
+
+        // Intersect the ray P0 + t·dir with the plane (dot(N, P) = 0).
+        double t = -(N[0] * p0[0] + N[1] * p0[1] + N[2] * p0[2]) / denom;
+        return new float[]{(float) (p0[0] + t * dir[0]), (float) (p0[1] + t * dir[1]), (float) (p0[2] + t * dir[2])};
+    }
+
     private void projectPoint(Point3D p, double rx, double ry, double rz, float cx, float cy, float scale) {
         float x = p.x, y = -p.y, z = p.z;
         float x1 = (float) (x * Math.cos(ry) + z * Math.sin(ry));
@@ -1227,6 +1373,43 @@ public class GeometryCanvas3D extends View {
         // parallel projection, parallel stays parallel and a box keeps equal, parallel opposite edges.
         p.sx = cx + x3 * scale;
         p.sy = cy + y3 * scale;
+    }
+
+    /** Draws the active datum plane as a translucent, dashed-border grid square centred on the origin. */
+    private void drawActivePlane(Canvas canvas, double rx, double ry, double rz, float cx, float cy, float scale) {
+        if (!showActivePlane) return;
+        final float half = 260f, step = 65f;
+        float[][] ax = planeAxes(activePlane);
+        float[] u = ax[0], v = ax[1];
+
+        // Filled square + dashed border.
+        Point3D[] c = new Point3D[4];
+        int[][] sgn = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
+        for (int i = 0; i < 4; i++) {
+            float du = sgn[i][0] * half, dv = sgn[i][1] * half;
+            c[i] = new Point3D("", u[0] * du + v[0] * dv, u[1] * du + v[1] * dv, u[2] * du + v[2] * dv);
+            projectPoint(c[i], rx, ry, rz, cx, cy, scale);
+        }
+        Path path = new Path();
+        path.moveTo(c[0].sx, c[0].sy);
+        for (int i = 1; i < 4; i++) path.lineTo(c[i].sx, c[i].sy);
+        path.close();
+        canvas.drawPath(path, datumFillPaint);
+        canvas.drawPath(path, datumStrokePaint);
+
+        // Grid lines along both in-plane axes.
+        for (float k = -half; k <= half + 0.1f; k += step) {
+            Point3D a1 = planePt(u, v, k, -half), a2 = planePt(u, v, k, half);
+            Point3D b1 = planePt(u, v, -half, k), b2 = planePt(u, v, half, k);
+            projectPoint(a1, rx, ry, rz, cx, cy, scale); projectPoint(a2, rx, ry, rz, cx, cy, scale);
+            projectPoint(b1, rx, ry, rz, cx, cy, scale); projectPoint(b2, rx, ry, rz, cx, cy, scale);
+            canvas.drawLine(a1.sx, a1.sy, a2.sx, a2.sy, datumGridPaint);
+            canvas.drawLine(b1.sx, b1.sy, b2.sx, b2.sy, datumGridPaint);
+        }
+    }
+
+    private static Point3D planePt(float[] u, float[] v, float du, float dv) {
+        return new Point3D("", u[0] * du + v[0] * dv, u[1] * du + v[1] * dv, u[2] * du + v[2] * dv);
     }
 
     private void drawAxesCube(Canvas canvas, double rx, double ry, double rz, float axCX, float axCY) {

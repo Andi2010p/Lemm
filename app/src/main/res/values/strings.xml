@@ -92,6 +92,15 @@
     <string name="export_pdf_opt">PDF — figure + solution</string>
     <string name="pdf_saved">PDF saved to Documents</string>
     <string name="export_failed">Export failed</string>
+    <string name="export_3d_button">Export</string>
+    <string name="export_3d_title">Export 3D model</string>
+    <string name="export_3d_note">Creates a mesh file that opens in SolidWorks, Blender, Fusion and other 3D engines (as a viewable mesh body, not an editable feature model).</string>
+    <string name="export_3d_empty">Nothing to export yet — draw something first.</string>
+    <string name="export_3d_stl_share">STL — share</string>
+    <string name="export_3d_obj_share">OBJ — share</string>
+    <string name="export_3d_stl_save">STL — save to Files (Documents/Lemma)</string>
+    <string name="export_3d_obj_save">OBJ — save to Files (Documents/Lemma)</string>
+    <string name="export_3d_saved">Saved to Documents/Lemma</string>
     <string name="no_figure">This problem has no figure to save as an image.</string>
     <string name="download">Download</string>
 
@@ -136,6 +145,11 @@
     <string name="scan_error_no_text">No geometry problem found.</string>
     <string name="scan_error_failed">Scanner Error: Connection lost.</string>
     <string name="scan_error_loading_photo">Error: Could not load photo.</string>
+    <string name="scan_drawing_attached">Drawing attached — the AI will read your figure.</string>
+    <string name="img_add_title">Add a drawing or image</string>
+    <string name="img_take_photo">📷 Take a photo (scan a drawing)</string>
+    <string name="img_choose_gallery">🖼 Choose from gallery</string>
+    <string name="camera_permission_needed">Camera permission is needed to scan a drawing.</string>
     <string name="scan_not_geometry_title">Not a Geometry Problem</string>
     <string name="solve_not_geometry_msg">This doesn\'t look like a geometry problem. Please enter a geometry problem — shapes, angles, areas, volumes, or proofs.</string>
     <string name="add_image">Add Image</string>
@@ -281,8 +295,15 @@
     <string name="extrude">Extrude</string>
     <string name="extrude_need_closed">Select a closed shape to extrude (rectangle, circle, or polygon).</string>
     <string name="extrude_height">Extrude height</string>
-    <string name="d3_need_profile">Add at least 3 points on the ground to extrude.</string>
+    <string name="d3_need_profile">Draw at least 3 points on the active plane to extrude.</string>
     <string name="info_midpoint">Midpoint of</string>
+    <string name="plane_button">Plane</string>
+    <string name="plane_label">Plane: %1$s</string>
+    <string name="plane_choose">Sketch on which plane?</string>
+    <string name="plane_top">Top (XZ)</string>
+    <string name="plane_front">Front (XY)</string>
+    <string name="plane_right">Right (YZ)</string>
+    <string name="plane_now">Now sketching on %1$s</string>
     <string name="d3_draw">Draw</string>
     <string name="d3_angle">Angle</string>
     <string name="d3_finish">Finish</string>
@@ -347,6 +368,116 @@
     <string name="th_header_example">APPLICATION:</string>
     <string name="th_header_hints">WHERE IT IS USED &amp; HINTS:</string>
     <string name="th_header_questions">QUESTIONS:</string>
+
+    <!-- Alternate names / word-roots so theorem mentions in AI solutions link to their pages -->
+    <string name="th_alias_7_3">angle sum of a triangle|sum of the angles of a triangle</string>
+    <string name="th_alias_8_3">Pythagoras|Pythagoras\' theorem|Pythagoras theorem</string>
+    <string name="th_alias_8_8">Thales|intercept theorem|basic proportionality</string>
+    <string name="th_alias_9_1">cosine rule|cosine law</string>
+    <string name="th_alias_9_2">sine rule|sine law</string>
+    <string name="th_alias_9_7">Ptolemy</string>
+
+    <!-- Third practice question per theorem (audit-verified answers) -->
+    <string name="th_q3_7_1">Two lines cross; one angle is 130°. What is the angle opposite (vertical) to it?</string>
+    <string name="th_a3_7_1">130</string>
+    <string name="th_q3_7_2">The apex angle of an isosceles triangle is 100°. What is ONE base angle?</string>
+    <string name="th_a3_7_2">40</string>
+    <string name="th_q3_7_3">A triangle has angles of 30° and 90°. What is the third angle?</string>
+    <string name="th_a3_7_3">60</string>
+    <string name="th_q3_7_4">Two sides of a triangle are 8 and 3. What is the MINIMUM whole-number length of the third side?</string>
+    <string name="th_a3_7_4">6</string>
+    <string name="th_q3_7_5">An exterior angle of a triangle is 130° and one remote interior angle is 60°. What is the other remote interior angle?</string>
+    <string name="th_a3_7_5">70</string>
+    <string name="th_q3_7_6">A transversal crosses two parallel lines; one co-interior (same-side interior) angle is 85°. What is the other co-interior angle?</string>
+    <string name="th_a3_7_6">95</string>
+    <string name="th_q3_7_7">Two equal angles together lie on a straight line. How big is each one?</string>
+    <string name="th_a3_7_7">90</string>
+    <string name="th_q3_7_8">A bisector splits an angle into two halves of 27° each. How big was the whole angle?</string>
+    <string name="th_a3_7_8">54</string>
+    <string name="th_q3_7_9">Two congruent triangles have an angle of 55° in the first. What is the matching angle in the second?</string>
+    <string name="th_a3_7_9">55</string>
+    <string name="th_q3_7_10">Point P is on the perpendicular bisector of AB and PB = 15. What is PA?</string>
+    <string name="th_a3_7_10">15</string>
+    <string name="th_q3_7_11">The perpendicular from a point to a line is 8; a slant reaches a spot 15 along the line from the foot. How long is the slant?</string>
+    <string name="th_a3_7_11">17</string>
+    <string name="th_q3_7_12">The two angles at the ends of the included side are 45° and 75°. What is the third angle?</string>
+    <string name="th_a3_7_12">60</string>
+    <string name="th_q3_8_1">One angle of a parallelogram is 110°. What is the sum of its two neighbouring angles?</string>
+    <string name="th_a3_8_1">140</string>
+    <string name="th_q3_8_2">A triangle has area 24 and height 6. What is its base?</string>
+    <string name="th_a3_8_2">8</string>
+    <string name="th_q3_8_3">The legs of a right triangle are 6 and 8. What is the hypotenuse?</string>
+    <string name="th_a3_8_3">10</string>
+    <string name="th_q3_8_4">The base of a triangle is 50. What is the midsegment parallel to it?</string>
+    <string name="th_a3_8_4">25</string>
+    <string name="th_q3_8_5">The altitude to the hypotenuse cuts it into segments 4 and 9. What is the altitude h? (h = √(4·9))</string>
+    <string name="th_a3_8_5">6</string>
+    <string name="th_q3_8_6">The hypotenuse of a right triangle is 26. What is the median to the hypotenuse?</string>
+    <string name="th_a3_8_6">13</string>
+    <string name="th_q3_8_7">The segment from a vertex to the centroid is 10. How long is the whole median?</string>
+    <string name="th_a3_8_7">15</string>
+    <string name="th_q3_8_8">A line parallel to the base splits one side into 5 (top) and 10 (bottom), the other into 6 (top) and x (bottom). What is x?</string>
+    <string name="th_a3_8_8">12</string>
+    <string name="th_q3_8_9">A trapezoid has bases 5 and 11. What is its midsegment?</string>
+    <string name="th_a3_8_9">8</string>
+    <string name="th_q3_8_10">Three angles of a quadrilateral are 80°, 95° and 110°. What is the fourth?</string>
+    <string name="th_a3_8_10">75</string>
+    <string name="th_q3_8_11">The centre of a rectangle is 5 cm from each corner. How long is each diagonal?</string>
+    <string name="th_a3_8_11">10</string>
+    <string name="th_q3_8_12">The diagonals of a rhombus are 10 and 24. What is its area?</string>
+    <string name="th_a3_8_12">120</string>
+    <string name="th_q3_8_13">A parallelogram has area 72 and height 9. What is its base?</string>
+    <string name="th_a3_8_13">8</string>
+    <string name="th_q3_8_14">A trapezoid has parallel sides 7 and 13 and height 6. What is its area?</string>
+    <string name="th_a3_8_14">60</string>
+    <string name="th_q3_8_15">Two triangles are similar with ratio 3 : 5. A side of the larger is 20. What is the matching side of the smaller?</string>
+    <string name="th_a3_8_15">12</string>
+    <string name="th_q3_9_1">In a triangle a = 6, b = 8 and the angle between them is 90°. What is c?</string>
+    <string name="th_a3_9_1">10</string>
+    <string name="th_q3_9_2">In a triangle a = 12, sin A = 0.5 and sin C = 0.75. What is side c?</string>
+    <string name="th_a3_9_2">18</string>
+    <string name="th_q3_9_3">A central angle is 110°. What is the inscribed angle on the same arc?</string>
+    <string name="th_a3_9_3">55</string>
+    <string name="th_q3_9_4">From an external point the tangent is 10 and the external secant segment is 5. What is the whole secant?</string>
+    <string name="th_a3_9_4">20</string>
+    <string name="th_q3_9_5">A tangential quadrilateral has sides in order 10, 7, 3, x. What is x? (a + c = b + d)</string>
+    <string name="th_a3_9_5">6</string>
+    <string name="th_q3_9_6">One chord is cut into 5 and 12; the other into 10 and x. What is x?</string>
+    <string name="th_a3_9_6">6</string>
+    <string name="th_q3_9_7">A cyclic quadrilateral has a·c = 30 and b·d = 6; one diagonal is 9. What is the other diagonal?</string>
+    <string name="th_a3_9_7">4</string>
+    <string name="th_q3_9_8">A right triangle inscribed in a semicircle has hypotenuse (diameter) 26 and one leg 10. What is the other leg?</string>
+    <string name="th_a3_9_8">24</string>
+    <string name="th_q3_9_9">A circle has radius 7. What is its area as a multiple of π?</string>
+    <string name="th_a3_9_9">49</string>
+    <string name="th_q3_9_10">From a point 17 cm from the centre, a tangent touches a circle of radius 8 cm. How long is the tangent segment?</string>
+    <string name="th_a3_9_10">15</string>
+    <string name="th_q3_9_11">One angle of a cyclic quadrilateral is 95°. What is the opposite angle?</string>
+    <string name="th_a3_9_11">85</string>
+    <string name="th_q3_9_12">A tangent from a point is 24 and the circle\'s radius is 7. How far is the point from the centre?</string>
+    <string name="th_a3_9_12">25</string>
+    <string name="th_q3_10_1">A line is parallel to a plane. How many points does it share with the plane?</string>
+    <string name="th_a3_10_1">0</string>
+    <string name="th_q3_10_2">Two parallel planes are both cut by a third plane. How many points do the two intersection lines share?</string>
+    <string name="th_a3_10_2">0</string>
+    <string name="th_q3_10_3">A line is perpendicular to a plane. What angle (in degrees) does it make with any line in that plane?</string>
+    <string name="th_a3_10_3">90</string>
+    <string name="th_q3_11_1">A slant meets a plane and a line in the plane is perpendicular to the slant\'s projection. What angle (in degrees) is between that line and the slant?</string>
+    <string name="th_a3_11_1">90</string>
+    <string name="th_q3_11_2">A straight prism has base area 15 and height 6. What is its volume?</string>
+    <string name="th_a3_11_2">90</string>
+    <string name="th_q3_11_3">A pyramid has volume 60 and base area 12. What is its height?</string>
+    <string name="th_a3_11_3">15</string>
+    <string name="th_q3_11_4">A cube has edge 3. What is the SQUARE of its space diagonal?</string>
+    <string name="th_a3_11_4">27</string>
+    <string name="th_q3_12_1">A cylinder has R = 1 and H = 100. What is the volume divided by π?</string>
+    <string name="th_a3_12_1">100</string>
+    <string name="th_q3_12_2">A cone has R = 6 and H = 5. What is the volume divided by π?</string>
+    <string name="th_a3_12_2">60</string>
+    <string name="th_q3_12_3">A sphere has radius 2. What is the surface area divided by π?</string>
+    <string name="th_a3_12_3">16</string>
+    <string name="th_q3_12_4">A cylinder has R = 5 and H = 2. What is the lateral surface area divided by π?</string>
+    <string name="th_a3_12_4">20</string>
 
     <string name="knowledge_check">KNOWLEDGE CHECK</string>
     <string name="type_answer">Type answer (number)</string>
@@ -429,6 +560,66 @@
     <string name="th_q2_7_6">Two parallel lines are cut by a transversal. A co-interior angle is 120°. What is the other co-interior angle?</string>
     <string name="th_a2_7_6">60</string>
 
+    <string name="th_title_7_7">7. Angles on a Straight Line</string>
+    <string name="th_def_7_7">Two adjacent angles that together form a straight line add up to 180° (they are supplementary).</string>
+    <string name="th_exp_7_7">A straight line is half a full turn, which is 180°. If a ray splits that straight angle into two parts, the two parts must still add back up to 180°.</string>
+    <string name="th_proof_7_7">Ray OC stands on the straight line AB, so ∠AOC and ∠COB together sweep from OA all the way to OB — a straight angle. Therefore ∠AOC + ∠COB = 180°. ∎</string>
+    <string name="th_ex_7_7">• A clock hand, a see-saw or an opening door: the two angles on one side of the line always complete 180°.\n• In problems: if one angle is known, subtract it from 180° to get its neighbour.\n• This is the rule behind vertical angles too.</string>
+    <string name="th_q_7_7">One of two angles on a straight line is 130°. What is the other angle?</string>
+    <string name="th_a_7_7">50</string>
+    <string name="th_q2_7_7">A ray splits a straight angle into two equal angles. How big is each one?</string>
+    <string name="th_a2_7_7">90</string>
+
+    <string name="th_title_7_8">8. Angle Bisector</string>
+    <string name="th_def_7_8">An angle bisector is a ray that divides an angle into two equal angles.</string>
+    <string name="th_exp_7_8">The bisector is the exact middle line of an angle. It cuts the opening into two matching halves, so each half is exactly one half of the whole angle.</string>
+    <string name="th_proof_7_8">Let ray OL bisect ∠AOB, so ∠AOL = ∠LOB by definition. Adding them gives ∠AOB = ∠AOL + ∠LOB = 2·∠AOL, hence each half = ∠AOB ÷ 2. Every point on the bisector is also the same distance from both sides. ∎</string>
+    <string name="th_ex_7_8">• Folding paper to split a corner in half, or aiming a light exactly between two walls.\n• In problems: each half = whole angle ÷ 2.\n• The three angle bisectors of a triangle meet at the centre of its inscribed circle.</string>
+    <string name="th_q_7_8">An angle of 80° is bisected. How big is each half?</string>
+    <string name="th_a_7_8">40</string>
+    <string name="th_q2_7_8">Each half of a bisected angle is 35°. What was the original angle?</string>
+    <string name="th_a2_7_8">70</string>
+
+    <string name="th_title_7_9">9. Congruent Triangles (SAS)</string>
+    <string name="th_def_7_9">If two sides and the angle between them in one triangle equal those in another, the triangles are congruent (equal in every part).</string>
+    <string name="th_exp_7_9">Fix two stick lengths and the angle you open them to — the third side and the whole triangle are then forced. There is only one triangle you can build, so any two built the same way are identical copies.</string>
+    <string name="th_proof_7_9">Place △ABC onto △A′B′C′ so the equal angle at A lands on the equal angle at A′. Because AB = A′B′ and AC = A′C′, points B and C land exactly on B′ and C′. The triangles coincide, so they are congruent. ∎</string>
+    <string name="th_ex_7_9">• Manufacturing identical parts, trusses and flat-pack furniture rely on rigid, repeatable triangles.\n• In problems: matching Side–Angle–Side proves two triangles equal, so their remaining sides and angles match too.\n• The other tests are SSS, ASA and AAS.</string>
+    <string name="th_q_7_9">Two triangles have sides 6 and 8 with a 40° angle between them and are congruent. What is that matching angle in the second triangle?</string>
+    <string name="th_a_7_9">40</string>
+    <string name="th_q2_7_9">In congruent triangles a side measures 12 in the first. What does the matching side measure in the second?</string>
+    <string name="th_a2_7_9">12</string>
+
+    <string name="th_title_7_10">10. Perpendicular Bisector</string>
+    <string name="th_def_7_10">Every point on the perpendicular bisector of a segment is the same distance from the two endpoints.</string>
+    <string name="th_exp_7_10">The perpendicular bisector is the line that crosses a segment at its midpoint at a right angle. Stand anywhere on it and you are always equally far from both ends of the segment.</string>
+    <string name="th_proof_7_10">Let P lie on the perpendicular bisector of AB, meeting it at midpoint M. Then AM = MB, PM is shared, and both angles at M are 90°, so △PMA ≅ △PMB by SAS. Hence PA = PB. ∎</string>
+    <string name="th_ex_7_10">• Finding a spot equally far from two towns, or the centre of a circle through given points.\n• In problems: any point on it satisfies PA = PB.\n• The three perpendicular bisectors of a triangle meet at the centre of its circumscribed circle.</string>
+    <string name="th_q_7_10">Point P is on the perpendicular bisector of AB. If PA = 9, what is PB?</string>
+    <string name="th_a_7_10">9</string>
+    <string name="th_q2_7_10">A segment is 14 units long. How far is its midpoint from each endpoint?</string>
+    <string name="th_a2_7_10">7</string>
+
+    <string name="th_title_7_11">11. Shortest Distance to a Line</string>
+    <string name="th_def_7_11">The shortest distance from a point to a line is the perpendicular segment dropped from the point to the line.</string>
+    <string name="th_exp_7_11">Of all the segments joining a point to a line, the one that meets the line at a right angle is the shortest. Every slanted segment has to travel farther.</string>
+    <string name="th_proof_7_11">The perpendicular PH and any slanted segment PA form a right triangle PHA in which PA is the hypotenuse. The hypotenuse is always the longest side, so PA &gt; PH. Hence the perpendicular PH is the shortest. ∎</string>
+    <string name="th_ex_7_11">• The distance from a house to a straight road, or a ship to the shore, is measured along the perpendicular.\n• A triangle\'s altitude is exactly this perpendicular distance.\n• In problems: the perpendicular length is “the distance”; slanted paths are found with Pythagoras.</string>
+    <string name="th_q_7_11">The perpendicular from a point to a line is 6; a slanted segment to the same line is 10. What is the distance from the point to the line?</string>
+    <string name="th_a_7_11">6</string>
+    <string name="th_q2_7_11">A point is 5 above a line (perpendicular). A slanted segment reaches a spot 12 along the line from the foot. How long is the slanted segment?</string>
+    <string name="th_a2_7_11">13</string>
+
+    <string name="th_title_7_12">12. Congruent Triangles (ASA)</string>
+    <string name="th_def_7_12">If two angles and the side between them in one triangle equal those in another, the triangles are congruent (ASA).</string>
+    <string name="th_exp_7_12">Fix one side and the two angles at its ends. The two rays leave at set angles and cross at exactly one apex, so the whole triangle is locked — any triangle built the same way is an identical copy.</string>
+    <string name="th_proof_7_12">Slide △ABC onto △A′B′C′ so side AB lands on the equal side A′B′. The equal angles at A and B send rays AC and BC along A′C′ and B′C′, which meet at the single point C′. So C lands on C′ and the triangles coincide. ∎</string>
+    <string name="th_ex_7_12">• Surveyors fix a far point by measuring one baseline and the two angles to it.\n• In problems: matching Angle–Side–Angle proves two triangles equal, so their other sides and angles match.\n• The other tests are SSS, SAS and AAS.</string>
+    <string name="th_q_7_12">Two triangles share an included side of 7 with 50° and 60° at its ends and are congruent. What is that side in the second triangle?</string>
+    <string name="th_a_7_12">7</string>
+    <string name="th_q2_7_12">The two known angles at the ends of the side are 50° and 60°. What is the third angle of the triangle?</string>
+    <string name="th_a2_7_12">70</string>
+
     <!-- ================= GRADE 8 ================= -->
     <string name="th_title_8_1">1. Parallelogram Properties</string>
     <string name="th_def_8_1">In a parallelogram, opposite sides are equal, opposite angles are equal, and neighbouring angles add up to 180°.</string>
@@ -464,7 +655,7 @@
     <string name="th_def_8_4">The segment joining the midpoints of two sides is parallel to the third side and half its length.</string>
     <string name="th_exp_8_4">Connect the middles of two sides. That short segment runs parallel to the base and is exactly half as long, because it is a copy of the triangle scaled down by ½.</string>
     <string name="th_proof_8_4">The midsegment and base form similar triangles with ratio 1:2 (two sides halved, shared included angle), so the midsegment is parallel to the base and half its length. ∎</string>
-    <string name="th_ex_8_4">• Measuring a distance you cannot reach, e.g. across a lake, using midpoints.\n• In problems: midsegment = base ÷ 2, and it splits the triangle into similar shapes.</string>
+    <string name="th_ex_8_4">• Measuring a distance you cannot reach, e.g. across a lake, using midpoints.\n• In problems: midsegment = base ÷ 2, and it cuts off a smaller triangle at the top that is similar to the whole (half-size).</string>
     <string name="th_q_8_4">The base is 24. What is the midsegment?</string>
     <string name="th_a_8_4">12</string>
     <string name="th_q2_8_4">A midsegment is 9. What is the base it is parallel to?</string>
@@ -519,6 +710,66 @@
     <string name="th_a_8_9">10</string>
     <string name="th_q2_8_9">The midsegment is 15 and one base is 10. What is the other base?</string>
     <string name="th_a2_8_9">20</string>
+
+    <string name="th_title_8_10">10. Quadrilateral Angle Sum</string>
+    <string name="th_def_8_10">The four interior angles of any quadrilateral add up to 360°.</string>
+    <string name="th_exp_8_10">Draw one diagonal and the quadrilateral splits into two triangles. Each triangle holds 180°, so together the four corners hold 2 × 180° = 360°.</string>
+    <string name="th_proof_8_10">Diagonal AC divides quadrilateral ABCD into △ABC and △ACD. Each triangle\'s angles sum to 180°, and together they make up all four angles of the quadrilateral, so the total is 180° + 180° = 360°. ∎</string>
+    <string name="th_ex_8_10">• Checking the corners of a window frame, a kite or a tile pattern.\n• In problems: the four angles must total 360°, so a missing angle is 360° minus the other three.\n• A general n-sided polygon totals (n − 2) × 180°.</string>
+    <string name="th_q_8_10">Three angles of a quadrilateral are 90°, 90° and 100°. What is the fourth?</string>
+    <string name="th_a_8_10">80</string>
+    <string name="th_q2_8_10">A quadrilateral has three equal angles of 100° each. What is the fourth angle?</string>
+    <string name="th_a2_8_10">60</string>
+
+    <string name="th_title_8_11">11. Rectangle Diagonals</string>
+    <string name="th_def_8_11">The diagonals of a rectangle are equal in length and cut each other exactly in half.</string>
+    <string name="th_exp_8_11">A rectangle\'s two diagonals are always the same length, and they cross at the centre, splitting each other into two equal pieces. So the crossing point is the same distance from all four corners.</string>
+    <string name="th_proof_8_11">In rectangle ABCD, triangles ABC and DCB share side BC, have equal sides AB = DC, and each contains a 90° angle, so they are congruent (SAS). Hence diagonals AC and BD are equal, and by symmetry they bisect each other. ∎</string>
+    <string name="th_ex_8_11">• Checking a rectangle is “true”: if the diagonals match, the corners are square.\n• In problems: the centre is equidistant from every corner (useful for circumscribed circles).\n• Carpenters measure diagonals to square up frames.</string>
+    <string name="th_q_8_11">One diagonal of a rectangle is 10 cm. How long is the other diagonal?</string>
+    <string name="th_a_8_11">10</string>
+    <string name="th_q2_8_11">A rectangle\'s diagonal is 12. The diagonals cross at the centre. How far is the centre from each corner?</string>
+    <string name="th_a2_8_11">6</string>
+
+    <string name="th_title_8_12">12. Rhombus Diagonals</string>
+    <string name="th_def_8_12">The diagonals of a rhombus cross each other at right angles and cut each other in half.</string>
+    <string name="th_exp_8_12">A rhombus has four equal sides. Its two diagonals meet in the middle, always forming a perfect 90° cross, and each diagonal splits the other into two equal halves.</string>
+    <string name="th_proof_8_12">In rhombus ABCD all sides are equal, so triangle ABD is isosceles and its diagonal AC (an angle bisector) is also the perpendicular from the apex. Thus the diagonals meet at 90° and bisect each other. ∎</string>
+    <string name="th_ex_8_12">• The diagonals split a rhombus into four equal right triangles — handy for its area = ½ d₁ d₂.\n• In problems: use the right angle plus Pythagoras to link the side and the diagonals.\n• Kite frames and warning signs use this shape.</string>
+    <string name="th_q_8_12">The diagonals of a rhombus are 6 and 8. What is the area (½ × d₁ × d₂)?</string>
+    <string name="th_a_8_12">24</string>
+    <string name="th_q2_8_12">At what angle (in degrees) do the diagonals of a rhombus meet?</string>
+    <string name="th_a2_8_12">90</string>
+
+    <string name="th_title_8_13">13. Area of a Parallelogram</string>
+    <string name="th_def_8_13">The area of a parallelogram equals its base times its height: A = b · h, where h is the perpendicular distance between the two bases.</string>
+    <string name="th_exp_8_13">Slice a right triangle off one end of the parallelogram and slide it to the other end — you get a rectangle with the same base and height. So the area is base × height, using the perpendicular height, not the slanted side.</string>
+    <string name="th_proof_8_13">Drop a perpendicular to cut a right triangle off one side. Translating that triangle to the opposite side turns the parallelogram into a rectangle of base b and height h without changing its area, so A = b · h. ∎</string>
+    <string name="th_ex_8_13">• Tiling floors and estimating slanted plots of land.\n• The height is the perpendicular gap between the bases — a taller-looking slanted side does not count.\n• Shearing a parallelogram sideways keeps its area the same.</string>
+    <string name="th_q_8_13">A parallelogram has base 8 and height 5. What is its area?</string>
+    <string name="th_a_8_13">40</string>
+    <string name="th_q2_8_13">A parallelogram has area 60 and base 12. What is its height?</string>
+    <string name="th_a2_8_13">5</string>
+
+    <string name="th_title_8_14">14. Area of a Trapezoid</string>
+    <string name="th_def_8_14">The area of a trapezoid equals half the sum of its parallel sides times the height: A = ½ (a + b) · h.</string>
+    <string name="th_exp_8_14">Average the two parallel sides (that average is the midsegment) and multiply by the height. It is the same idea as a rectangle, but with the average width of the shape.</string>
+    <string name="th_proof_8_14">A diagonal splits the trapezoid into two triangles with the same height h and bases a and b. Their areas ½a·h and ½b·h add to A = ½(a + b)·h. ∎</string>
+    <string name="th_ex_8_14">• Cross-sections of canals, dams and beams are trapezoids.\n• Since the midsegment m = (a + b)/2, the area is simply m · h.\n• In problems: average the parallel sides first, then multiply by the height.</string>
+    <string name="th_q_8_14">A trapezoid has parallel sides 6 and 10 and height 4. What is its area?</string>
+    <string name="th_a_8_14">32</string>
+    <string name="th_q2_8_14">A trapezoid has area 45 and parallel sides 4 and 5. What is its height?</string>
+    <string name="th_a2_8_14">10</string>
+
+    <string name="th_title_8_15">15. Similar Triangles (AA)</string>
+    <string name="th_def_8_15">If two angles of one triangle equal two angles of another, the triangles are similar: same shape, with sides in the same ratio.</string>
+    <string name="th_exp_8_15">Match two angles and the third matches automatically (angles sum to 180°). With all three angles equal the triangles have the same shape, so every pair of matching sides shares one scale factor.</string>
+    <string name="th_proof_8_15">Equal angles at A and B force the third angles equal too, since each triangle\'s angles sum to 180°. With all angles equal the triangles are similar, so corresponding sides are proportional: AB/A′B′ = BC/B′C′ = CA/C′A′. ∎</string>
+    <string name="th_ex_8_15">• Measuring a tree\'s height from its shadow and a known stick.\n• Scale drawings, maps and models are all similar figures.\n• A line drawn parallel to one side of a triangle cuts off a smaller, similar triangle.</string>
+    <string name="th_q_8_15">Two triangles are similar with ratio 2 : 3. A side of the smaller is 8. What is the matching side of the larger?</string>
+    <string name="th_a_8_15">12</string>
+    <string name="th_q2_8_15">Two triangles are similar; the smaller has shortest side 3 and the larger has shortest side 6. What is the scale factor?</string>
+    <string name="th_a2_8_15">2</string>
 
     <!-- ================= GRADE 9 ================= -->
     <string name="th_title_9_1">1. Law of Cosines</string>
@@ -590,6 +841,56 @@
     <string name="th_a_9_7">6</string>
     <string name="th_q2_9_7">In a cyclic quadrilateral a·c = 15, b·d = 9, and one diagonal is 4. What is the other diagonal?</string>
     <string name="th_a2_9_7">6</string>
+
+    <string name="th_title_9_8">8. Angle in a Semicircle</string>
+    <string name="th_def_9_8">An angle inscribed in a semicircle is always a right angle (90°).</string>
+    <string name="th_exp_9_8">Take a diameter and any third point on the circle. Join them into a triangle — the corner sitting on the circle is always exactly 90°, no matter where you slide it along the arc.</string>
+    <string name="th_proof_9_8">The diameter subtends a central angle of 180°. By the inscribed-angle theorem, an inscribed angle on the same arc is half of it: 180° ÷ 2 = 90°. ∎</string>
+    <string name="th_ex_9_8">• A set square can be checked against a circle drawn on its longest edge.\n• In problems: spotting a diameter instantly gives a 90° angle to use with Pythagoras.\n• It is the special case of the inscribed-angle theorem for a 180° arc.</string>
+    <string name="th_q_9_8">A triangle is inscribed in a semicircle with the diameter as one side. What is the angle at the point on the arc?</string>
+    <string name="th_a_9_8">90</string>
+    <string name="th_q2_9_8">A right triangle inscribed in a semicircle has legs 6 and 8. What is the diameter (its hypotenuse)?</string>
+    <string name="th_a2_9_8">10</string>
+
+    <string name="th_title_9_9">9. Area of a Circle</string>
+    <string name="th_def_9_9">A circle of radius r has area A = πr² and circumference C = 2πr.</string>
+    <string name="th_exp_9_9">Slice a circle into many thin wedges and rearrange them into a near-rectangle of height r and length πr (half the circumference). Its area πr² is the circle\'s area.</string>
+    <string name="th_proof_9_9">Cutting the disc into n equal sectors and alternating them forms a shape approaching a rectangle of width πr (half of the circumference 2πr) and height r. Its area is πr × r = πr². ∎</string>
+    <string name="th_ex_9_9">• Pizza sizes, pipe cross-sections and circular fields all scale with r².\n• In problems: doubling the radius quadruples the area (because of the square).\n• Use π ≈ 3.14 for quick estimates.</string>
+    <string name="th_q_9_9">A circle has radius 5. What is its area as a multiple of π? (give the number multiplying π)</string>
+    <string name="th_a_9_9">25</string>
+    <string name="th_q2_9_9">A circle has radius 3. What is its circumference as a multiple of π? (give the number multiplying π)</string>
+    <string name="th_a2_9_9">6</string>
+
+    <string name="th_title_9_10">10. Tangent and Radius</string>
+    <string name="th_def_9_10">A tangent to a circle is perpendicular to the radius drawn to the point where it touches.</string>
+    <string name="th_exp_9_10">A tangent just grazes the circle at a single point. At that touch point the radius sticks straight out, meeting the tangent at a perfect 90° angle.</string>
+    <string name="th_proof_9_10">The radius to the touch point is the shortest distance from the centre to the tangent line. The shortest segment from a point to a line is always perpendicular to that line, so the radius meets the tangent at 90°. ∎</string>
+    <string name="th_ex_9_10">• A wheel touching the road, or a belt leaving a pulley, departs along the tangent.\n• In problems: the radius, tangent and line to the centre form a right triangle — use Pythagoras.\n• Two tangents drawn from one outside point have equal length.</string>
+    <string name="th_q_9_10">A radius meets a tangent at the point of contact. What is the angle between them (in degrees)?</string>
+    <string name="th_a_9_10">90</string>
+    <string name="th_q2_9_10">From a point 13 cm from the centre, a tangent touches a circle of radius 5 cm. How long is the tangent segment?</string>
+    <string name="th_a2_9_10">12</string>
+
+    <string name="th_title_9_11">11. Cyclic Quadrilateral</string>
+    <string name="th_def_9_11">In a cyclic quadrilateral (all four vertices on a circle), opposite angles add up to 180°.</string>
+    <string name="th_exp_9_11">Each pair of opposite corners together “sees” the whole circle. Since an inscribed angle is half its arc and the two arcs make a full 360°, the opposite angles add up to half of 360°, which is 180°.</string>
+    <string name="th_proof_9_11">Opposite angles ∠A and ∠C are inscribed angles standing on the two arcs that together form the whole circle (360°). Each equals half its arc, so ∠A + ∠C = ½ · 360° = 180°. The same holds for ∠B and ∠D. ∎</string>
+    <string name="th_ex_9_11">• A quick test of whether four points lie on one circle.\n• Combined with the inscribed-angle theorem to chase angles in circle problems.\n• In problems: a missing angle is 180° minus its opposite.</string>
+    <string name="th_q_9_11">One angle of a cyclic quadrilateral is 70°. What is the opposite angle?</string>
+    <string name="th_a_9_11">110</string>
+    <string name="th_q2_9_11">Opposite angles of a cyclic quadrilateral are x and 2x. What is x?</string>
+    <string name="th_a2_9_11">60</string>
+
+    <string name="th_title_9_12">12. Two Tangents from a Point</string>
+    <string name="th_def_9_12">The two tangent segments drawn to a circle from the same external point are equal in length.</string>
+    <string name="th_exp_9_12">From a point outside a circle you can draw exactly two tangents. They touch the circle symmetrically, so both touch-segments have the same length.</string>
+    <string name="th_proof_9_12">The radii OA and OB to the touch points are equal and each is perpendicular to its tangent; OP is shared. So the right triangles OAP and OBP are congruent (hypotenuse–leg), giving PA = PB. ∎</string>
+    <string name="th_ex_9_12">• Belt-and-pulley layouts and drawing an incircle rely on equal tangents.\n• They give the “equal tangent lengths” used to prove a + c = b + d for a tangential quadrilateral.\n• In problems: two tangents from one point are always equal, so set them equal.</string>
+    <string name="th_q_9_12">One tangent from an external point measures 9. What is the length of the other tangent from that same point?</string>
+    <string name="th_a_9_12">9</string>
+    <string name="th_q2_9_12">A tangent from a point is 12 and the circle\'s radius is 5. How far is the point from the centre?</string>
+    <string name="th_a2_9_12">13</string>
 
     <!-- ================= GRADE 10 ================= -->
     <string name="th_title_10_1">1. Line &amp; Plane Parallelism</string>
@@ -691,8 +992,8 @@
     <string name="th_ex_12_3">• Material needed for a ball; fuel in a spherical tank.\n• In problems the answer is often a multiple of π.</string>
     <string name="th_q_12_3">Radius 3. What is the surface area divided by π?</string>
     <string name="th_a_12_3">36</string>
-    <string name="th_q2_12_3">Radius 3. What is the volume divided by π?</string>
-    <string name="th_a2_12_3">36</string>
+    <string name="th_q2_12_3">Radius 6. What is the volume divided by π?</string>
+    <string name="th_a2_12_3">288</string>
 
     <string name="th_title_12_4">4. Cylinder Lateral Surface</string>
     <string name="th_def_12_4">The lateral (side) surface area of a cylinder is A = 2πRH.</string>

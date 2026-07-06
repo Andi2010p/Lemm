@@ -57,6 +57,16 @@
                 app:iconGravity="textStart" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPlane"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#0277BD"
+                android:text="@string/plane_button"
+                app:icon="@android:drawable/ic_menu_crop"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDraw"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="wrap_content"
@@ -204,6 +214,16 @@
                 android:textColor="#2E7D32"
                 android:text="@string/save"
                 app:icon="@android:drawable/ic_menu_save"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExport3D"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#1565C0"
+                android:text="@string/export_3d_button"
+                app:icon="@android:drawable/ic_menu_share"
                 app:iconGravity="textStart" />
 
             <View android:layout_width="1dp" android:layout_height="24dp" android:background="#DDDDDD" android:layout_marginHorizontal="6dp"/>

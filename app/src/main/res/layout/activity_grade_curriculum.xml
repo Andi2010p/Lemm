@@ -127,16 +127,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Theorem Explanation -->
-            <TextView
-                android:id="@+id/tvTheoremExplanation"
+            <!-- Theorem Explanation — one card per section (definition / plain / proof / uses) -->
+            <LinearLayout
+                android:id="@+id/theoremSections"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Loading proof..."
-                android:textSize="16sp"
-                android:textColor="@color/text_main"
-                android:lineSpacingExtra="6dp"
-                android:layout_marginBottom="24dp"/>
+                android:orientation="vertical"
+                android:layout_marginBottom="12dp"/>
 
             <!-- INTERACTIVE QUIZ SECTION -->
             <com.google.android.material.card.MaterialCardView

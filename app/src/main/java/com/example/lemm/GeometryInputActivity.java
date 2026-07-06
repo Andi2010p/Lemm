@@ -88,6 +88,9 @@ public class GeometryInputActivity extends AppCompatActivity {
     private List<android.graphics.Bitmap> solveImages;
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<Intent> voiceLauncher;
+    private ActivityResultLauncher<Intent> cameraLauncher;
+    private ActivityResultLauncher<String> cameraPermLauncher;
+    private String pendingCameraPath;
     private EditText voiceTarget;
     private LinearLayout imageStrip;
     private View imageScroll, btnAddImage;
@@ -140,11 +143,29 @@ public class GeometryInputActivity extends AppCompatActivity {
                 if (!uris.isEmpty()) addImagesFromUris(uris);
             }
         });
+        // Capture a drawing with the camera and attach it (the AI reads the figure via vision).
+        cameraLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK && pendingCameraPath != null) {
+                if (addImageFromFile(pendingCameraPath)) {
+                    Toast.makeText(this, R.string.scan_drawing_attached, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        cameraPermLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+            if (granted) launchCamera();
+            else Toast.makeText(this, R.string.camera_permission_needed, Toast.LENGTH_SHORT).show();
+        });
+
+        // "Add image": let the user photograph a drawing OR pick an existing image.
         btnAddImage.setOnClickListener(v -> {
-            Intent pick = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            pick.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-            try { imagePickerLauncher.launch(pick); }
-            catch (Exception e) { imagePickerLauncher.launch(new Intent(Intent.ACTION_GET_CONTENT).setType("image/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)); }
+            CharSequence[] items = { getString(R.string.img_take_photo), getString(R.string.img_choose_gallery) };
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.img_add_title)
+                    .setItems(items, (d, which) -> {
+                        if (which == 0) startCameraCapture();
+                        else openImageGallery();
+                    })
+                    .show();
         });
 
         // Voice input: spoken text is appended into whichever field requested it.
@@ -988,6 +1009,9 @@ public class GeometryInputActivity extends AppCompatActivity {
         final String plain = tv.getText().toString();
         solutionCardTexts.add(plain);
 
+        // Make any theorem names in this card tappable → open the theorem's page.
+        TheoremLinker.linkify(this, tv);
+
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.addView(tv);
@@ -1108,6 +1132,72 @@ public class GeometryInputActivity extends AppCompatActivity {
             if (bmp != null) selectedImages.add(bmp);
         }
         refreshImageStrip();
+    }
+
+    /** Loads a photo from an absolute file path (scanned/captured drawing) and attaches it. */
+    private boolean addImageFromFile(String path) {
+        android.graphics.Bitmap bmp = decodeScaledBitmapFromFile(path, 1280);
+        if (bmp == null) return false;
+        selectedImages.add(bmp);
+        refreshImageStrip();
+        return true;
+    }
+
+    /** Opens the system gallery picker for one or more images. */
+    private void openImageGallery() {
+        Intent pick = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pick.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        try { imagePickerLauncher.launch(pick); }
+        catch (Exception e) { imagePickerLauncher.launch(new Intent(Intent.ACTION_GET_CONTENT).setType("image/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)); }
+    }
+
+    /** Checks/requests CAMERA permission, then opens the camera to photograph a drawing. */
+    private void startCameraCapture() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            cameraPermLauncher.launch(Manifest.permission.CAMERA);
+            return;
+        }
+        launchCamera();
+    }
+
+    private void launchCamera() {
+        try {
+            java.io.File dir = getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES);
+            java.io.File photo = java.io.File.createTempFile("SCAN_" + System.currentTimeMillis() + "_", ".jpg", dir);
+            pendingCameraPath = photo.getAbsolutePath();
+            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(this, "com.example.lemm.fileprovider", photo);
+            Intent it = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+            it.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri);
+            it.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            cameraLauncher.launch(it);
+        } catch (Exception e) {
+            Log.e(TAG, "Camera launch failed", e);
+            Toast.makeText(this, R.string.scan_error_loading_photo, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /** Decodes a (possibly large) camera photo from disk, downsampling first to avoid OOM. */
+    private android.graphics.Bitmap decodeScaledBitmapFromFile(String path, int maxDim) {
+        try {
+            android.graphics.BitmapFactory.Options bounds = new android.graphics.BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            android.graphics.BitmapFactory.decodeFile(path, bounds);
+            int w = bounds.outWidth, h = bounds.outHeight;
+            if (w <= 0 || h <= 0) return null;
+            int sample = 1;
+            while (Math.max(w, h) / sample > maxDim * 2) sample *= 2;
+            android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
+            opts.inSampleSize = sample;
+            android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeFile(path, opts);
+            if (bmp == null) return null;
+            int bw = bmp.getWidth(), bh = bmp.getHeight();
+            float ratio = Math.min((float) maxDim / bw, (float) maxDim / bh);
+            if (ratio >= 1f) return bmp;
+            return android.graphics.Bitmap.createScaledBitmap(bmp, Math.round(bw * ratio), Math.round(bh * ratio), true);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load image from file", e);
+            return null;
+        }
     }
 
     private android.graphics.Bitmap decodeScaledBitmap(android.net.Uri uri, int maxDim) {
@@ -1423,6 +1513,14 @@ public class GeometryInputActivity extends AppCompatActivity {
 
         if (intent.hasExtra("SCANNED_TEXT")) {
             etDescription.setText(intent.getStringExtra("SCANNED_TEXT"));
+        }
+
+        // A drawing scanned from the home screen: attach the photo so the AI reads the figure itself.
+        if (intent.hasExtra("SCANNED_IMAGE_PATH")) {
+            String scanPath = intent.getStringExtra("SCANNED_IMAGE_PATH");
+            if (scanPath != null && !scanPath.isEmpty() && addImageFromFile(scanPath)) {
+                Toast.makeText(this, R.string.scan_drawing_attached, Toast.LENGTH_SHORT).show();
+            }
         }
 
         if (intent.hasExtra("SAVED_RAW")) {
