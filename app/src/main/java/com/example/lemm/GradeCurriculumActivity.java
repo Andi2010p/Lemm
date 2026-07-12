@@ -46,10 +46,14 @@ public class GradeCurriculumActivity extends AppCompatActivity {
     private int quizIndex = 0;
     private boolean awaitingNextQuestion = false;
 
+    private boolean styleGlass;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StyleManager.apply(this);
         setContentView(R.layout.activity_grade_curriculum);
+        styleGlass = StyleManager.isGlass(this);
 
         try {
             canvas2D = findViewById(R.id.curriculumCanvas);
@@ -87,6 +91,12 @@ public class GradeCurriculumActivity extends AppCompatActivity {
             Toast.makeText(this, "Error loading curriculum: " + e.getMessage(), Toast.LENGTH_LONG).show();
             finish();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        StyleManager.recreateIfChanged(this, styleGlass);
     }
 
     @Override
@@ -264,7 +274,9 @@ public class GradeCurriculumActivity extends AppCompatActivity {
         card.setLayoutParams(lp);
         card.setRadius(dp(16));
         card.setCardElevation(dp(2));
-        card.setCardBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.surface_white));
+        card.setCardBackgroundColor(StyleManager.color(this, R.attr.appCardFill));
+        card.setStrokeColor(StyleManager.color(this, R.attr.appCardStroke));
+        card.setStrokeWidth((int) getResources().getDisplayMetrics().density);
 
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);

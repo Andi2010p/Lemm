@@ -306,23 +306,26 @@ public class LoginActivity extends AppCompatActivity {
                                 .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
                                     @Override
                                     public void onDataChange(com.google.firebase.database.DataSnapshot snapshot) {
-                                        String finalUsername = snapshot.getValue(String.class);
-                                        if (finalUsername == null || finalUsername.isEmpty()) {
-                                            String rawName = (account.getDisplayName() != null) ? account.getDisplayName() : email.split("@")[0];
-                                            finalUsername = UsernameRules.sanitize(rawName);
-                                            FirebaseManager.getDatabase().getReference("users_info")
-                                                    .child(uid).child("username").setValue(finalUsername);
+                                        String existing = snapshot.getValue(String.class);
+                                        if (existing == null || existing.isEmpty()) {
+                                            // First Google sign-in for this account: let them CHOOSE a
+                                            // username rather than derive one from their email.
+                                            String suggestion = (account.getDisplayName() != null)
+                                                    ? account.getDisplayName()
+                                                    : (email != null ? email.split("@")[0] : "");
+                                            UsernamePrompt.choose(LoginActivity.this, suggestion,
+                                                    chosen -> {
+                                                        FirebaseManager.getDatabase().getReference("users_info")
+                                                                .child(uid).child("username").setValue(chosen);
+                                                        Social.writeDirectory(uid, chosen);
+                                                        Social.claimUsername(chosen, null);
+                                                        finishGoogleLogin(account, email, chosen);
+                                                    });
+                                        } else {
+                                            // Returning user — make sure they're in the directory, then continue.
+                                            Social.writeDirectory(uid, existing);
+                                            finishGoogleLogin(account, email, existing);
                                         }
-
-                                        try {
-                                            dbHelper.syncGoogleUser(finalUsername, email, account.getId());
-                                            CloudSyncManager.syncLocalToCloud(dbHelper, finalUsername);
-                                        } catch (Exception ignored) {}
-
-                                        AuthManager.sendGoogleWelcome(email, finalUsername);
-
-                                        Toast.makeText(LoginActivity.this, getString(R.string.welcome, finalUsername), Toast.LENGTH_SHORT).show();
-                                        saveSessionAndGoMain(finalUsername, false);
                                     }
 
                                     @Override
@@ -339,6 +342,18 @@ public class LoginActivity extends AppCompatActivity {
                                 Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    /** Finishes a Google login once we have the account's final username. */
+    private void finishGoogleLogin(GoogleSignInAccount account, String email, String username) {
+        try {
+            dbHelper.syncGoogleUser(username, email, account.getId());
+            CloudSyncManager.syncLocalToCloud(dbHelper, username);
+        } catch (Exception ignored) {}
+
+        AuthManager.sendGoogleWelcome(email, username);
+        Toast.makeText(LoginActivity.this, getString(R.string.welcome, username), Toast.LENGTH_SHORT).show();
+        saveSessionAndGoMain(username, false);
     }
 
     private void saveSessionAndGoMain(String username, boolean isGuest) {

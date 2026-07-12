@@ -73,10 +73,14 @@ public class HistoryActivity extends AppCompatActivity {
     // Serializes all DB writes/reads off the UI thread so the cloud merge never freezes the list.
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
 
+    private boolean styleGlass;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StyleManager.apply(this);
         setContentView(R.layout.activity_history);
+        styleGlass = StyleManager.isGlass(this);
 
         dbHelper = new DatabaseHelper(this);
         currentUsername = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("username", "GuestUser");
@@ -810,6 +814,12 @@ public class HistoryActivity extends AppCompatActivity {
                 ivThumb = itemView.findViewById(R.id.ivHistoryThumb);
             }
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        StyleManager.recreateIfChanged(this, styleGlass);
     }
 
     @Override

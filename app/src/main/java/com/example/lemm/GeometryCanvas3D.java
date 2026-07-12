@@ -98,6 +98,13 @@ public class GeometryCanvas3D extends View {
     private boolean showMidpoints = true;
     private boolean showDimensions = false; // length labels on every edge (like the 2D editor)
 
+    // Flat 2D figures (a triangle, a circle, an inscribed polygon, …) are shown face-on like a drawing
+    // on paper: no tilt, no 3D axes/grid. This keeps circles ROUND and every element in the SAME plane,
+    // instead of the old angled view that made a flat circle look like it was standing up perpendicular
+    // to the rest of the figure. Genuine 3D bodies keep the angled view + axes.
+    private boolean showAxesCube = true;
+    private boolean flatViewMode = false;
+
     /** Show/hide the length label drawn on each edge. */
     public void setShowDimensions(boolean show) { this.showDimensions = show; invalidate(); }
     public boolean isShowingDimensions() { return showDimensions; }
@@ -272,6 +279,40 @@ public class GeometryCanvas3D extends View {
     public void addPyramid(String l, float x, float y, float z, float w, float d, float h) { pyramids.add(new Pyramid3D(l, x, y, z, w, d, h)); invalidate(); }
     public void addCylinder(String l, float x, float y, float z, float r, float h) { cylinders.add(new Cylinder3D(l, x, y, z, r, h)); invalidate(); }
 
+    // ---- Exact CONSTRUCTIONS: derive a point from existing ones so the AI never has to guess its
+    //      coordinates (a big source of wrong midpoints, altitude feet and intersections). Each is a
+    //      no-op if a referenced point isn't defined yet. ----
+
+    /** Places {@code label} at the exact midpoint of segment a–b. */
+    public void addMidpoint(String label, String a, String b) {
+        Point3D pa = findPt(a), pb = findPt(b);
+        if (pa == null || pb == null) return;
+        addPoint(label, (pa.x + pb.x) / 2f, (pa.y + pb.y) / 2f, (pa.z + pb.z) / 2f);
+    }
+
+    /** Places {@code label} at the foot of the perpendicular from point p onto line a–b (e.g. an altitude foot). */
+    public void addFoot(String label, String p, String a, String b) {
+        Point3D pp = findPt(p), pa = findPt(a), pb = findPt(b);
+        if (pp == null || pa == null || pb == null) return;
+        float dx = pb.x - pa.x, dy = pb.y - pa.y, dz = pb.z - pa.z;
+        float len2 = dx * dx + dy * dy + dz * dz;
+        if (len2 < 1e-6f) return;
+        float t = ((pp.x - pa.x) * dx + (pp.y - pa.y) * dy + (pp.z - pa.z) * dz) / len2;
+        addPoint(label, pa.x + t * dx, pa.y + t * dy, pa.z + t * dz);
+    }
+
+    /** Places {@code label} where line a–b crosses line c–d (computed in the drawing plane). */
+    public void addIntersection(String label, String a, String b, String c, String d) {
+        Point3D pa = findPt(a), pb = findPt(b), pc = findPt(c), pd = findPt(d);
+        if (pa == null || pb == null || pc == null || pd == null) return;
+        float x1 = pa.x, y1 = pa.y, x2 = pb.x, y2 = pb.y, x3 = pc.x, y3 = pc.y, x4 = pd.x, y4 = pd.y;
+        float den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+        if (Math.abs(den) < 1e-6f) return; // parallel / coincident — nothing to place
+        float px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / den;
+        float py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / den;
+        addPoint(label, px, py, (pa.z + pb.z + pc.z + pd.z) / 4f);
+    }
+
     /** Extrudes a 2D profile (points in the XZ plane at baseY) upward by `height` to form a solid. */
     public void addPrism(String label, float[] xs, float[] zs, float baseY, float height) {
         if (xs == null || zs == null || xs.length < 3 || xs.length != zs.length) return;
@@ -304,7 +345,76 @@ public class GeometryCanvas3D extends View {
     public void clear() {
         points.clear(); lines.clear(); planes.clear(); cones.clear(); pyramids.clear(); cylinders.clear(); circles.clear(); spheres.clear(); prisms.clear(); angles.clear();
         clearSelection();
+        flatViewMode = false; // back to the 3D default until the next figure decides otherwise
+        showAxesCube = true;
         resetRotation();
+    }
+
+    /**
+     * Picks a sensible camera for the figure that was just built. A FLAT 2D drawing — everything sitting
+     * in one plane parallel to the screen (all z equal) with no real 3D solids — is shown face-on, like
+     * paper: circles stay round and every shape shares the SAME plane. Genuine 3D bodies keep the angled
+     * view with axes. Call this right after loading a solution's drawing commands.
+     */
+    public void autoOrientForContent() {
+        if (isFlat2DFigure()) {
+            flatViewMode = true;
+            showAxesCube = false;
+            showActivePlane = false;
+            rotateX = 0f; rotateY = 0f; rotateZ = 0f;
+            translateX = 0f; translateY = 0f; scaleFactor = 1.0f;
+        } else {
+            flatViewMode = false;
+            showAxesCube = true;
+            showActivePlane = true;
+        }
+        invalidate();
+    }
+
+    /** True when the whole figure is a flat 2D drawing lying in one plane parallel to XY (no 3D solids). */
+    private boolean isFlat2DFigure() {
+        if (!cones.isEmpty() || !cylinders.isEmpty() || !pyramids.isEmpty()
+                || !prisms.isEmpty() || !spheres.isEmpty()) return false;
+        Float z0 = null;
+        for (Point3D p : points) {
+            if (z0 == null) z0 = p.z;
+            else if (Math.abs(p.z - z0) > 1f) return false;
+        }
+        for (Circle3D c : circles) {
+            if (c.ground) return false; // a floor circle is horizontal, not in the upright drawing plane
+            if (z0 == null) z0 = c.cz;
+            else if (Math.abs(c.cz - z0) > 1f) return false;
+        }
+        return !points.isEmpty() || !circles.isEmpty();
+    }
+
+    /**
+     * Safety net for AI figures: a point that is CLOSE to a circle (a tangent point, an intersection,
+     * an inscribed vertex…) is usually MEANT to lie exactly on it, but the AI's coordinates are often a
+     * little off, leaving a visible gap where a line and a circle should touch. This snaps any named
+     * point within a tolerance band of a circle radially ONTO the circle, so shared points really meet.
+     * Points clearly inside or far outside the circle are left alone. Call after loading a figure.
+     */
+    public void snapPointsToCircles() {
+        final float band = 0.2f; // snap only points within ±20% of the radius (i.e. already near the ring)
+        for (Circle3D c : circles) {
+            if (c.r <= 1f) continue;
+            for (Point3D p : points) {
+                if (p.label == null || p.label.isEmpty()) continue;
+                // Distance in the circle's own plane (XY for an upright circle, XZ for a floor circle).
+                double dx = p.x - c.cx;
+                double dy = c.ground ? (p.z - c.cz) : (p.y - c.cy);
+                double d = Math.hypot(dx, dy);
+                if (d < 1e-3) continue;
+                if (Math.abs(d - c.r) <= band * c.r) {
+                    double s = c.r / d; // pull the point in/out along its radial direction to sit on the ring
+                    p.x = (float) (c.cx + dx * s);
+                    if (c.ground) p.z = (float) (c.cz + dy * s);
+                    else p.y = (float) (c.cy + dy * s);
+                }
+            }
+        }
+        invalidate();
     }
 
     /** Removes any current selection without notifying the listener. */
@@ -337,9 +447,15 @@ public class GeometryCanvas3D extends View {
                 else if (line.startsWith("CYLINDER3D:")) { String[] a = cmdArgs(line); if (a.length >= 6) addCylinder(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4]), pf(a[5])); }
                 else if (line.startsWith("SPHERE3D:")) { String[] a = cmdArgs(line); if (a.length >= 5) addSphere(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4])); }
                 else if (line.startsWith("CIRCLE3D:")) { String[] a = cmdArgs(line); if (a.length >= 5) addCircle(a[0].trim(), pf(a[1]), pf(a[2]), pf(a[3]), pf(a[4])); }
+                else if (line.startsWith("MIDPOINT:")) { String[] a = cmdArgs(line); if (a.length >= 3) addMidpoint(a[0].trim(), a[1].trim(), a[2].trim()); }
+                else if (line.startsWith("FOOT:")) { String[] a = cmdArgs(line); if (a.length >= 4) addFoot(a[0].trim(), a[1].trim(), a[2].trim(), a[3].trim()); }
+                else if (line.startsWith("INTERSECT:")) { String[] a = cmdArgs(line); if (a.length >= 5) addIntersection(a[0].trim(), a[1].trim(), a[2].trim(), a[3].trim(), a[4].trim()); }
                 else if (line.startsWith("ANGLE3D:")) { String[] a = cmdArgs(line); if (a.length >= 3) addAngle(a[0].trim(), a[1].trim(), a[2].trim(), a.length >= 4 ? pf(a[3]) : null); }
             } catch (Exception ignored) {}
         }
+        snapPointsToCircles(); // make points that should sit on a circle actually touch it
+        // Flat 2D solutions render face-on (like paper) in thumbnails and exports too, not just live.
+        autoOrientForContent();
     }
 
     private static String[] cmdArgs(String line) {
@@ -358,7 +474,10 @@ public class GeometryCanvas3D extends View {
     }
 
     public void resetRotation() {
-        rotateX = -25f; rotateY = 45f; rotateZ = 0f; translateX = 0f; translateY = 0f; scaleFactor = 1.0f;
+        // A flat 2D figure resets to face-on (like paper); a 3D body resets to the angled 3/4 view.
+        if (flatViewMode) { rotateX = 0f; rotateY = 0f; rotateZ = 0f; }
+        else { rotateX = -25f; rotateY = 45f; rotateZ = 0f; }
+        translateX = 0f; translateY = 0f; scaleFactor = 1.0f;
         invalidate();
     }
 
@@ -389,7 +508,7 @@ public class GeometryCanvas3D extends View {
         double radY = Math.toRadians(rotateY);
         double radZ = Math.toRadians(rotateZ);
 
-        drawAxesCube(canvas, radX, radY, radZ, 120f, 350f);
+        if (showAxesCube) drawAxesCube(canvas, radX, radY, radZ, 120f, 350f);
 
         // The active datum plane (translucent grid) — shows the user which plane DRAW/Extrude use.
         drawActivePlane(canvas, radX, radY, radZ, centerX, centerY, sceneScale);

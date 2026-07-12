@@ -1,4 +1,23 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ===== App style overlays (Glass vs Basic), chosen in Settings and applied per-activity
+         by StyleManager. Each provides the values for the appScreen*/appCard* attributes so every
+         themed screen follows the one chosen style. Both are DayNight-safe (the colors they point
+         at are themselves light/dark aware). ===== -->
+    <style name="ThemeOverlay.Lemm.Glass" parent="">
+        <item name="appScreenBg">@drawable/bg_futuristic</item>
+        <item name="appCardFill">@color/glass_fill</item>
+        <item name="appCardStroke">@color/glass_stroke</item>
+        <item name="appCardStrokeWidth">1dp</item>
+    </style>
+
+    <style name="ThemeOverlay.Lemm.Basic" parent="">
+        <item name="appScreenBg">@drawable/bg_gradient_light</item>
+        <item name="appCardFill">@color/surface_white</item>
+        <item name="appCardStroke">@color/card_border_basic</item>
+        <item name="appCardStrokeWidth">1dp</item>
+    </style>
+
     <!-- Base application theme. -->
     <style name="Theme.Lemm" parent="Theme.MaterialComponents.DayNight.NoActionBar">
 
@@ -144,6 +163,18 @@
         <item name="android:textColor">@color/error_red</item>
         <item name="iconTint">@color/error_red</item>
         <item name="rippleColor">@color/error_red</item>
+    </style>
+
+    <!-- Section header inside the Friends / chat screens ("Requests", "Your friends"). -->
+    <style name="SocialSectionLabel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">18dp</item>
+        <item name="android:layout_marginBottom">2dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/neon_text_dim</item>
     </style>
 
 </resources>

@@ -13,6 +13,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,29 +33,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
+    /** Must stay in sync with the URL entered in the Play Console listing. Source: docs/privacy.html */
+    private static final String PRIVACY_POLICY_URL = "https://andi2010p.github.io/Lemm/privacy.html";
+
     private int proTapCount = 0;
     private String currentLang;
     private MaterialButton btnBuyPro;
     private MaterialButton btnUnsubscribe;
+    private MaterialButton btnBuyTokens;
     private TextView tvStatus;
+    private TextView tvTokenBalance;
 
     private BillingManager billingManager;
 
 
+    private boolean styleGlass;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StyleManager.apply(this);
         setContentView(R.layout.activity_settings);
+        styleGlass = StyleManager.isGlass(this);
 
         currentLang = getSharedPreferences("Settings", MODE_PRIVATE).getString("Locale.Helper.Selected.Language", "en");
         setupLanguagePicker();
 
         setupThemeToggle();
+        setupStyleToggle();
 
         // Pull this account's saved keys from the cloud so the management screen is up to date.
         ApiKeyStore.syncFromCloud(this, null);
 
         findViewById(R.id.btnApiKeyConfig).setOnClickListener(v -> openApiKeyDialog());
+        View btnAiProvider = findViewById(R.id.btnAiProvider);
+        if (btnAiProvider != null) btnAiProvider.setOnClickListener(v -> showAiProviderDialog());
 
         btnBuyPro = findViewById(R.id.btnBuyPro);
         tvStatus = findViewById(R.id.tvProStatus);
@@ -73,7 +87,15 @@ public class SettingsActivity extends AppCompatActivity {
         });
         billingManager.startConnection();
 
-        btnBuyPro.setOnClickListener(v -> billingManager.initiatePurchase());
+        // The Pro card now opens the Plans page — one place that explains what the money buys,
+        // instead of a bare "buy" button with no context.
+        btnBuyPro.setOnClickListener(v -> startActivity(new Intent(this, PlansActivity.class)));
+
+        btnBuyTokens = findViewById(R.id.btnBuyTokens);
+        tvTokenBalance = findViewById(R.id.tvTokenBalance);
+        if (btnBuyTokens != null) btnBuyTokens.setOnClickListener(v -> showBuyTokensDialog());
+        // Pull the account's token wallet from the cloud, then show the balance.
+        TokenWallet.syncFromCloud(this, this::refreshTokenBalance);
 
         btnUnsubscribe = findViewById(R.id.btnUnsubscribe);
         btnUnsubscribe.setOnClickListener(v -> new AlertDialog.Builder(this)
@@ -121,6 +143,10 @@ public class SettingsActivity extends AppCompatActivity {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://andi2010p.github.io/Lemm/")));
         });
 
+        View btnPrivacy = findViewById(R.id.btnPrivacy);
+        if (btnPrivacy != null) btnPrivacy.setOnClickListener(v ->
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL))));
+
         findViewById(R.id.btnHowToUse).setOnClickListener(v ->
                 startActivity(new Intent(this, OnboardingActivity.class)));
 
@@ -155,6 +181,157 @@ public class SettingsActivity extends AppCompatActivity {
             case "hy": return "HY";
             default:   return "EN";
         }
+    }
+
+    /** Choose the AI provider (Gemini / OpenAI GPT / Anthropic Claude) + the model + your own key. */
+    private void showAiProviderDialog() {
+        final AiConfig.Provider cur = AiConfig.provider(this);
+        int density = (int) getResources().getDisplayMetrics().density;
+
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(24 * density, 8 * density, 24 * density, 0);
+
+        // Cloud AI: the recommended pipe once the backend is deployed. Server holds a paid key and
+        // meters plan credits, so the app needs no key of its own. When off, the choices below apply.
+        final android.widget.CheckBox cbCloud = new android.widget.CheckBox(this);
+        cbCloud.setText(R.string.cloud_ai_toggle);
+        cbCloud.setChecked(AiPrefs.cloudEnabled(this));
+        root.addView(cbCloud);
+
+        final TextView cloudNote = new TextView(this);
+        cloudNote.setText(R.string.cloud_ai_note);
+        cloudNote.setTextSize(12f);
+        cloudNote.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_subtitle));
+        LinearLayout.LayoutParams cnp = new LinearLayout.LayoutParams(-1, -2);
+        cnp.bottomMargin = 12 * density;
+        cloudNote.setLayoutParams(cnp);
+        root.addView(cloudNote);
+
+        final RadioGroup rg = new RadioGroup(this);
+        RadioButton rGemini = new RadioButton(this); rGemini.setId(1); rGemini.setText(R.string.provider_gemini);
+        RadioButton rOpenai = new RadioButton(this); rOpenai.setId(2); rOpenai.setText(R.string.provider_openai);
+        RadioButton rClaude = new RadioButton(this); rClaude.setId(3); rClaude.setText(R.string.provider_claude);
+        rg.addView(rGemini); rg.addView(rOpenai); rg.addView(rClaude);
+        rg.check(cur == AiConfig.Provider.OPENAI ? 2 : cur == AiConfig.Provider.CLAUDE ? 3 : 1);
+        root.addView(rg);
+
+        // Picking GPT / Claude and a specific model is a Plus feature — free users stay on Gemini.
+        final boolean canChoose = Entitlements.canChooseModel(this);
+        if (!canChoose) {
+            rOpenai.setEnabled(false);
+            rClaude.setEnabled(false);
+            rg.check(1);
+            TextView gate = new TextView(this);
+            gate.setText(R.string.model_choice_plus);
+            gate.setTextSize(12f);
+            gate.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_subtitle));
+            root.addView(gate);
+        }
+
+        final EditText etKey = new EditText(this);
+        etKey.setHint(R.string.ext_api_key_hint);
+        etKey.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        root.addView(etKey);
+
+        final EditText etModel = new EditText(this);
+        etModel.setHint(R.string.ext_model_hint);
+        etModel.setSingleLine(true);
+        root.addView(etModel);
+
+        final TextView suggestLabel = new TextView(this);
+        suggestLabel.setText(R.string.ext_suggested);
+        suggestLabel.setTextSize(12f);
+        suggestLabel.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_subtitle));
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(-1, -2);
+        slp.topMargin = 12 * density;
+        suggestLabel.setLayoutParams(slp);
+        root.addView(suggestLabel);
+
+        final LinearLayout suggestions = new LinearLayout(this);
+        suggestions.setOrientation(LinearLayout.VERTICAL);
+        root.addView(suggestions);
+
+        final TextView note = new TextView(this);
+        note.setTextSize(12f);
+        note.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_subtitle));
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-1, -2);
+        nlp.topMargin = 8 * density;
+        note.setLayoutParams(nlp);
+        root.addView(note);
+
+        final int rowPad = 6 * density;
+        final Runnable refresh = () -> {
+            AiConfig.Provider sel = rg.getCheckedRadioButtonId() == 2 ? AiConfig.Provider.OPENAI
+                    : rg.getCheckedRadioButtonId() == 3 ? AiConfig.Provider.CLAUDE : AiConfig.Provider.GEMINI;
+            boolean ext = sel != AiConfig.Provider.GEMINI;
+            etKey.setVisibility(ext ? View.VISIBLE : View.GONE);
+            etModel.setVisibility(ext ? View.VISIBLE : View.GONE);
+            suggestLabel.setVisibility(ext ? View.VISIBLE : View.GONE);
+            suggestions.removeAllViews();
+            if (ext) {
+                etKey.setText(AiConfig.key(this, sel));
+                etModel.setText(AiConfig.model(this, sel));
+                note.setText(R.string.ext_byok_note);
+                // Curated model list — tap a row to use it; the everyday pick is starred.
+                for (ModelCatalog.Model m : ModelCatalog.forProvider(sel)) {
+                    TextView row = new TextView(this);
+                    String star = (m.tier == ModelCatalog.TIER_BALANCED) ? "   ★" : "";
+                    row.setText(m.name + "  ·  " + ModelCatalog.tierLabel(m.tier) + "  ·  "
+                            + ModelCatalog.costLabel(m.cost) + star + "\n" + m.goodFor);
+                    row.setTextSize(13f);
+                    row.setPadding(0, rowPad, 0, rowPad);
+                    row.setClickable(true);
+                    row.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_title));
+                    final String id = m.id;
+                    row.setOnClickListener(v -> etModel.setText(id));
+                    suggestions.addView(row);
+                }
+            } else {
+                note.setText(R.string.ext_gemini_note);
+            }
+        };
+        rg.setOnCheckedChangeListener((g, id) -> refresh.run());
+        refresh.run();
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.settings_ai_model)
+                .setView(root)
+                .setPositiveButton(R.string.save, (d, w) -> {
+                    AiPrefs.setCloudEnabled(this, cbCloud.isChecked());
+                    AiConfig.Provider sel = rg.getCheckedRadioButtonId() == 2 ? AiConfig.Provider.OPENAI
+                            : rg.getCheckedRadioButtonId() == 3 ? AiConfig.Provider.CLAUDE : AiConfig.Provider.GEMINI;
+                    AiConfig.setProvider(this, sel);
+                    if (sel != AiConfig.Provider.GEMINI) {
+                        AiConfig.setKey(this, sel, etKey.getText().toString());
+                        AiConfig.setModel(this, sel, etModel.getText().toString());
+                    }
+                    Toast.makeText(this, getString(R.string.ext_saved, AiConfig.label(sel)), Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    /** Glass vs Basic app-style picker — applies instantly (recreates) and every page follows it. */
+    private void setupStyleToggle() {
+        MaterialButtonToggleGroup toggleStyle = findViewById(R.id.toggleStyle);
+        if (toggleStyle == null) return;
+
+        toggleStyle.check(StyleManager.isGlass(this) ? R.id.btnStyleGlass : R.id.btnStyleBasic);
+
+        toggleStyle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            boolean wantGlass = checkedId == R.id.btnStyleGlass;
+            if (wantGlass == StyleManager.isGlass(this)) return;
+            StyleManager.setGlass(this, wantGlass);
+            recreate(); // re-themes this screen now; other pages re-apply on their next onResume
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        StyleManager.recreateIfChanged(this, styleGlass);
     }
 
     private void setupThemeToggle() {
@@ -195,6 +372,43 @@ public class SettingsActivity extends AppCompatActivity {
             btnBuyPro.setVisibility(View.VISIBLE);
             if (btnUnsubscribe != null) btnUnsubscribe.setVisibility(View.GONE);
         }
+        refreshTokenBalance();
+    }
+
+    /**
+     * Shows the balance in plain terms: roughly how many problems are left this month, with the raw
+     * token count and a one-line "what tokens are" reminder underneath. Top-ups (btnBuyTokens) only
+     * make sense for Plus users. Tapping the line opens a fuller "what are tokens?" explainer.
+     */
+    private void refreshTokenBalance() {
+        if (tvTokenBalance == null) return;
+        boolean plus = Entitlements.isPlus(this);
+        long balance = TokenWallet.balance(this);
+        long solves = Entitlements.approxSolves(balance);
+        tvTokenBalance.setText(getString(R.string.tokens_balance, solves, Entitlements.grouped(balance)));
+        tvTokenBalance.setOnClickListener(v -> showTokensInfoDialog());
+        if (btnBuyTokens != null) btnBuyTokens.setVisibility(plus ? View.VISIBLE : View.GONE);
+    }
+
+    /** Kid-friendly explainer of what tokens are and how money buys them. */
+    private void showTokensInfoDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.tokens_what_title)
+                .setMessage(getString(R.string.tokens_what_msg,
+                        Entitlements.APPROX_TOKENS_PER_SOLVE,
+                        Entitlements.grouped(Entitlements.PLUS_MONTHLY_TOKENS),
+                        Entitlements.approxSolves(Entitlements.PLUS_MONTHLY_TOKENS)))
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    /**
+     * Buying now lives on the Plans page, which shows the whole money → credits → problems picture in
+     * one place instead of a bare list of packs. Keeping a second buying surface here would just be
+     * two things to keep in sync.
+     */
+    private void showBuyTokensDialog() {
+        startActivity(new Intent(this, PlansActivity.class));
     }
 
     private void openApiKeyDialog() {

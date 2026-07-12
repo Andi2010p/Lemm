@@ -46,10 +46,14 @@ public class ProfileActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<String> requestCameraPermissionLauncher;
 
+    private boolean styleGlass;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StyleManager.apply(this);
         setContentView(R.layout.activity_profile);
+        styleGlass = StyleManager.isGlass(this);
 
         dbHelper = new DatabaseHelper(this);
 
@@ -159,6 +163,7 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        StyleManager.recreateIfChanged(this, styleGlass);
         // Refresh all user data, avatar, and PRO status every time you look at the screen!
         setupUserData();
     }
@@ -445,7 +450,26 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Claims the new name BEFORE touching anything.
+     *
+     * <p>The rules gate {@code users/{name}} on the {@code usernames/} claim. The old code renamed
+     * locally, deleted {@code users/{oldName}}, then re-pushed to {@code users/{newName}} — which the
+     * server denied, because nothing had claimed the new name. The cloud copy of the user's history
+     * and drawings was destroyed and never rewritten. Claim first, and abort if the name is taken.
+     */
     private void applyUsernameChange(String oldName, String newName) {
+        Social.claimUsername(newName, owned -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!owned) {
+                Toast.makeText(this, R.string.username_taken_title, Toast.LENGTH_LONG).show();
+                return;
+            }
+            applyUsernameChangeClaimed(oldName, newName);
+        });
+    }
+
+    private void applyUsernameChangeClaimed(String oldName, String newName) {
         // 1. Rename every local row (users, history, drawings).
         if (!dbHelper.renameUser(oldName, newName)) {
             Toast.makeText(this, "Could not update username.", Toast.LENGTH_LONG).show();
@@ -471,12 +495,14 @@ public class ProfileActivity extends AppCompatActivity {
                     .child(fbUser.getUid()).child("username").setValue(newName);
         }
 
-        // 4. Move the cloud data node: drop the old one (unless it sanitizes to the same path)
-        //    and re-push the now-renamed local rows under the new name.
+        // 4. Move the cloud data node: re-push the now-renamed local rows under the NEW name first
+        //    (the claim above makes this write legal), and only then drop the old node and give the
+        //    old name back so somebody else can take it.
+        CloudSyncManager.syncLocalToCloud(dbHelper, newName);
         if (!FirebaseManager.sanitizeUser(oldName).equals(FirebaseManager.sanitizeUser(newName))) {
             FirebaseManager.getUserRef(oldName).removeValue();
+            Social.releaseUsername(oldName);
         }
-        CloudSyncManager.syncLocalToCloud(dbHelper, newName);
 
         Toast.makeText(this, getString(R.string.username_updated), Toast.LENGTH_SHORT).show();
         tvUsername.setText(newName);
@@ -490,6 +516,11 @@ public class ProfileActivity extends AppCompatActivity {
         if (currentUser != null) {
             dbRef.child("users").child(FirebaseManager.sanitizeUser(username)).removeValue();
             dbRef.child("users_info").child(currentUser.getUid()).removeValue();
+            dbRef.child("users_public").child(currentUser.getUid()).removeValue();
+            // Give the username back. Without this the claim outlives the account, pointing at a uid
+            // that no longer exists — and since the rules only let the claim holder overwrite it, the
+            // name could never be claimed again by anyone, bricking users/{name} forever.
+            Social.releaseUsername(username);
 
             currentUser.delete().addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {

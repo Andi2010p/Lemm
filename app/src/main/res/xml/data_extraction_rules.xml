@@ -4,16 +4,14 @@
    for details.
 -->
 <data-extraction-rules>
+    <!-- Cloud backup is disabled app-wide (allowBackup=false); user content is restored from
+         Firebase cloud sync. Keep sensitive local prefs out of device-to-device transfer too. -->
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="sharedpref" path="UserPrefs.xml" />
+        <exclude domain="sharedpref" path="AI_Settings.xml" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="sharedpref" path="UserPrefs.xml" />
+        <exclude domain="sharedpref" path="AI_Settings.xml" />
     </device-transfer>
-    -->
 </data-extraction-rules>

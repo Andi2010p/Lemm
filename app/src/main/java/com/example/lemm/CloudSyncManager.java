@@ -10,9 +10,25 @@ import java.util.concurrent.Executors;
 
 public class CloudSyncManager {
 
+    /**
+     * Pushes local history + drawings to {@code users/{sanitizedUsername}}.
+     *
+     * <p>The database rules only permit that write to whoever holds the {@code usernames/} claim for
+     * that name, so the claim is taken FIRST. Sign-in used to call this before anything had ever
+     * claimed the name (the claim happened later, in MainActivity), so the very first sync after
+     * login was rejected by the server and the rows silently stayed unsynced.
+     */
     public static void syncLocalToCloud(DatabaseHelper db, String username) {
         if (username == null || username.isEmpty() || username.startsWith("GuestUser")) return;
 
+        Social.claimUsername(username, owned -> {
+            if (owned) doSync(db, username);
+            // Not owned => another account holds this name. The write would be denied anyway;
+            // MainActivity tells the user to rename.
+        });
+    }
+
+    private static void doSync(DatabaseHelper db, String username) {
         // Move to a background thread so it NEVER freezes your login screen!
         Executors.newSingleThreadExecutor().execute(() -> {
             try {

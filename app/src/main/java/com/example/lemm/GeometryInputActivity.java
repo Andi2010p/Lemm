@@ -50,6 +50,7 @@ public class GeometryInputActivity extends AppCompatActivity {
     private static final String TAG = "GeometryInput";
     private GeometryCanvas3D canvas3D;
     private boolean proCloudRefreshed = false; // guards the one-shot cloud Pro re-check per solve
+    private boolean styleGlass; // the app style this screen was built with (Glass vs Basic)
     private EditText etDescription, etExtra;
     private TextView tvZoom;
     private LinearLayout inputArea, rotationControls, stepsContainer, solutionControls;
@@ -61,6 +62,7 @@ public class GeometryInputActivity extends AppCompatActivity {
     private String lastSolutionText = "";
     private String lastAIResponse = "";
     private View resultActions;
+    private View btnAskLemma;
     // Plain text of each rendered solution card, in order — used for "Copy all".
     private final List<String> solutionCardTexts = new ArrayList<>();
     private String editId = "";
@@ -98,7 +100,9 @@ public class GeometryInputActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StyleManager.apply(this);
         setContentView(R.layout.activity_geometry_input);
+        styleGlass = StyleManager.isGlass(this);
 
         currentLangCode = Locale.getDefault().getLanguage();
 
@@ -118,8 +122,10 @@ public class GeometryInputActivity extends AppCompatActivity {
         stepsContainer = findViewById(R.id.stepsContainer);
         solutionControls = findViewById(R.id.solutionControls);
         resultActions = findViewById(R.id.resultActions);
+        btnAskLemma = findViewById(R.id.btnAskLemma);
         findViewById(R.id.btnCopyAll).setOnClickListener(v -> copyAllSolution());
         findViewById(R.id.btnSaveImage).setOnClickListener(v -> exportSolution());
+        btnAskLemma.setOnClickListener(v -> openSolutionChat());
         progressBar = findViewById(R.id.progressBar);
         btnStopAI = findViewById(R.id.btnStopAI);
         btnToggleInput = findViewById(R.id.btnToggleInput);
@@ -241,6 +247,7 @@ public class GeometryInputActivity extends AppCompatActivity {
         findViewById(R.id.btnRotZMinus).setOnClickListener(v -> canvas3D.rotateZ(-10));
 
         findViewById(R.id.btnSolveProblem).setOnClickListener(v -> {
+            Ux.tick(v);
             String prob = etDescription.getText().toString().trim();
             proCloudRefreshed = false; // allow one fresh cloud Pro check for this attempt
             if (!prob.isEmpty() || !selectedImages.isEmpty()) solveWithAI(prob);
@@ -327,113 +334,155 @@ public class GeometryInputActivity extends AppCompatActivity {
                 break;
         }
         return "SYSTEM: " + instructions + "\n" +
-                "Any problem the user sends is fair game — solve it as best you can. If the problem isn't " +
-                "geometric, simply skip the 3D drawing commands and give a clear step-by-step solution. " +
-                "Only emit DRAW3D/LINE3D/PLANE3D etc. when the problem actually has a figure or shape to draw.\n" +
-                "CORE RULES:\n" +
-                "1. Output drawing commands first: DRAW3D, LINE3D, PLANE3D.\n" +
-                "2. Always use PLANE3D for faces of 3D shapes (Pyramids, Cubes).\n" +
-                "3. The step-by-step explanation MUST be in " + langName + ".\n" +
-                "4. Structure your explanation EXACTLY like this:\n" +
-                "   GIVEN:(if in other language translate to that language)\n" +
-                "   (Write what is known, which letter is what, etc. Do NOT use the word 'STEP' here.)\n" +
-                "   STEP 1: Title\n" +
-                "   (Explanation)\n" +
-                "   STEP 2: Title\n" +
-                "   (Explanation)\n" +
+                "You are a warm, patient geometry tutor for school children. Solve the problem the user sends. " +
+                "If it isn't a geometry/math problem, still help, but skip the drawing commands.\n\n" +
+
+                "════════ FIRST — UNDERSTAND & PICTURE THE PROBLEM ════════\n" +
+                "This is the MOST important part: really imagine the situation before you draw or solve. Do this " +
+                "thinking PRIVATELY, above a line that reads exactly ===SOLUTION=== . Everything above that line is " +
+                "hidden from the student; everything below it is shown. In the private part:\n" +
+                "  1. Re-read the problem and restate, in your own words, what is happening.\n" +
+                "  2. Name every shape and EXACTLY how the parts relate: which point is ON vs INSIDE vs OUTSIDE a " +
+                "shape; what is tangent, inscribed, circumscribed, perpendicular, parallel, equal, a midpoint, a " +
+                "diameter, an altitude, etc. Get the configuration right — this is where mistakes happen.\n" +
+                "  3. List every given number and exactly what the question asks for.\n" +
+                "  4. Choose concrete positions/coordinates that make ALL of those relationships TRUE AT ONCE, then " +
+                "CHECK each given fact against them (a point said to be on a circle is exactly the radius away; a " +
+                "tangent touches at one point; a right angle is really 90°). Fix anything that doesn't match.\n" +
+                "  5. Work the answer out, then SANITY-CHECK it before showing it: is it the right formula, the right " +
+                "units, and a reasonable size, and does it satisfy every given fact? If a check fails, redo it.\n" +
+                "Then output the line:\n===SOLUTION===\n" +
+                "and BELOW it give the drawing commands and the student explanation described next. (If you are very " +
+                "sure and need no private notes you may start directly, but ALWAYS make the figure match every " +
+                "given fact.)\n\n" +
+
+                "════════ PART 1 — DRAW THE FIGURE ════════\n" +
+                "The app draws your figure from the special commands below. Put ALL drawing commands FIRST, " +
+                "one per line, BEFORE the explanation.\n\n" +
+                "MOST problems are FLAT (2D): triangles, quadrilaterals, circles, angles, inscribed shapes, etc. " +
+                "Draw a flat problem in ONE single flat plane, like a picture on paper:\n" +
+                "  • Every point uses z = 0:  DRAW3D:Name,x,y,0   (the THIRD number is ALWAYS 0 for a 2D problem).\n" +
+                "  • Bigger y = higher up, bigger x = further right. Use sizes about 50–300.\n" +
+                "  • Draw circles with CIRCLE3D — a CIRCLE3D lies in that SAME flat plane, so it stays round and " +
+                "in the plane of the figure. Give it z = 0 too. NEVER build a circle out of little line segments, " +
+                "and NEVER place the circle on a different plane than the rest of the figure.\n" +
+                "  • Do NOT tilt a 2D figure and do NOT use any 3D solid command for it.\n\n" +
+                "Use 3D ONLY when the problem is really about a solid body (cube, box, prism, pyramid, cone, " +
+                "cylinder, sphere). Then Y is UP, the base sits at y = 0, and you may use the solid commands. " +
+                "For a solid, draw every face with PLANE3D.\n\n" +
+                "COMMANDS (use these names EXACTLY, one per line):\n" +
+                "DRAW3D:Name,x,y,z\n" +
+                "LINE3D:Name1,Name2[,color]   (segment between two points; the optional color — red, blue, green, " +
+                "orange, purple, cyan, etc., or a hex like #FF0000 — highlights an auxiliary line such as a height. " +
+                "Example: LINE3D:A,H,red)\n" +
+                "CIRCLE3D:Name,cx,cy,cz,radius   (a circle in the flat drawing plane)\n" +
+                "ANGLE3D:Vertex,A,B[,degrees]   (marks angle A-Vertex-B with an arc and its value, and auto-draws " +
+                "the two arms if missing. ALWAYS mark every angle you talk about, e.g. ANGLE3D:B,A,C,90)\n" +
+                "PLANE3D:Name,v1,v2,v3,v4   (a flat face — for 3D solids)\n" +
+                "PYRAMID3D:Name,cx,cy,cz,width,depth,height\n" +
+                "CONE3D:Name,cx,cy,cz,radius,height,curvature   (curvature 1.0 = a normal cone; use CONE3D for any " +
+                "cone, never lines+circle)\n" +
+                "CYLINDER3D:Name,cx,cy,cz,radius,height\n" +
+                "SPHERE3D:Name,x,y,z,radius\n" +
+                "PRISM3D:Name,height,x1,z1,x2,z2,x3,z3[,...]   (a flat base of (x,z) pairs pushed straight up into " +
+                "a solid; use for boxes, triangular/hexagonal prisms, L-shapes. Y is UP; base at y = 0)\n\n" +
+
+                "CONSTRUCTIONS — let the app place DERIVED points EXACTLY (this is the #1 way to avoid wrong figures):\n" +
+                "For a point you get FROM other points — a midpoint, the foot of a height, or where two lines cross — do " +
+                "NOT compute its coordinates yourself (that is where drawings go wrong). DECLARE it instead and the app " +
+                "places it perfectly. Define the points it refers to with DRAW3D FIRST, then:\n" +
+                "MIDPOINT:M,A,B          (M = the exact midpoint of segment AB — for medians, midsegments, the centre of a diameter)\n" +
+                "FOOT:H,P,A,B            (H = the foot of the perpendicular from point P onto line AB — e.g. the foot of an altitude/height)\n" +
+                "INTERSECT:X,A,B,C,D     (X = the point where line AB crosses line CD — e.g. where diagonals or two medians meet)\n" +
+                "After declaring it, use the new point in LINE3D/ANGLE3D like any other. ALWAYS prefer these over guessing " +
+                "coordinates for a midpoint, an altitude foot, or an intersection.\n\n" +
+
+                "DRAWING RULES:\n" +
+                "  • Define EVERY point with DRAW3D BEFORE you use it in a LINE3D/PLANE3D/ANGLE3D — including feet of " +
+                "heights, midpoints, centres and intersection points (e.g. DRAW3D:H,...). A command that uses a name " +
+                "you never defined is skipped and won't appear, so never reference an undefined point.\n" +
+                "  • If the solution uses ANY extra segment — height/altitude, median, bisector, midsegment, diagonal, " +
+                "radius, apothem, perpendicular, tangent, or a segment joining two named points — you MUST draw it with " +
+                "LINE3D so the student can see it.\n\n" +
+
+                "GEOMETRIC ACCURACY — a relationship stated in words MUST be real in the picture, not approximate. " +
+                "Compute the coordinates so shapes actually meet:\n" +
+                "  • A point that lies ON a circle must be EXACTLY the radius away from the centre. For centre (cx,cy) " +
+                "and radius r, place it at (cx + r·cosθ, cy + r·sinθ) for some angle θ — never just near the circle.\n" +
+                "  • TANGENT line (touches a circle at exactly ONE point T): put T on the circle, and remember the tangent " +
+                "is PERPENDICULAR to the radius at T. Draw T with DRAW3D on the circle and run the visible tangent segment " +
+                "along that perpendicular THROUGH T, so the line and the circle really touch at T and nowhere else. If the " +
+                "tangent comes from an outside point P, make T an END of the segment: LINE3D:P,T.\n" +
+                "  • A CHORD / SECANT / DIAMETER must have the point(s) where it meets the circle placed exactly on the circle.\n" +
+                "  • An INSCRIBED polygon has EVERY vertex exactly on the circle; a circle inscribed inside a shape touches " +
+                "each side at one point that is radius-distance from the centre.\n" +
+                "  • ALWAYS mark the touch / meeting point with DRAW3D and route the line THROUGH it — a line and a circle " +
+                "that share a point must be drawn actually meeting, never with a gap between them.\n" +
+                "WORKED TANGENT EXAMPLE (circle centre O radius 60, tangent from outside point P touching at T):\n" +
+                "CIRCLE3D:c,0,0,0,60\n" +
+                "DRAW3D:O,0,0,0\n" +
+                "DRAW3D:T,0,60,0\n" +
+                "DRAW3D:P,140,60,0\n" +
+                "LINE3D:P,T\n" +
+                "LINE3D:O,T\n" +
+                "ANGLE3D:T,O,P,90\n\n" +
+
+                "════════ PART 2 — EXPLAIN IT (very important) ════════\n" +
+                "The explanation is for a CHILD. Make it SUPER simple and SUPER step-by-step, like a kind teacher " +
+                "talking slowly and patiently. The step-by-step explanation MUST be written in " + langName + ".\n" +
+                "Structure it EXACTLY like this (keep the labels GIVEN, STEP and FINAL ANSWER):\n" +
+                "   GIVEN:\n" +
+                "   (In plain, friendly words say what we already know, and which letter is which point / side / angle. " +
+                "Do NOT use the word 'STEP' here.)\n" +
+                "   STEP 1: short title\n" +
+                "   (one small idea, explained very simply)\n" +
+                "   STEP 2: short title\n" +
+                "   (the next small idea)\n" +
+                "   ... as many small steps as needed ...\n" +
                 "   FINAL ANSWER:\n" +
-                "   (The final result)\n" +
-                "5. End with 'FINAL ANSWER:'.\n" +
-                "QUALITY RULES (make the solution easy to follow):\n" +
-                " - In each step, NAME the theorem or formula you use (e.g. 'By the Pythagorean theorem'), then write the formula, then substitute the numbers, then compute.\n" +
-                " - Keep each step short and about ONE idea. Don't merge several computations into one step.\n" +
-                " - Always carry UNITS through the working and in the FINAL ANSWER (cm, cm², °, etc.). If a problem has no units, say so.\n" +
-                " - FINAL ANSWER must be the clean final value (rounded sensibly), not an expression to simplify.\n" +
-                " - Do not invent data. If something needed is missing, state the assumption you make.\n\n" +
-                "SYSTEM: You are a CAD Geometry Engine. You MUST output DRAWING COMMANDS for any shape mentioned.\n" +
-                "TASK: Analyze the problem and output DRAWING COMMANDS followed by the step-by-step solution.\n\n" +
-                "RULE 1: Use ONLY these exact commands. Do NOT use 'point3d' or 'cad' or any other words.\n" +
-                "RULE 2: To draw a Cone, you MUST use CONE3D. Do NOT use Circle and Lines.\n\n" +
-                "COMMAND: CONE3D:Label,cx,cy,cz,radius,height,curvature\n" +
-                "MATH LOGIC:\n" +
-                "1. (cx, cy, cz) is the center of the bottom circle.\n" +
-                "2. height is how far the tip is above the base.\n" +
-                "3. curvature should be 1.0 for a standard cone.\n" +
-                "4. Y is UP. For a cone on the ground, cy=0 and height=200.\n\n" +
-                "EXAMPLE: CONE3D:MyCone,0,0,0,50,150,1.0\n\n" +
-                "COMMAND LIST:\n" +
-                "DRAW3D:Label,x,y,z\n" +
-                "LINE3D:Label1,Label2[,COLOR]   (COLOR is optional — use it ONLY when the user " +
-                "asks for a specific color in the additional instructions, or when highlighting " +
-                "an auxiliary line is helpful. Accepts a hex like #FF0000, or a name: red, blue, " +
-                "green, orange, purple, magenta, cyan, yellow, pink, brown, teal, gold, navy. " +
-                "Example: LINE3D:H,M,red highlights the height HM in red.)\n" +
-                "- radius: Radius of the base.\n" +
-                "- height: Vertical height from base to apex.\n" +
-                "- curvature: 1.0 (standard cone), 2.5 (concave shard), 0.5 (convex dome).\n\n" +
-                "OTHER COMMANDS:\n" +
-                "PYRAMID3D:Label,cx,cy,cz,width,depth,height\n" +
-                "CYLINDER3D:Label,cx,cy,cz,radius,height\n" +
-                "SPHERE3D:Label,x,y,z,radius\n" +
-                "PLANE3D:Label,v1,v2,v3,v4 (Four labels for a face)\n" +
-                "PRISM3D:Label,height,x1,z1,x2,z2,x3,z3[,x4,z4,...]   (EXTRUDED SOLID: give a flat base " +
-                "polygon as (x,z) pairs on the ground, then it is extruded straight up by 'height'. Use this for " +
-                "boxes/cuboids, triangular prisms, hexagonal prisms, L-shapes — any flat shape pushed to a constant " +
-                "thickness. Y is UP; the base sits at y=0. Example, a 100×60 box 150 tall: " +
-                "PRISM3D:Box,150,-50,-30,50,-30,50,30,-50,30)\n" +
-                "ANGLE3D:Vertex,A,B[,degrees]   (Marks the angle A-Vertex-B: it auto-draws an ARC at the " +
-                "vertex with the angle's VALUE in degrees shown next to it, and auto-draws the two rays " +
-                "Vertex→A and Vertex→B if they are missing. ALWAYS use ANGLE3D for any angle the solution " +
-                "mentions (e.g. a right angle, a base angle, an angle between a slant and the base) so the " +
-                "student sees the value on the figure. Give the degrees if you know them, e.g. ANGLE3D:B,A,C,90.)\n\n" +
-                "CONE RULES:\n" +
-                "- curvature 1.0 is a sharp cone.\n" +
-                "- Center is (0,0,0). Y is UP. Height should be 100-300.\n\n" +
-                "EXAMPLE RESPONSE:\n" +
-                "DRAW3D:A,0,0,0\n" +
-                "CONE3D:Cone1,0,0,0,50,200,1.0\n" +
-                "GIVEN:\nRadius is 50, Height is 200.\n" +
-                "STEP 1: Find Volume\nVolume = 1/3 * PI * r^2 * h...\n" +
-                "FINAL ANSWER: 523598\n\n" +
-                "CRITICAL RULES:\n" +
-                "1. For any CONE use CONE3D. Do NOT use CIRCLE3D + LINE3D.\n" +
-                "2. Coordinates: Y is UP. Center is (0,0,0). Use sizes between 50 and 200.\n" +
-                "3. To make a cone look solid, the AI only needs to output one CONE3D command.\n\n" +
-                "4. Never use CIRCLE3D + LINE3D to describe a cone. Use CONE3D only.\n" +
-                "5. For buildings with 'non-straight' sides, always set curvature > 1.5.\n" +
-                "6. Use coordinates like (0,0,0) and heights around 200.\n\n" +
-                "Example for a curved skyscraper: CONE3D:SkyTower,0,0,0,50,300,2.2\n\n" +
-                "- CURVATURE: 1.0 is a normal cone. 2.5 is a thin 'Shard' building (concave). 0.5 is a rounded 'Bullet' dome (convex).\n" +
-                "- Use CONE3D with curvature > 1.5 to create modern aesthetic skyscrapers.\n" +
-                "Make plane3d for each face.\n"+
-                "CYLINDER3D:Label,cx,cy,cz,radius,height (SOLID CYLINDER)\n" +
-                "SPHERE3D:Label,x,y,z,radius (Wireframe sphere)\n\n" +
-                "================ MODELING TIPS =================\n" +
-                "- REALIZABLE FACES: To make an object look solid, use PLANE3D or CIRCLE3D.\n" +
-                "- CONES: For any cone, use CONE3D. It handles shaded sides and base automatically.\n" +
-                "- COORDINATES: Center view is (0,0,0). Use sizes like 50-200 units. Y-axis is UP.\n" +
-                "- Output Drawing Commands first, one per line.\n\n" +
-                "CRITICAL RULES:\n" +
-                "3. Use STRICTLY Unicode math symbols (√, ×, ÷, ^, ², ³, α, β, γ, θ, π). NEVER use LaTeX, backslashes, or dollar signs (No $, no \\cos, no \\alpha, no \\frac, no \\sqrt, no curly braces {}). Write formulas clearly like: cos(α), a² + b² = c², √x, a / b.\n" +
-                "1. For any pointed shape with a circular base, use CONE3D. Do NOT use lines/circles.\n" +
-                "2. Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
-                "3. Use Unicode math symbols (√, ×, ÷, ^). No LaTeX(dont use dolar sign, /sqrt or other things {}etc).\n" +
-                "4. Make it look like a solid building using CONE3D/PYRAMID3D.(Cone3D if its cone or its base is circle.\n\n" +
-                "SOLUTION FORMAT: Start each step with 'STEP X: ' (e.g., 'STEP 1: Calculate...'). End the solution with 'FINAL ANSWER: ' followed by the result.\n\n" +
-                "1. For any pointed shape with a circular base, use CONE3D. Do NOT use lines/circles.\n" +
-                "2. Y is UP. Center base at (0,0,0). Use sizes like 50-200.\n" +
-                "If there is no circle in that part of stucture use line3d and plane 3d\n"+
-                "If there is a face for structure make plane for every face.Example:If you have pyramid you should draw pyramid with planes\n"+
-                "3. Use Unicode math symbols (√, ×, ÷, ^). No LaTeX(dont use  /sqrt or other things {}etc).\n" +
-                "4. Make it look like a solid building using CONE3D/PYRAMID3D.(Cone3D if its cone or its base is circle.\n\n" +
-                "Explain everything carefully every step in a new card,at first say user what letter is what point or line in solution\n"+
-                "If solution needs construction in or out of structure you can also do it with plane3d line3d circle3d and other function.\n"+
-                "EVERY FACE SHOULD HAVE PLANE\n"+
-                "CONSTRUCTION LINES (MANDATORY): If the solution uses ANY auxiliary segment — height/altitude, median, angle bisector, midsegment, diagonal, radius, apothem, perpendicular, tangent, or a segment joining two named points — you MUST draw it with LINE3D so the student can see it. Define EVERY endpoint first with DRAW3D (including feet of perpendiculars, midpoints, centers, and intersection points, e.g. DRAW3D:H,...), THEN connect them with LINE3D. A LINE3D or PLANE3D that references a label you did NOT define with DRAW3D is skipped and will NOT be drawn — so never reference an undefined point. Re-draw every vertex and auxiliary point you mention in the text.\n\n"+
+                "   (the clean final result with its unit)\n\n" +
+                "RULES FOR A GREAT, EASY EXPLANATION:\n" +
+                " 0. FORMAT (critical): put EACH step on its OWN new line and begin it with the word STEP + its " +
+                "number + a colon — 'STEP 1:', 'STEP 2:', 'STEP 3:', … The app turns every 'STEP n:' line into a " +
+                "separate card, so NEVER merge two steps into one paragraph and NEVER drop the STEP number. Put " +
+                "'FINAL ANSWER:' on its own line at the end. Keep these labels (GIVEN, STEP, FINAL ANSWER) at the " +
+                "start of their line.\n" +
+                " 1. Keep every step TINY — ONE idea per step. If a step feels big, split it into two smaller steps.\n" +
+                " 2. In each step: FIRST name the rule in words (e.g. 'By the Pythagorean theorem'), THEN write the " +
+                "formula, THEN put the numbers in, THEN compute — each on its own short line.\n" +
+                " 3. Use simple everyday words a child understands. If you must use a hard term, explain it in a few words.\n" +
+                " 4. Carry UNITS through the working and the final answer (cm, cm², °, …). Round the final answer sensibly.\n" +
+                " 5. Do NOT invent missing data. If something needed is missing, say the assumption you make.\n" +
+                " 6. The FINAL ANSWER must be the clean final value, not an expression left to simplify.\n\n" +
+                "NEVER mention coordinates, a coordinate system, axes, or x / y / z anywhere in the explanation, and " +
+                "never quote the numbers used inside the drawing commands. The student only sees the picture — always " +
+                "talk about points, sides, angles and lengths by their LETTERS and their real values, never by their " +
+                "position numbers.\n\n" +
+                "MATH SYMBOLS: use plain Unicode only (√, ×, ÷, ^, ², ³, π, α, β, γ, θ, °). NEVER use LaTeX or dollar " +
+                "signs (no $, no \\frac, no \\sqrt, no \\cos, no curly braces { }). Write like: cos(α), a² + b² = c², √x, a / b.\n\n" +
+
+                "COMMON MISTAKES TO AVOID: confusing radius and diameter; using the wrong measure (area vs perimeter " +
+                "vs volume); assuming a right angle, or that a triangle is isosceles/equilateral, without a given or a " +
+                "reason; forgetting units; rounding too early; mixing degrees and radians; and drawing a shape that " +
+                "doesn't actually match the givens.\n\n" +
+
+                "════════ GOLD EXAMPLE ════════\n" +
+                "Study this worked example — copy its FORMAT and its careful quality, then solve the REAL problem the " +
+                "same way (adapt it to the actual problem; write your shown answer in " + langName + "):\n\n" +
+                SolutionExemplars.pickFor(problem) + "\n" +
+                "════════ NOW SOLVE THE REAL PROBLEM ════════\n\n" +
+
                 "PROBLEM:\n" + problem;
     }
 
     private void solveWithAI(String problem) {
+        // Cloud AI: route the solve through the Lemma backend, which holds a PAID Gemini key and
+        // meters the user's plan credits server-side. This is the pipe a paying user's AI comes from.
+        if (AiPrefs.cloudEnabled(this)) { solveViaBackend(problem); return; }
+
+        // Non-Gemini providers (OpenAI / Claude) chosen in Settings use their own bring-your-own-key path.
+        if (AiConfig.provider(this) != AiConfig.Provider.GEMINI) { solveWithExternal(problem); return; }
+
         SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
         String username = userPrefs.getString("username", "");
@@ -488,6 +537,21 @@ public class GeometryInputActivity extends AppCompatActivity {
             return;
         }
 
+        // Token metering: a Plus user on the built-in Gemini spends from their monthly allowance (plus
+        // any purchased top-ups). When it's exhausted, send them to buy more instead of solving.
+        //
+        // Gate on what a solve actually COSTS, not on the problem text alone. estimateTokens(problem)
+        // is only ~430 tokens for a short problem, but the deduction afterwards also counts the
+        // model's multi-thousand-token answer — so a near-empty wallet used to sail through the gate
+        // and get one full solve for free.
+        if (Entitlements.shouldMeter(this)) {
+            long cost = Math.max(TokenWallet.estimateTokens(problem), Entitlements.APPROX_TOKENS_PER_SOLVE);
+            if (!TokenWallet.canSpend(this, cost)) {
+                showOutOfTokensDialog();
+                return;
+            }
+        }
+
         // App backup keys as a last-resort fallback once the user is past the gate.
         for (String bk : BuildConfig.GEMINI_BACKUP_KEYS.split(",")) {
             String k = bk.trim();
@@ -506,7 +570,8 @@ public class GeometryInputActivity extends AppCompatActivity {
         String effectiveProblem = problem;
         if (solveImages != null) {
             effectiveProblem = "The problem statement and/or the figure are provided in the attached image(s). "
-                    + "Read the image(s) carefully and treat them as the problem.\n" + problem;
+                    + "Look VERY carefully at the image(s): identify every labelled point, line, angle and mark, "
+                    + "and exactly how the shapes are arranged, then treat them as the problem.\n" + problem;
         }
         solvePrompt = getTranslatedSystemPrompt(currentLangCode, effectiveProblem);
         solveProblemText = problem;
@@ -521,6 +586,124 @@ public class GeometryInputActivity extends AppCompatActivity {
         nQuotaBody = getString(R.string.notif_quota_body);
 
         runSolveAttempt(0, 0);
+    }
+
+    /** Solve path through the Lemma Cloud backend (server-side paid key + credit metering). */
+    private void solveViaBackend(String problem) {
+        isSaved = false;
+        isFromHistory = false;
+        progressBar.setVisibility(View.VISIBLE);
+        setInputLocked(true);
+
+        solveImages = selectedImages.isEmpty() ? null : new ArrayList<>(selectedImages);
+        String effectiveProblem = problem;
+        if (solveImages != null) {
+            effectiveProblem = "The problem statement and/or the figure are provided in the attached image(s). "
+                    + "Look VERY carefully at the image(s): identify every labelled point, line, angle and mark, "
+                    + "and exactly how the shapes are arranged, then treat them as the problem.\n" + problem;
+        }
+        solvePrompt = getTranslatedSystemPrompt(currentLangCode, effectiveProblem);
+        solveProblemText = problem;
+
+        nNotGeoTitle = getString(R.string.scan_not_geometry_title);
+        nNotGeoMsg = getString(R.string.solve_not_geometry_msg);
+
+        LemmaBackend.AiRequest req = new LemmaBackend.AiRequest("solve", solvePrompt);
+        if (solveImages != null) {
+            for (Bitmap b : solveImages) {
+                String b64 = toJpegBase64(b);
+                if (b64 != null) req.imagesB64.add(b64);
+            }
+        }
+
+        LemmaBackend.askAI(req, new LemmaBackend.Callback<LemmaBackend.AiReply>() {
+            @Override public void onSuccess(LemmaBackend.AiReply v) {
+                if (isFinishing() || isDestroyed()) return;
+                progressBar.setVisibility(View.GONE);
+                setInputLocked(false);
+                String text = v.text;
+                if (text != null && text.toUpperCase().contains("NOT_GEOMETRY")) {
+                    isSaved = true;
+                    solutionControls.setVisibility(View.GONE);
+                    new AlertDialog.Builder(GeometryInputActivity.this)
+                            .setTitle(nNotGeoTitle).setMessage(nNotGeoMsg)
+                            .setPositiveButton(android.R.string.ok, null).show();
+                    return;
+                }
+                if (text != null) { lastAIResponse = text; processAIResult(text); }
+            }
+            @Override public void onError(String code, String message) {
+                if (isFinishing() || isDestroyed()) return;
+                progressBar.setVisibility(View.GONE);
+                setInputLocked(false);
+                if (LemmaBackend.isOutOfCredits(code)) { showOutOfTokensDialog(); return; }
+                new AlertDialog.Builder(GeometryInputActivity.this)
+                        .setMessage(getString(R.string.chat_error))
+                        .setPositiveButton(android.R.string.ok, null).show();
+            }
+        });
+    }
+
+    private static String toJpegBase64(Bitmap b) {
+        if (b == null) return null;
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        b.compress(Bitmap.CompressFormat.JPEG, 85, out);
+        return android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP);
+    }
+
+    /** Solve path for a bring-your-own-key provider (OpenAI / Anthropic) chosen in Settings. */
+    private void solveWithExternal(String problem) {
+        final AiConfig.Provider p = AiConfig.provider(this);
+        if (AiConfig.key(this, p).isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setMessage(getString(R.string.ext_no_key, AiConfig.label(p)))
+                    .setPositiveButton(R.string.open_settings, (d, w) -> startActivity(new Intent(this, SettingsActivity.class)))
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show();
+            return;
+        }
+
+        isSaved = false;
+        isFromHistory = false;
+        progressBar.setVisibility(View.VISIBLE);
+        setInputLocked(true);
+
+        solveImages = selectedImages.isEmpty() ? null : new ArrayList<>(selectedImages);
+        String effectiveProblem = problem;
+        if (solveImages != null) {
+            effectiveProblem = "The problem statement and/or the figure are provided in the attached image(s). "
+                    + "Look VERY carefully at the image(s): identify every labelled point, line, angle and mark, "
+                    + "and exactly how the shapes are arranged, then treat them as the problem.\n" + problem;
+        }
+        solvePrompt = getTranslatedSystemPrompt(currentLangCode, effectiveProblem);
+        solveProblemText = problem;
+
+        nReadyTitle = getString(R.string.notif_solution_ready_title);
+        nReadyBody = getString(R.string.notif_solution_ready_body);
+        nFailTitle = getString(R.string.notif_solution_failed_title);
+        nFailBody = getString(R.string.notif_solution_failed_body);
+
+        ExternalAiClient.generate(this, solvePrompt, solveImages, new ExternalAiClient.Callback() {
+            @Override public void onText(String text) {
+                boolean alive = !isFinishing() && !isDestroyed();
+                if (alive) {
+                    progressBar.setVisibility(View.GONE);
+                    setInputLocked(false);
+                    lastAIResponse = text;
+                    processAIResult(text);
+                }
+                if (!isActivityVisible) postSolutionNotification(nReadyTitle, nReadyBody, solveProblemText, text);
+            }
+            @Override public void onError(String message) {
+                boolean alive = !isFinishing() && !isDestroyed();
+                if (alive) {
+                    progressBar.setVisibility(View.GONE);
+                    setInputLocked(false);
+                    Toast.makeText(GeometryInputActivity.this, message, Toast.LENGTH_LONG).show();
+                }
+                if (!isActivityVisible) postSolutionNotification(nFailTitle, nFailBody, solveProblemText, null);
+            }
+        });
     }
 
     private void runSolveAttempt(int keyIndex) { runSolveAttempt(keyIndex, 0, 0); }
@@ -726,7 +909,11 @@ public class GeometryInputActivity extends AppCompatActivity {
 
     private boolean isActivityVisible = false;
 
-    @Override protected void onResume() { super.onResume(); isActivityVisible = true; }
+    @Override protected void onResume() {
+        super.onResume();
+        isActivityVisible = true;
+        StyleManager.recreateIfChanged(this, styleGlass);
+    }
     @Override protected void onPause() { super.onPause(); isActivityVisible = false; }
 
     @Override
@@ -771,6 +958,18 @@ public class GeometryInputActivity extends AppCompatActivity {
     }
 
     private void processAIResult(String text) {
+        // Strip the model's private "work out the configuration" scratchpad, then keep the clean answer
+        // as the stored/saved/chat copy so students, History and exports never see the raw reasoning.
+        // Full model output (may start with a private "===SOLUTION===" scratchpad); the student-facing
+        // part is everything after that marker (or all of it if the model started directly).
+        String rawResponse = (text == null) ? "" : text;
+        String solutionPart = extractSolution(rawResponse);
+
+        // Meter a fresh built-in-Gemini solve against the wallet (never when just re-opening History).
+        if (!isFromHistory && Entitlements.shouldMeter(this)) {
+            TokenWallet.spend(this, TokenWallet.estimateTokens(solveProblemText, rawResponse));
+        }
+
         canvas3D.clear();
         stepsContainer.removeAllViews();
         solutionCardTexts.clear();
@@ -783,24 +982,36 @@ public class GeometryInputActivity extends AppCompatActivity {
             solutionControls.setVisibility(View.GONE);
         }
 
-        String[] lines = text.split("\n");
-        StringBuilder explanationText = new StringBuilder();
-
-        for (String line : lines) {
+        // Draw the figure from EVERY command line in the whole output, so a command the model happened to
+        // put in its private notes is never lost. Explanation CARDS, however, come ONLY from the
+        // student-facing part — the private reasoning is never shown.
+        StringBuilder commandsOnly = new StringBuilder();
+        for (String line : rawResponse.split("\n")) {
             String cleanLine = line.trim();
-            if (cleanLine.startsWith("DRAW3D:") || cleanLine.startsWith("LINE3D:") ||
-                    cleanLine.startsWith("PLANE3D:") || cleanLine.startsWith("CONE3D:") ||
-                    cleanLine.startsWith("PYRAMID3D:") || cleanLine.startsWith("CYLINDER3D:") ||
-                    cleanLine.startsWith("SPHERE3D:") || cleanLine.startsWith("CIRCLE3D:") ||
-                    cleanLine.startsWith("PRISM3D:") || cleanLine.startsWith("ANGLE3D:")) {
-
+            if (isCadCommand(cleanLine)) {
                 parseCadCommand(cleanLine);
-            } else {
-                explanationText.append(line).append("\n");
+                commandsOnly.append(cleanLine).append("\n");
             }
         }
+        StringBuilder explanationText = new StringBuilder();
+        for (String line : solutionPart.split("\n")) {
+            if (!isCadCommand(line.trim())) explanationText.append(line).append("\n");
+        }
+
+        // Clean copy for save / History / chat / export = commands + student explanation, no scratchpad.
+        lastAIResponse = (commandsOnly.toString() + explanationText.toString()).trim();
+
+        // Make points that should lie on a circle (tangent/intersection/inscribed) actually touch it,
+        // then show flat 2D problems face-on so the circle and the rest sit in the SAME plane.
+        canvas3D.snapPointsToCircles();
+        canvas3D.autoOrientForContent();
 
         String fullText = explanationText.toString();
+
+        // The AI may write step / final-answer headers in the student's language (ШАГ, Քայլ, ОТВЕТ,
+        // ՊԱՏԱՍԽԱՆ…) or with markdown, which broke the English-only split below and dumped every step
+        // into ONE card. Normalize all of those to the English markers first, so each step gets its card.
+        fullText = normalizeSolutionMarkers(fullText);
 
         fullText = fullText.replaceAll("(?i)STEP\\s*(\\d+)", "STEP $1");
         fullText = fullText.replaceAll("(?i)STEP\\s*:\\s*", "");
@@ -828,12 +1039,59 @@ public class GeometryInputActivity extends AppCompatActivity {
             addFinalAnswerCard(finalAnswerText);
         }
 
-        // Copy / Save-image are available whenever a solution is on screen (incl. opened from History).
-        if (resultActions != null)
-            resultActions.setVisibility(stepsContainer.getChildCount() > 0 ? View.VISIBLE : View.GONE);
+        // Copy / Save-image / Ask-Lemma are available whenever a solution is on screen (incl. from History).
+        boolean hasSolution = stepsContainer.getChildCount() > 0;
+        if (resultActions != null) resultActions.setVisibility(hasSolution ? View.VISIBLE : View.GONE);
+        if (btnAskLemma != null) btnAskLemma.setVisibility(hasSolution ? View.VISIBLE : View.GONE);
 
         inputArea.setVisibility(View.GONE);
         btnToggleInput.setColorFilter(Color.parseColor("#E67E22"));
+    }
+
+    /**
+     * Rewrites step / final-answer headers written in any supported language (or with markdown/■bullets)
+     * to the exact English markers the card splitter needs ("STEP n" and "FINAL ANSWER:"). Without this,
+     * a Russian ("ШАГ 1", "ОТВЕТ:") or Armenian ("Քայլ 1", "Պատասխան:") solution never split and every
+     * step showed up crammed into a single card. Flags: i = case-insensitive, m = ^ per line, u = Unicode
+     * case folding (so ШАГ/Шаг/шаг and ՔԱՅԼ/Քայլ all match).
+     */
+    /**
+     * Drops the AI's PRIVATE reasoning scratchpad — it is told to work out the configuration above a
+     * line reading "===SOLUTION===" and put the student-facing answer below it. We keep only the part
+     * after the last such marker, so the extra "imagine the problem" thinking improves accuracy without
+     * ever being shown to the child. No marker (the model started directly) → return the text unchanged.
+     */
+    private static String extractSolution(String text) {
+        if (text == null) return "";
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(?i)={2,}\\s*SOLUTION\\s*={2,}").matcher(text);
+        int end = -1;
+        while (m.find()) end = m.end(); // take the LAST marker, in case the word appears in the notes
+        return (end >= 0) ? text.substring(end).trim() : text;
+    }
+
+    private String normalizeSolutionMarkers(String text) {
+        if (text == null) return "";
+        // "STEP 1" / "Шаг 1" / "ՔԱՅԼ 1" / "**Step 2:**" ... -> "STEP <n>"
+        text = text.replaceAll(
+                "(?imu)^[\\s>*#.\\-]*(?:STEP|ШАГ|ЭТАП|ՔԱՅԼ|Քայլ)\\s*[:.#)\\-]?\\s*(\\d+)",
+                "STEP $1");
+        // Final-answer header in EN/RU/HY -> "FINAL ANSWER:"
+        text = text.replaceAll(
+                "(?imu)^[\\s>*#.\\-]*(?:FINAL\\s*ANSWER|ИТОГОВЫЙ\\s*ОТВЕТ|ОТВЕТ|ИТОГ|ՎԵՐՋՆԱԿԱՆ\\s*ՊԱՏԱՍԽԱՆ|ՊԱՏԱՍԽԱՆ)\\s*:",
+                "FINAL ANSWER:");
+        return text;
+    }
+
+    /** True if a line is one of the figure drawing commands (vs. student explanation text). */
+    private static boolean isCadCommand(String cleanLine) {
+        return cleanLine.startsWith("DRAW3D:") || cleanLine.startsWith("LINE3D:")
+                || cleanLine.startsWith("PLANE3D:") || cleanLine.startsWith("CONE3D:")
+                || cleanLine.startsWith("PYRAMID3D:") || cleanLine.startsWith("CYLINDER3D:")
+                || cleanLine.startsWith("SPHERE3D:") || cleanLine.startsWith("CIRCLE3D:")
+                || cleanLine.startsWith("PRISM3D:") || cleanLine.startsWith("ANGLE3D:")
+                || cleanLine.startsWith("MIDPOINT:") || cleanLine.startsWith("FOOT:")
+                || cleanLine.startsWith("INTERSECT:");
     }
 
     private void parseCadCommand(String cleanLine) {
@@ -899,6 +1157,18 @@ public class GeometryInputActivity extends AppCompatActivity {
                         canvas3D.addAngle(args[0].trim(), args[1].trim(), args[2].trim(), deg);
                     }
                     break;
+                case "MIDPOINT":
+                    // MIDPOINT:M,A,B -> place M exactly at the midpoint of A–B (engine computes it).
+                    if (args.length >= 3) canvas3D.addMidpoint(args[0].trim(), args[1].trim(), args[2].trim());
+                    break;
+                case "FOOT":
+                    // FOOT:H,P,A,B -> H = foot of the perpendicular from P onto line A–B (altitude foot).
+                    if (args.length >= 4) canvas3D.addFoot(args[0].trim(), args[1].trim(), args[2].trim(), args[3].trim());
+                    break;
+                case "INTERSECT":
+                    // INTERSECT:X,A,B,C,D -> X = where line A–B crosses line C–D.
+                    if (args.length >= 5) canvas3D.addIntersection(args[0].trim(), args[1].trim(), args[2].trim(), args[3].trim(), args[4].trim());
+                    break;
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse command: " + cleanLine, e);
@@ -911,12 +1181,14 @@ public class GeometryInputActivity extends AppCompatActivity {
         lp.setMargins(24, 12, 24, 12);
         card.setLayoutParams(lp);
         card.setRadius(24f);
-        card.setCardElevation(3f);
-        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.surface_white));
+        card.setCardElevation(0f);
+        card.setCardBackgroundColor(StyleManager.color(this, R.attr.appCardFill));
+        card.setStrokeColor(StyleManager.color(this, R.attr.appCardStroke));
+        card.setStrokeWidth((int)(getResources().getDisplayMetrics().density));
 
         TextView tv = new TextView(this);
         tv.setPadding(44, 40, 44, 40);
-        tv.setTextColor(ContextCompat.getColor(this, R.color.text_title));
+        tv.setTextColor(ContextCompat.getColor(this, R.color.neon_text));
         tv.setTextSize(14f);
 
         // Sanitize any ugly LaTeX first!
@@ -947,12 +1219,14 @@ public class GeometryInputActivity extends AppCompatActivity {
         lp.setMargins(24, 12, 24, 12);
         card.setLayoutParams(lp);
         card.setRadius(24f);
-        card.setCardElevation(4f);
-        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.surface_white));
+        card.setCardElevation(0f);
+        card.setCardBackgroundColor(StyleManager.color(this, R.attr.appCardFill));
+        card.setStrokeColor(StyleManager.color(this, R.attr.appCardStroke));
+        card.setStrokeWidth((int)(getResources().getDisplayMetrics().density));
 
         TextView tv = new TextView(this);
         tv.setPadding(44, 40, 44, 40);
-        tv.setTextColor(ContextCompat.getColor(this, R.color.text_title));
+        tv.setTextColor(ContextCompat.getColor(this, R.color.neon_text));
         tv.setTextSize(14f);
 
         // Sanitize any ugly LaTeX first!
@@ -1016,22 +1290,82 @@ public class GeometryInputActivity extends AppCompatActivity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.addView(tv);
 
+        // Action row: "Ask AI about this" + copy, bottom-right of the card.
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(-1, -2);
+        actions.setLayoutParams(alp);
+
+        int sz = (int) (36 * getResources().getDisplayMetrics().density);
+
+        // Ask AI: opens the tutor chat focused on THIS step, carrying the whole solution as context.
+        ImageButton ask = new ImageButton(this);
+        ask.setImageResource(android.R.drawable.sym_action_chat);
+        ask.setColorFilter(ContextCompat.getColor(this, R.color.primary));
+        ask.setBackgroundResource(android.R.color.transparent);
+        ask.setContentDescription(getString(R.string.ask_about_step));
+        LinearLayout.LayoutParams asklp = new LinearLayout.LayoutParams(sz, sz);
+        asklp.rightMargin = 8;
+        asklp.bottomMargin = 6;
+        ask.setLayoutParams(asklp);
+        ask.setOnClickListener(v -> openStepChat(plain));
+        actions.addView(ask);
+
         ImageButton copy = new ImageButton(this);
         copy.setImageResource(R.drawable.ic_copy);
         copy.setColorFilter(ContextCompat.getColor(this, R.color.text_subtitle));
         copy.setBackgroundResource(android.R.color.transparent);
         copy.setContentDescription(getString(R.string.copy));
-        int sz = (int) (36 * getResources().getDisplayMetrics().density);
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(sz, sz);
-        clp.gravity = Gravity.END;
         clp.rightMargin = 12;
         clp.bottomMargin = 6;
         copy.setLayoutParams(clp);
         copy.setOnClickListener(v -> copyToClipboard(plain));
-        box.addView(copy);
+        actions.addView(copy);
+
+        // Report: Play's AI-Generated Content policy requires an in-app way to flag offensive AI output.
+        ImageButton report = new ImageButton(this);
+        report.setImageResource(android.R.drawable.ic_dialog_alert);
+        report.setColorFilter(ContextCompat.getColor(this, R.color.text_subtitle));
+        report.setBackgroundResource(android.R.color.transparent);
+        report.setContentDescription(getString(R.string.report_ai));
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(sz, sz);
+        rlp.rightMargin = 12;
+        rlp.bottomMargin = 6;
+        report.setLayoutParams(rlp);
+        report.setOnClickListener(v -> AiReports.showReportDialog(this, plain));
+        actions.addView(report);
+
+        box.addView(actions);
 
         card.addView(box);
         stepsContainer.addView(card);
+        // Futuristic reveal: each card fades + rises in, staggered one after another.
+        Ux.revealIn(card, (stepsContainer.getChildCount() - 1) * 60L);
+    }
+
+    /** Opens the Lemma chat focused on one solution step; the figure + full solution ride along as context. */
+    private void openStepChat(String stepText) {
+        Intent i = buildChatIntent();
+        i.putExtra("FOCUS_STEP", stepText);
+        startActivity(i);
+    }
+
+    /** Opens the Lemma chat about the WHOLE solution (no single step focused). */
+    private void openSolutionChat() {
+        startActivity(buildChatIntent());
+    }
+
+    /** Common chat context: the problem, the readable solution, AND the raw text so the chat can
+     *  re-draw the figure and let the student ask about any detail in the solution or the drawing. */
+    private Intent buildChatIntent() {
+        Intent i = new Intent(this, ChatActivity.class);
+        i.putExtra("CONTEXT_PROBLEM", etDescription.getText().toString());
+        i.putExtra("CONTEXT_SOLUTION", SolutionExporter.cleanSolutionText(lastAIResponse));
+        i.putExtra("CONTEXT_RAW", lastAIResponse); // carries the DRAW3D/LINE3D/… commands => the figure
+        if (getIntent().hasExtra("SAVED_NAME")) i.putExtra("CONTEXT_TITLE", getIntent().getStringExtra("SAVED_NAME"));
+        return i;
     }
 
     private void copyAllSolution() {
@@ -1165,7 +1499,7 @@ public class GeometryInputActivity extends AppCompatActivity {
             java.io.File dir = getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES);
             java.io.File photo = java.io.File.createTempFile("SCAN_" + System.currentTimeMillis() + "_", ".jpg", dir);
             pendingCameraPath = photo.getAbsolutePath();
-            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(this, "com.example.lemm.fileprovider", photo);
+            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photo);
             Intent it = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
             it.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri);
             it.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
@@ -1425,6 +1759,19 @@ public class GeometryInputActivity extends AppCompatActivity {
                     .setPositiveButton(R.string.upgrade_pro, (d, w) -> startActivity(new Intent(this, SettingsActivity.class)));
         }
         b.setNegativeButton(R.string.cancel, null).show();
+    }
+
+    /**
+     * They've used up their problems for now. Show them the PLANS page rather than a settings screen:
+     * this is the exact moment they can see what more would buy them, so make the offer legible.
+     */
+    private void showOutOfTokensDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.tokens_out_title)
+                .setMessage(R.string.tokens_out_msg)
+                .setPositiveButton(R.string.tokens_buy, (d, w) -> startActivity(new Intent(this, PlansActivity.class)))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void showSaveDialog(boolean exitAfter) {

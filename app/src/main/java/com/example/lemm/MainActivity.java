@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvMainWelcome;
     private ImageButton btnSettings, btnProfile;
 
-    private MaterialCardView cardNewProblem, cardScanProblem, cardDrawProblem, cardHistory, cardTheorems;
+    private MaterialCardView cardNewProblem, cardScanProblem, cardDrawProblem, cardHistory, cardTheorems, cardAskAI, cardFriends;
 
     private Uri photoUri;
     private String currentPhotoPath;
@@ -58,10 +58,14 @@ public class MainActivity extends AppCompatActivity {
             }
     );
 
+    private boolean styleGlass;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StyleManager.apply(this);
         setContentView(R.layout.activity_main);
+        styleGlass = StyleManager.isGlass(this);
 
         initViews();
         setupUser();
@@ -92,6 +96,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        StyleManager.recreateIfChanged(this, styleGlass); // reflect a style change made in Settings
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         ApiKeyStore.detachRealtimeListener(apiKeyAutoSync);
@@ -108,6 +118,8 @@ public class MainActivity extends AppCompatActivity {
         cardDrawProblem = findViewById(R.id.cardDrawProblem);
         cardHistory = findViewById(R.id.cardHistory);
         cardTheorems = findViewById(R.id.cardTheorems);
+        cardAskAI = findViewById(R.id.cardAskAI);
+        cardFriends = findViewById(R.id.cardFriends);
     }
 
     /** Shows the animated how-to guide once, on the first launch after login. */
@@ -128,27 +140,53 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupListeners() {
         if (cardNewProblem != null) {
-            cardNewProblem.setOnClickListener(v -> startActivity(new Intent(this, GeometryInputActivity.class)));
+            cardNewProblem.setOnClickListener(v -> { Ux.tick(v); startActivity(new Intent(this, GeometryInputActivity.class)); });
         }
 
         if (cardScanProblem != null) {
             cardScanProblem.setOnClickListener(v -> {
+                Ux.tick(v);
                 if (checkCameraPermission()) dispatchTakePictureIntent();
                 else requestCameraPermission();
             });
         }
 
         if (cardDrawProblem != null) {
-            cardDrawProblem.setOnClickListener(v -> startActivity(new Intent(this, DrawingActivity.class)));
+            cardDrawProblem.setOnClickListener(v -> { Ux.tick(v); startActivity(new Intent(this, DrawingActivity.class)); });
         }
 
         if (cardHistory != null) {
-            cardHistory.setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
+            cardHistory.setOnClickListener(v -> { Ux.tick(v); startActivity(new Intent(this, HistoryActivity.class)); });
         }
 
         if (cardTheorems != null) {
-            cardTheorems.setOnClickListener(v -> startActivity(new Intent(this, TheoremsActivity.class)));
+            cardTheorems.setOnClickListener(v -> { Ux.tick(v); startActivity(new Intent(this, TheoremsActivity.class)); });
         }
+
+        if (cardAskAI != null) {
+            cardAskAI.setOnClickListener(v -> { Ux.tick(v); startActivity(new Intent(this, ChatActivity.class)); });
+        }
+
+        if (cardFriends != null) {
+            cardFriends.setOnClickListener(v -> { Ux.tick(v); startActivity(new Intent(this, FriendsActivity.class)); });
+        }
+
+        // Pull the token wallet BEFORE anything can spend from it. Until this lands, TokenWallet
+        // refuses to push, so a fresh install can't overwrite purchased tokens with its local zero.
+        TokenWallet.syncFromCloud(this, null);
+
+        // Keep this account findable by username, and claim the name that proves we own our cloud
+        // history. If another account already holds it, this account's work will NOT sync — say so.
+        Social.publishDirectoryEntry(this, () -> {
+            if (isFinishing() || isDestroyed()) return;
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle(R.string.username_taken_title)
+                    .setMessage(R.string.username_taken_msg)
+                    .setPositiveButton(R.string.username_taken_fix,
+                            (d, w) -> startActivity(new Intent(this, ProfileActivity.class)))
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+        });
 
         if (btnSettings != null) {
             btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
@@ -172,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
         File photoFile = null;
         try { photoFile = createImageFile(); } catch (IOException ex) { Log.e(TAG, "Error creating file", ex); }
         if (photoFile != null) {
-            photoUri = FileProvider.getUriForFile(this, "com.example.lemm.fileprovider", photoFile);
+            photoUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photoFile);
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
             cameraLauncher.launch(takePictureIntent);
         }

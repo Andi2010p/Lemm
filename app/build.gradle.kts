@@ -17,10 +17,16 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 android {
+    // namespace = the Java package — internal only, Play never sees it. Leave it alone.
     namespace = "com.example.lemm"
     compileSdk = 36
 
     defaultConfig {
+        // ⚠️ RELEASE BLOCKER — Play REJECTS any applicationId starting with "com.example".
+        // Change this to  io.github.andi2010p.lemma  as the LAST step before your first upload, at the
+        // same time as registering that package in the Firebase console (Firebase matches
+        // google-services.json on the applicationId, so the build fails until the new json is in app/).
+        // This id is PERMANENT once published — it can never be changed. See RELEASE_CHECKLIST.md.
         applicationId = "com.example.lemm"
         minSdk = 24
         targetSdk = 36
@@ -48,6 +54,47 @@ android {
     }
     buildFeatures {
         buildConfig = true
+    }
+
+    // Release signing. Provide these in local.properties (kept out of source control):
+    //   RELEASE_STORE_FILE=../keystore/lemma-release.jks
+    //   RELEASE_STORE_PASSWORD=...
+    //   RELEASE_KEY_ALIAS=lemma
+    //   RELEASE_KEY_PASSWORD=...
+    // Generate one with:
+    //   keytool -genkey -v -keystore lemma-release.jks -alias lemma -keyalg RSA -keysize 2048 -validity 10000
+    val hasReleaseKeystore = localProperties.getProperty("RELEASE_STORE_FILE")?.isNotBlank() == true
+    if (!hasReleaseKeystore) {
+        logger.warn(
+            "\n⚠️  RELEASE SIGNING: no RELEASE_STORE_FILE in local.properties.\n" +
+            "    The release build will be signed with the DEBUG key.\n" +
+            "    Google Play REJECTS debug-signed artifacts — do not upload this .aab.\n"
+        )
+    }
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(localProperties.getProperty("RELEASE_STORE_FILE"))
+                storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Use the real release key when provided; otherwise fall back to the debug key so the
+            // release variant still builds locally/CI. NEVER publish a debug-signed APK to Play.
+            signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release")
+            else signingConfigs.getByName("debug")
+        }
+        // NOTE: debug build keeps the base applicationId (com.example.lemm) so it matches the
+        // Firebase google-services.json. Do NOT add an applicationIdSuffix without also adding that
+        // package to Firebase, or the google-services plugin will fail the build.
     }
 
     compileOptions {
@@ -91,6 +138,13 @@ dependencies {
     // Firebase products - versions are now managed by the firebase-bom
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-auth")
+    // Callable Cloud Functions: the AI proxy, OTP email, and every consent-checked social write.
+    implementation("com.google.firebase:firebase-functions")
+    // App Check + Play Integrity: proves a request came from a genuine, unmodified Lemma install.
+    // Without it, anyone can pull google-services.json out of the APK and talk to the backend
+    // with a script — security rules cannot tell your app from curl.
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    debugImplementation("com.google.firebase:firebase-appcheck-debug")
     // Google Sign-In Library
     implementation("com.google.android.gms:play-services-auth:21.1.1")
     // Google Generative AI
@@ -100,7 +154,9 @@ dependencies {
     // Mail Sending (OTP)
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")
-    implementation("com.android.billingclient:billing:6.1.0")
+    // Play REQUIRES Billing Library 8+ for new apps/updates from 2026-08-31 (v6 is already below the
+    // v7+ floor enforced since 2025-08). Keep this at 8.x or newer or Play will reject the upload.
+    implementation("com.android.billingclient:billing:8.3.0")
     // Utilities
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.guava:guava:33.0.0-android")

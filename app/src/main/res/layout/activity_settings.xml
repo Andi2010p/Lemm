@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:background="@drawable/bg_gradient_light"
+    android:background="?attr/appScreenBg"
     android:fillViewport="true">
 
     <LinearLayout
@@ -44,8 +44,11 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/appCardFill"
+            app:strokeColor="?attr/appCardStroke"
+            app:strokeWidth="1dp"
             android:layout_marginBottom="16dp">
 
             <LinearLayout
@@ -78,6 +81,15 @@
                     android:textSize="11sp"
                     android:layout_marginTop="8dp"
                     android:textColor="@color/text_subtitle"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAiProvider"
+                    style="@style/Widget.Lemm.Button.Tonal"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/settings_ai_model"
+                    app:icon="@android:drawable/ic_menu_manage" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -124,11 +136,30 @@
                     app:backgroundTint="#F57F17"
                     app:icon="@android:drawable/btn_star_big_on" />
 
+                <TextView
+                    android:id="@+id/tvTokenBalance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tokens_balance_hint"
+                    android:textColor="@color/text_subtitle"
+                    android:textSize="13sp"
+                    android:layout_marginTop="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBuyTokens"
+                    style="@style/Widget.Lemm.Button.Tonal"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/tokens_buy"
+                    app:icon="@android:drawable/ic_menu_add" />
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnUnsubscribe"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
+                    android:layout_marginTop="8dp"
                     android:text="@string/unsubscribe"
                     android:textColor="#C62828"
                     app:strokeColor="#C62828"
@@ -140,8 +171,11 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/appCardFill"
+            app:strokeColor="?attr/appCardStroke"
+            app:strokeWidth="1dp"
             android:layout_marginBottom="16dp">
 
             <LinearLayout
@@ -210,8 +244,11 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/appCardFill"
+            app:strokeColor="?attr/appCardStroke"
+            app:strokeWidth="1dp"
             android:layout_marginBottom="16dp">
 
             <LinearLayout
@@ -239,6 +276,26 @@
                     <Button android:id="@+id/btnThemeLight" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/theme_light" />
                     <Button android:id="@+id/btnThemeDark" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/theme_dark" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_style"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:layout_marginTop="18dp"
+                    android:layout_marginBottom="12dp" />
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/toggleStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true"
+                    app:selectionRequired="true">
+                    <Button android:id="@+id/btnStyleGlass" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/style_glass" />
+                    <Button android:id="@+id/btnStyleBasic" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:textAllCaps="false" android:text="@string/style_basic" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -250,6 +307,17 @@
             android:layout_marginTop="4dp"
             android:text="@string/about_us"
             app:icon="@android:drawable/ic_menu_info_details" />
+
+        <!-- Google Play requires a privacy policy to be reachable for an app that collects
+             personal data. It is linked here as well as in the store listing. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPrivacy"
+            style="@style/Widget.Lemm.Button.Tonal"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="4dp"
+            android:text="@string/privacy_policy"
+            app:icon="@android:drawable/ic_lock_lock" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnHowToUse"

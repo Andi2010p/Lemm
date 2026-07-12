@@ -57,9 +57,15 @@ class UserDao {
         return ok;
     }
 
+    /**
+     * Case-INSENSITIVE on purpose. The cloud path is {@code users/{sanitizeUser(username)}} and
+     * {@link FirebaseManager#sanitizeUser} lowercases, so "Andi" and "andi" would resolve to the same
+     * cloud node and silently share one person's history and drawings.
+     */
     boolean checkUsernameExists(String u) {
         Cursor c = helper.getReadableDatabase().rawQuery(
-                "SELECT * FROM " + TABLE_USERS + " WHERE " + KEY_USERNAME + " = ?", new String[]{u});
+                "SELECT * FROM " + TABLE_USERS + " WHERE " + KEY_USERNAME + " = ? COLLATE NOCASE",
+                new String[]{u});
         boolean exists = c.getCount() > 0;
         c.close();
         return exists;

@@ -1,541 +1,559 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lemma — AI Geometry Tutor &amp; 2D/3D CAD Sketcher</title>
-  <meta name="description" content="Lemma is an AI geometry tutor, a parametric 2D CAD sketcher, and a 3D viewer in one app. Scan, speak, or type a problem and get step-by-step solutions in English, Russian, and Armenian." />
-  <meta name="theme-color" content="#1E3A8A" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    :root {
-      /* Light theme — mirrors the app's values/colors.xml */
-      --bg:        #F4F7FA;
-      --grad-top:  #FFFFFF;
-      --grad-bot:  #EBF4FF;
-      --surface:   #FFFFFF;
-      --surface-2: #F8FAFD;
-      --primary:        #1E3A8A;
-      --primary-light:  #3B82F6;
-      --ink:       #0F172A;   /* headings / strong text */
-      --secondary:       #06B6D4;
-      --secondary-light: #67E8F9;
-      --gold:      #F59E0B;
-      --text-main: #1C1C1E;
-      --text-sub:  #64748B;
-      --border:    rgba(30, 58, 138, 0.10);
-      --card-bg:   rgba(255, 255, 255, 0.85);
-      --chip-bg:   #EBF4FF;
-      --canvas-bg: #FDFEFE;
-      --shadow:    0 15px 40px rgba(15, 23, 42, 0.08);
-      --shadow-lg: 0 24px 60px rgba(15, 23, 42, 0.14);
-      --pattern:   rgba(30, 58, 138, 0.22);
-      --radius:    24px;
-    }
+<!-- ── SEO ──────────────────────────────────────────────────────────────────
+     Title kept under ~60 chars so Google doesn't truncate it in results.
+     The words people actually type — "lemma", "geometry", "AI" — are all in it. -->
+<title>Lemma — AI Geometry Tutor That Draws the Figure</title>
+<meta name="description" content="Lemma is an AI geometry tutor for students. Scan or type a geometry problem and get step-by-step solutions with the figure drawn in 2D and 3D. Free tier." />
+<link rel="canonical" href="https://andi2010p.github.io/Lemm/" />
+<meta name="theme-color" content="#0A0F1C" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        /* Dark theme — mirrors the app's values-night/colors.xml */
-        --bg:        #0A0F1C;
-        --grad-top:  #0A0F1C;
-        --grad-bot:  #0E1B30;
-        --surface:   #161F30;
-        --surface-2: #14233B;
-        --primary:        #2563EB;
-        --primary-light:  #60A5FA;
-        --ink:       #F4F8FC;
-        --secondary:       #22D3EE;
-        --secondary-light: #67E8F9;
-        --gold:      #FBBF24;
-        --text-main: #F4F8FC;
-        --text-sub:  #C2D0E2;
-        --border:    rgba(125, 179, 255, 0.16);
-        --card-bg:   rgba(22, 31, 48, 0.82);
-        --chip-bg:   #14233B;
-        --canvas-bg: #0E1A2E;
-        --shadow:    0 15px 40px rgba(0, 0, 0, 0.45);
-        --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
-        --pattern:   rgba(125, 179, 255, 0.18);
+<!-- ⬇ PASTE YOUR GOOGLE SEARCH CONSOLE VERIFICATION TAG HERE ⬇
+     Without this the site is never submitted to Google and effectively won't be found.
+     Search Console → Add property → URL prefix → https://andi2010p.github.io/Lemm/
+                    → Verify with "HTML tag" → copy the line it gives you and paste it below.
+<meta name="google-site-verification" content="PASTE_YOUR_CODE_HERE" />
+-->
+
+
+<!-- Link previews: Google, WhatsApp, Telegram, Facebook, X -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Lemma" />
+<meta property="og:title" content="Lemma — the AI geometry tutor that DRAWS the figure" />
+<meta property="og:description" content="Scan or type a geometry problem. Get the steps — and see it drawn in 2D and 3D. Free tier. English, Russian, Armenian." />
+<meta property="og:url" content="https://andi2010p.github.io/Lemm/" />
+<meta property="og:image" content="https://andi2010p.github.io/Lemm/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Lemma: a circle with a tangent line drawn at point P, radius and right angle marked." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Lemma — the AI geometry tutor that DRAWS the figure" />
+<meta name="twitter:description" content="Scan or type a geometry problem. Get the steps — and see it drawn in 2D and 3D." />
+<meta name="twitter:image" content="https://andi2010p.github.io/Lemm/og.png" />
+
+<!-- Structured data: tells Google this page IS an app, and answers common questions,
+     which is what earns a rich result. NOTE: no aggregateRating/review — inventing
+     those is structured-data spam and can get the site penalised. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "MobileApplication",
+      "name": "Lemma",
+      "alternateName": "Lemma Geometry AI",
+      "url": "https://andi2010p.github.io/Lemm/",
+      "image": "https://andi2010p.github.io/Lemm/og.png",
+      "description": "An AI geometry tutor for school students. Scan, speak or type a geometry problem and Lemma solves it step by step and draws the figure in 2D and 3D. Includes a parametric sketcher and a theorem library for grades 7 to 12.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Android 7.0+",
+      "inLanguage": ["en", "ru", "hy"],
+      "featureList": [
+        "Solves geometry problems step by step",
+        "Draws the figure in 2D and 3D",
+        "Camera scanning of textbook problems",
+        "Parametric 2D sketcher with constraints",
+        "Theorem library for grades 7 to 12",
+        "Works in English, Russian and Armenian"
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free plan: 3 solved problems a day. Paid plans add more."
       }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Lemma?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Lemma is an Android app that helps students learn geometry. You scan, speak or type a problem, and Lemma explains it step by step and draws the figure, so you can see what the problem actually looks like." }
+        },
+        {
+          "@type": "Question",
+          "name": "How is Lemma different from ChatGPT or Gemini?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A general chatbot answers a geometry question with text. Lemma draws the actual figure, a real 2D or 3D diagram you can rotate, zoom and tap, and links every theorem it uses to a page with the proof and a quiz. It is built for a school geometry curriculum, not for general chat." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Lemma free?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. The free plan gives you 3 solved problems every day, and the theorem library, the sketcher, your saved work and opening a solution a friend shared with you are always free. Paid plans add more problems and a smarter AI model." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Lemma work in Armenian?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Lemma works fully in Armenian, Russian and English: the interface, the step-by-step explanations and the theorem library for grades 7 to 12." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Lemma solve a problem from a photo of my textbook?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Point the camera at a printed problem. Lemma reads the text, rejects images that are not geometry, then draws and solves it." }
+        }
+      ]
     }
+  ]
+}
+</script>
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      color: var(--text-main);
-      background: linear-gradient(160deg, var(--grad-top), var(--bg));
-      min-height: 100vh;
-      overflow-x: hidden;
-      line-height: 1.6;
+<style>
+  :root{
+    --bg:#F4F7FA; --grad-top:#FFFFFF; --grad-bot:#EBF4FF;
+    --surface:#FFFFFF; --surface-2:#F8FAFD;
+    --primary:#1E3A8A; --primary-light:#3B82F6;
+    --secondary:#0891B2; --secondary-light:#06B6D4;
+    --gold:#D97706;
+    --ink:#0F172A; --text-main:#1C1C1E; --text-sub:#5A6B85;
+    --border:rgba(30,58,138,.12);
+    --card:rgba(255,255,255,.92);
+    --shadow:0 12px 32px rgba(15,23,42,.08);
+    --shadow-lg:0 24px 60px rgba(15,23,42,.14);
+    --grid:rgba(30,58,138,.07);
+    --r:22px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0A0F1C; --grad-top:#0A0F1C; --grad-bot:#111C33;
+      --surface:#0F172A; --surface-2:#131F38;
+      --primary:#3B82F6; --primary-light:#60A5FA;
+      --secondary:#06B6D4; --secondary-light:#67E8F9;
+      --gold:#F59E0B;
+      --ink:#F8FAFC; --text-main:#E2E8F0; --text-sub:#94A3B8;
+      --border:rgba(103,232,249,.16);
+      --card:rgba(255,255,255,.04);
+      --shadow:0 12px 32px rgba(0,0,0,.4);
+      --shadow-lg:0 24px 60px rgba(0,0,0,.55);
+      --grid:rgba(103,232,249,.06);
     }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text-main); line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+      linear-gradient(180deg,var(--grad-top),var(--grad-bot));
+    background-size:44px 44px,44px 44px,100% 100%;
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  h1,h2,h3{color:var(--ink);line-height:1.2;letter-spacing:-.02em}
+  a{color:var(--secondary);text-decoration:none}
+  strong{color:var(--ink)}
 
-    /* Faint scattered math symbols behind everything (same idea as the app background) */
-    .bg-math {
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      pointer-events: none;
-      opacity: 1;
-    }
-    .bg-math svg { width: 100%; height: 100%; }
-    .bg-math [stroke] { stroke: var(--pattern); fill: none; stroke-width: 2.4; }
-    .bg-math [data-fill] { fill: var(--pattern); stroke: none; }
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+      background:color-mix(in srgb,var(--bg) 84%,transparent);
+      border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;gap:22px;height:64px}
+  .logo{font-weight:800;font-size:22px;color:var(--ink);letter-spacing:-.03em}
+  .logo em{color:var(--secondary);font-style:normal}
+  .nav .links{margin-left:auto;display:flex;gap:22px;flex-wrap:wrap}
+  .nav .links a{color:var(--text-sub);font-size:15px;font-weight:600}
+  .nav .links a:hover{color:var(--secondary)}
+  @media(max-width:760px){.nav .links{display:none}}
 
-    a { color: inherit; }
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:76px 0 64px}
+  @media(max-width:900px){.hero{grid-template-columns:1fr;padding:48px 0 40px}}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--secondary);
+    background:var(--card);border:1px solid var(--border);
+    padding:7px 14px;border-radius:999px;margin-bottom:20px}
+  h1{font-size:clamp(34px,5.2vw,56px);font-weight:800}
+  .grad{background:linear-gradient(100deg,var(--secondary),var(--primary-light));
+        -webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:19px;color:var(--text-sub);margin:20px 0 30px;max-width:52ch}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:9px;padding:14px 26px;border-radius:14px;
+    font-weight:700;font-size:16px;border:1px solid transparent;transition:.18s}
+  .btn-p{background:linear-gradient(100deg,var(--secondary),var(--primary));color:#fff;
+    box-shadow:0 10px 26px color-mix(in srgb,var(--secondary) 34%,transparent)}
+  .btn-p:hover{transform:translateY(-2px)}
+  .btn-s{background:var(--card);border-color:var(--border);color:var(--ink)}
+  .btn-s:hover{border-color:var(--secondary)}
+  .chips{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+  .chip{font-size:13px;font-weight:600;color:var(--text-sub);background:var(--card);
+    border:1px solid var(--border);padding:6px 13px;border-radius:999px}
+  .phone{width:100%;max-width:330px;margin:0 auto;display:block;filter:drop-shadow(var(--shadow-lg))}
 
-    /* NAV */
-    .nav {
-      position: sticky; top: 0; z-index: 100;
-      backdrop-filter: blur(18px);
-      background: var(--surface); /* fallback */
-      background: color-mix(in srgb, var(--surface) 78%, transparent);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-inner {
-      max-width: 1200px; margin: auto; padding: 14px 24px;
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    }
-    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 22px; color: var(--ink); text-decoration: none; }
-    .brand-logo {
-      width: 44px; height: 44px; border-radius: 14px;
-      background: linear-gradient(135deg, var(--primary-light), var(--primary));
-      color: #fff; font-weight: 900; display: grid; place-items: center; font-size: 24px;
-      box-shadow: 0 6px 18px rgba(59, 130, 246, 0.45);
-    }
-    .nav-links { display: flex; gap: 26px; align-items: center; }
-    .nav-links a { color: var(--text-sub); text-decoration: none; font-weight: 600; font-size: 15px; transition: .25s; }
-    .nav-links a:hover { color: var(--primary-light); }
+  section{padding:74px 0;scroll-margin-top:70px}
+  .kicker{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--secondary);margin-bottom:12px}
+  h2{font-size:clamp(27px,3.6vw,40px);font-weight:800;margin-bottom:14px}
+  .sub{color:var(--text-sub);font-size:17px;max-width:62ch;margin-bottom:40px}
 
-    /* BUTTONS */
-    .btn {
-      border: 0; color: #fff;
-      background: linear-gradient(135deg, var(--primary-light), var(--primary));
-      padding: 14px 26px; border-radius: 50px; font-weight: 700; font-size: 15px;
-      text-decoration: none; box-shadow: 0 8px 22px rgba(59, 130, 246, 0.35);
-      display: inline-flex; align-items: center; gap: 10px;
-      transition: .3s cubic-bezier(.175,.885,.32,1.275); cursor: pointer; white-space: nowrap;
-    }
-    .btn:hover { transform: translateY(-4px); box-shadow: 0 14px 32px rgba(59,130,246,.5); }
-    .btn.secondary {
-      background: var(--surface); color: var(--primary-light);
-      border: 2px solid var(--primary-light); box-shadow: none;
-    }
-    .btn.secondary:hover { background: var(--surface-2); }
-    .btn.ghost { background: var(--chip-bg); color: var(--primary-light); box-shadow: none; }
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:820px){.vs{grid-template-columns:1fr}}
+  .pane{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+    padding:26px;box-shadow:var(--shadow)}
+  .pane.win{border-color:var(--secondary);
+    box-shadow:0 0 0 1px var(--secondary),0 16px 44px color-mix(in srgb,var(--secondary) 20%,transparent)}
+  .pane h3{font-size:19px;margin-bottom:4px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .tag{font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;
+    background:color-mix(in srgb,var(--secondary) 18%,transparent);color:var(--secondary)}
+  .note{color:var(--text-sub);font-size:14px;margin-bottom:16px}
+  .fakeline{height:9px;border-radius:5px;background:var(--text-sub);opacity:.22;margin:9px 0}
 
-    /* HERO */
-    .hero {
-      max-width: 1200px; margin: auto; padding: 72px 24px 56px;
-      display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center;
-    }
-    .badge {
-      display: inline-flex; gap: 8px; align-items: center; padding: 8px 16px; border-radius: 50px;
-      background: var(--chip-bg); color: var(--primary-light); font-weight: 700; font-size: 13px; margin-bottom: 22px;
-    }
-    h1 { font-size: clamp(38px, 5.4vw, 60px); line-height: 1.08; font-weight: 800; color: var(--ink); margin-bottom: 20px; letter-spacing: -1px; }
-    .gradient-text { background: linear-gradient(135deg, var(--primary-light), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .hero p.lead { font-size: 18px; color: var(--text-sub); margin-bottom: 32px; max-width: 560px; }
-    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
-    .site-link { color: var(--text-sub); font-size: 14px; }
-    .site-link a { color: var(--primary-light); font-weight: 700; text-decoration: none; }
-    .pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-    .pill { font-size: 12.5px; font-weight: 700; color: var(--text-sub); background: var(--surface); border: 1px solid var(--border); padding: 7px 14px; border-radius: 50px; }
+  .grid{display:grid;gap:18px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:900px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+    padding:24px;box-shadow:var(--shadow);transition:.18s}
+  .card:hover{transform:translateY(-3px);border-color:var(--secondary)}
+  .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--secondary) 14%,transparent);margin-bottom:14px;font-size:21px}
+  .card h3{font-size:17px;margin-bottom:6px}
+  .card p{color:var(--text-sub);font-size:15px}
 
-    /* PHONE MOCKUP */
-    .phone {
-      width: 300px; max-width: 100%; margin: auto;
-      background: var(--ink);
-      border-radius: 40px; padding: 12px;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border);
-    }
-    .phone .screen {
-      border-radius: 30px; overflow: hidden;
-      background: linear-gradient(160deg, var(--grad-top), var(--grad-bot));
-      min-height: 560px; position: relative;
-    }
-    .app-bar {
-      display: flex; align-items: center; gap: 10px; padding: 16px 16px 10px;
-    }
-    .app-bar .mini-logo {
-      width: 30px; height: 30px; border-radius: 9px; font-size: 16px;
-      background: linear-gradient(135deg, var(--primary-light), var(--primary));
-      color: #fff; font-weight: 900; display: grid; place-items: center;
-    }
-    .app-bar .titles { display: flex; flex-direction: column; line-height: 1.15; }
-    .app-bar .titles strong { color: var(--ink); font-size: 14px; }
-    .app-bar .titles span { color: var(--text-sub); font-size: 11px; }
-    .app-bar .chip {
-      margin-left: auto; font-size: 10px; font-weight: 800; letter-spacing: .04em;
-      padding: 4px 10px; border-radius: 50px; background: rgba(6,182,212,.18); color: var(--secondary);
-    }
-    .screen-body { padding: 8px 14px 16px; }
+  .steps{counter-reset:s}
+  .step{display:flex;gap:18px;align-items:flex-start;padding:18px 0;border-bottom:1px solid var(--border)}
+  .step:last-child{border-bottom:0}
+  .step .n{counter-increment:s;flex:0 0 38px;height:38px;border-radius:11px;display:grid;
+    place-items:center;font-weight:800;color:#fff;
+    background:linear-gradient(140deg,var(--secondary),var(--primary))}
+  .step .n::before{content:counter(s)}
+  .step h3{font-size:17px}
+  .step p{color:var(--text-sub);font-size:15px}
 
-    .mcard {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
-      padding: 14px; margin-bottom: 10px; box-shadow: 0 6px 16px rgba(15,23,42,.06);
-    }
-    .mcard .step-tag { font-size: 11px; font-weight: 800; color: var(--primary-light); }
-    .mcard .mtext { font-size: 12.5px; color: var(--text-main); margin-top: 4px; }
-    .answer { border: 2px solid #34D399; background: var(--surface); background: color-mix(in srgb, #34D399 14%, var(--surface)); }
-    .answer .step-tag { color: #10B981; }
+  .plan{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+    padding:26px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+  .plan.best{border-color:var(--secondary);box-shadow:0 0 0 1px var(--secondary),var(--shadow-lg)}
+  .badge{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--secondary);margin-bottom:6px}
+  .plan h3{font-size:20px}
+  .price{font-size:31px;font-weight:800;color:var(--ink);margin:10px 0 2px}
+  .per{font-size:14px;color:var(--text-sub);font-weight:600}
+  .plan ul{list-style:none;margin-top:16px;display:grid;gap:9px}
+  .plan li{font-size:15px;display:flex;gap:9px}
+  .plan li::before{content:"✓";color:var(--secondary);font-weight:800}
 
-    .canvas {
-      border-radius: 16px; overflow: hidden; border: 1px solid var(--border);
-      background: var(--canvas-bg); aspect-ratio: 1 / 0.82;
-    }
-    .canvas svg { width: 100%; height: 100%; display: block; }
+  details{background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:18px 22px;margin-bottom:12px}
+  details[open]{border-color:var(--secondary)}
+  summary{font-weight:700;color:var(--ink);cursor:pointer;font-size:17px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";float:right;color:var(--secondary);font-weight:800}
+  details[open] summary::after{content:"−"}
+  details p{color:var(--text-sub);margin-top:12px;font-size:15px}
 
-    .toolbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
-    .tool { font-size: 11px; font-weight: 700; text-align: center; padding: 9px 4px; border-radius: 11px; background: var(--chip-bg); color: var(--primary-light); }
-    .tool.active { background: var(--primary); color: #fff; }
-    .btn-row { display: flex; gap: 8px; margin-top: 10px; }
-    .mini-btn { flex: 1; text-align: center; font-size: 11px; font-weight: 800; padding: 10px; border-radius: 12px; }
-    .mini-btn.fill { background: var(--primary); color: #fff; }
-    .mini-btn.tonal { background: var(--chip-bg); color: var(--primary-light); }
-
-    .list-row { display: flex; align-items: center; gap: 10px; padding: 11px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); margin-bottom: 8px; }
-    .list-row .dot { width: 30px; height: 30px; border-radius: 9px; background: var(--chip-bg); color: var(--primary-light); display: grid; place-items: center; font-size: 14px; }
-    .list-row .meta { display: flex; flex-direction: column; line-height: 1.2; }
-    .list-row .meta b { font-size: 12.5px; color: var(--ink); }
-    .list-row .meta span { font-size: 10.5px; color: var(--text-sub); }
-
-    .seg { display: flex; background: var(--chip-bg); border-radius: 12px; padding: 4px; gap: 4px; margin-bottom: 12px; }
-    .seg span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 8px; border-radius: 9px; color: var(--primary-light); }
-    .seg span.on { background: var(--primary); color: #fff; }
-
-    /* SECTIONS */
-    section { max-width: 1200px; margin: auto; padding: 72px 24px; }
-    .section-title { text-align: center; margin-bottom: 48px; }
-    .section-title h2 { font-size: clamp(28px, 3.4vw, 40px); color: var(--ink); margin-bottom: 12px; }
-    .section-title p { color: var(--text-sub); font-size: 17px; max-width: 620px; margin: auto; }
-
-    /* WHY band */
-    .why { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    .why .card { background: var(--card-bg); }
-    .why .why-num { font-size: 13px; font-weight: 800; color: var(--secondary); letter-spacing: .08em; }
-
-    /* FEATURE GRID */
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-    .card {
-      background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 30px; box-shadow: var(--shadow); transition: .3s; backdrop-filter: blur(6px);
-    }
-    .card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); background: var(--surface); }
-    .icon { width: 50px; height: 50px; border-radius: 14px; background: var(--chip-bg); color: var(--primary-light); display: grid; place-items: center; font-size: 24px; margin-bottom: 20px; }
-    .card h3 { font-size: 19px; color: var(--ink); margin-bottom: 10px; }
-    .card p { color: var(--text-sub); font-size: 14.5px; }
-
-    /* SHOWCASE */
-    .showcase { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; align-items: start; }
-    .showcase .cap { text-align: center; margin-top: 18px; }
-    .showcase .cap b { color: var(--ink); display: block; font-size: 16px; }
-    .showcase .cap span { color: var(--text-sub); font-size: 13.5px; }
-
-    /* HOW TO USE */
-    .howto { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
-    .howto .ht {
-      display: flex; gap: 16px; background: var(--card-bg); border: 1px solid var(--border);
-      border-radius: 20px; padding: 22px; box-shadow: var(--shadow);
-    }
-    .howto .ht .n {
-      flex: none; width: 40px; height: 40px; border-radius: 12px; font-weight: 800; font-size: 17px;
-      background: linear-gradient(135deg, var(--primary-light), var(--primary)); color: #fff;
-      display: grid; place-items: center; box-shadow: 0 6px 14px rgba(59,130,246,.3);
-    }
-    .howto .ht h3 { font-size: 17px; color: var(--ink); margin-bottom: 6px; }
-    .howto .ht p { color: var(--text-sub); font-size: 14.5px; }
-
-    /* WORKFLOW */
-    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
-    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; box-shadow: var(--shadow); }
-    .step-num { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--primary-light), var(--primary)); color: #fff; font-weight: 800; font-size: 18px; display: grid; place-items: center; margin-bottom: 18px; box-shadow: 0 4px 12px rgba(59,130,246,.3); }
-    .step h3 { margin-bottom: 8px; font-size: 17px; color: var(--ink); }
-    .step p { color: var(--text-sub); font-size: 14px; }
-
-    /* DOWNLOAD */
-    .download {
-      max-width: 1200px; margin: auto;
-      background: var(--chip-bg); /* fallback */
-      background: linear-gradient(135deg, var(--chip-bg), color-mix(in srgb, var(--secondary) 12%, var(--surface)));
-      border: 1px solid var(--border); border-radius: 34px; padding: 48px;
-      display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between;
-    }
-    .download h2 { color: var(--ink); font-size: 30px; margin-bottom: 10px; }
-    .download p { color: var(--text-sub); font-size: 16px; max-width: 620px; }
-
-    /* FAQ */
-    .faq { display: grid; gap: 14px; max-width: 820px; margin: auto; }
-    .faq details { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow); }
-    .faq summary { font-weight: 700; cursor: pointer; color: var(--ink); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
-    .faq summary::-webkit-details-marker { display: none; }
-    .faq summary::after { content: "+"; color: var(--primary-light); font-weight: 800; }
-    .faq details[open] summary::after { content: "–"; }
-    .faq p { color: var(--text-sub); margin-top: 12px; font-size: 15px; }
-
-    footer { border-top: 1px solid var(--border); padding: 32px 24px; color: var(--text-sub); text-align: center; background: var(--surface); font-weight: 600; font-size: 14px; }
-
-    @media (max-width: 960px) {
-      .hero { grid-template-columns: 1fr; text-align: center; padding: 44px 24px; }
-      .hero p.lead { margin: 0 auto 28px; }
-      .hero-actions, .pill-row { justify-content: center; }
-      .grid, .why { grid-template-columns: 1fr 1fr; }
-      .steps { grid-template-columns: 1fr 1fr; }
-      .showcase { grid-template-columns: 1fr; max-width: 360px; margin: auto; }
-      .howto { grid-template-columns: 1fr; }
-      .nav-links { display: none; }
-    }
-    @media (max-width: 560px) {
-      .grid, .why, .steps { grid-template-columns: 1fr; }
-      h1 { font-size: 36px; }
-      .download { padding: 32px; }
-    }
-  </style>
+  footer{border-top:1px solid var(--border);padding:38px 0;color:var(--text-sub);font-size:14px}
+  .foot{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+  .foot a{color:var(--text-sub);font-weight:600}
+  .foot a:hover{color:var(--secondary)}
+  .sp{margin-left:auto}
+  @media(max-width:640px){.sp{margin-left:0}}
+</style>
 </head>
 
 <body>
 
-  <!-- Faint math-symbol background, matching the in-app pattern -->
-  <div class="bg-math" aria-hidden="true">
-    <svg viewBox="0 0 360 720" preserveAspectRatio="xMidYMid slice">
-      <path stroke="" stroke-linecap="round" d="M34,50 L94,50 M48,50 L44,100 M80,50 L84,100"/>
-      <path stroke="" stroke-linecap="round" d="M130,68 C148,46 166,46 184,68 C202,90 220,90 238,68 C256,46 274,46 292,68"/>
-      <path stroke="" stroke-linecap="round" stroke-linejoin="round" d="M30,262 L40,272 L52,238 L112,238"/>
-      <path stroke="" d="M262,210 a34,34 0 1,0 68,0 a34,34 0 1,0 -68,0"/>
-      <path stroke="" stroke-linecap="round" d="M296,210 L330,210 M296,210 L324,190"/>
-      <path stroke="" stroke-linejoin="round" d="M150,430 L220,430 L150,370 Z"/>
-      <path stroke="" stroke-linejoin="round" d="M150,430 L220,430 L220,500 L150,500 Z"/>
-      <path stroke="" stroke-linejoin="round" d="M150,370 L90,370 L90,430 L150,430"/>
-      <path stroke="" stroke-linejoin="round" d="M150,370 L210,300 L280,360 L220,430"/>
-      <path stroke="" stroke-linecap="round" d="M323,302 C315,302 318,320 317,346 C316,372 319,390 311,398"/>
-      <path stroke="" stroke-linejoin="round" d="M330,458 L290,458 L312,485 L290,512 L330,512"/>
-      <path stroke="" stroke-linecap="round" d="M48,478 C92,568 128,568 172,478"/>
-      <path stroke="" d="M100,612 C100,598 78,598 78,612 C78,626 100,626 100,612 C100,598 122,598 122,612 C122,626 100,626 100,612 Z"/>
-      <path stroke="" stroke-linecap="round" d="M28,682 L112,682 M44,620 L44,700"/>
-      <path stroke="" stroke-linecap="round" d="M150,694 A40,40 0 0,1 230,694 M150,694 L230,694"/>
-      <path stroke="" stroke-linejoin="round" d="M324,645 L307,674 L273,674 L256,645 L273,616 L307,616 Z"/>
-    </svg>
+<nav>
+  <div class="wrap nav">
+    <a class="logo" href="#top">Lem<em>ma</em></a>
+    <div class="links">
+      <a href="#difference">Why Lemma</a>
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#plans">Plans</a>
+      <a href="#faq">FAQ</a>
+      <a href="#get">Download</a>
+    </div>
   </div>
+</nav>
 
-  <nav class="nav">
-    <div class="nav-inner">
-      <a class="brand" href="#top">
-        <div class="brand-logo">λ</div>
-        <span>Lemma</span>
-      </a>
-      <div class="nav-links">
-        <a href="#why">Why Lemma</a>
-        <a href="#features">Features</a>
-        <a href="#screens">Screens</a>
-        <a href="#howto">How to use</a>
-        <a href="#download">Download</a>
+<main id="top">
+
+  <header class="wrap hero">
+    <div>
+      <span class="eyebrow">📐 AI geometry tutor · Android</span>
+      <h1>Geometry you can<br><span class="grad">actually see.</span></h1>
+      <p class="lede">
+        Scan, speak or type a geometry problem. Lemma explains it step by step —
+        and <strong>draws the figure</strong> in 2D and 3D, so you understand the problem
+        instead of just copying an answer.
+      </p>
+      <div class="cta">
+        <a class="btn btn-p" href="#get">⬇ Download for Android</a>
+        <a class="btn btn-s" href="#difference">See the difference</a>
       </div>
-      <a class="btn" href="downloads/lemmageoai.apk" download>Download APK</a>
-    </div>
-  </nav>
-
-  <main id="top">
-    <!-- HERO -->
-    <section class="hero">
-      <div>
-        <div class="badge">📐 AI Tutor · Parametric CAD · 3D — in one app</div>
-        <h1>Understand geometry,<br><span class="gradient-text">don't just get the answer.</span></h1>
-        <p class="lead">
-          Lemma scans, hears, or reads your geometry problem and walks you through a clear,
-          step-by-step solution — then draws the figure for you. Sketch your own shapes with a
-          parametric CAD engine, rotate them in 3D, and sync everything across your devices.
-        </p>
-        <div class="hero-actions">
-          <a class="btn" href="downloads/lemmageoai.apk" download>⬇ Download for Android</a>
-          <a class="btn secondary" href="https://github.com/Andi2010p/Lemm" target="_blank" rel="noopener">View Source</a>
-        </div>
-        <p class="site-link">Open source · <a href="https://github.com/Andi2010p/Lemm" target="_blank" rel="noopener">github.com/Andi2010p/Lemm</a></p>
-        <div class="pill-row">
-          <span class="pill">🌐 English · Русский · Հայերեն</span>
-          <span class="pill">📴 Works offline</span>
-          <span class="pill">🌙 Dark mode</span>
-        </div>
+      <div class="chips">
+        <span class="chip">English</span>
+        <span class="chip">Русский</span>
+        <span class="chip">Հայերեն</span>
+        <span class="chip">Grades 7–12</span>
+        <span class="chip">Free tier</span>
       </div>
+    </div>
 
-      <!-- Solver mockup -->
-      <div class="phone">
-        <div class="screen">
-          <div class="app-bar">
-            <div class="mini-logo">λ</div>
-            <div class="titles"><strong>Geometry Solver</strong><span>Step-by-step</span></div>
-            <div class="chip">SOLVED</div>
-          </div>
-          <div class="screen-body">
-            <div class="canvas">
-              <svg viewBox="0 0 300 200">
-                <path d="M0,40 H300 M0,80 H300 M0,120 H300 M0,160 H300" stroke="rgba(125,160,210,.18)" stroke-width="1"/>
-                <path d="M60,170 L150,40 L240,170 Z" fill="rgba(59,130,246,.10)" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/>
-                <path d="M150,40 L150,170" stroke="#06B6D4" stroke-width="2" stroke-dasharray="6 4"/>
-                <circle cx="150" cy="40" r="4" fill="#1E3A8A"/><circle cx="60" cy="170" r="4" fill="#1E3A8A"/><circle cx="240" cy="170" r="4" fill="#1E3A8A"/>
-                <text x="150" y="190" fill="#3B82F6" font-size="13" font-weight="800" text-anchor="middle">base = 180</text>
-                <text x="120" y="105" fill="#06B6D4" font-size="12" font-weight="800" text-anchor="end">h</text>
-              </svg>
-            </div>
-            <div class="mcard"><div class="step-tag">STEP 1</div><div class="mtext">The triangle is isosceles, so the altitude h splits the base into two equal parts.</div></div>
-            <div class="mcard answer"><div class="step-tag">FINAL ANSWER</div><div class="mtext">Area = ½ · 180 · h = 8100 units²</div></div>
-            <div class="btn-row">
-              <div class="mini-btn tonal">⧉ Copy all</div>
-              <div class="mini-btn tonal">⬇ Download</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
+    <svg class="phone" viewBox="0 0 300 600" role="img"
+         aria-label="The Lemma app showing a circle with a tangent line drawn at point P, with step-by-step solution cards below.">
+      <rect x="4" y="4" width="292" height="592" rx="40" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/>
+      <rect x="16" y="16" width="268" height="568" rx="30" fill="var(--surface-2)"/>
+      <rect x="118" y="24" width="64" height="9" rx="5" fill="var(--border)"/>
 
-  <!-- WHY -->
-  <section id="why">
-    <div class="section-title">
-      <h2>Why Lemma is the smart choice</h2>
-      <p>Most apps just hand you a number. Lemma is built to make geometry click — and to be genuinely useful day to day.</p>
-    </div>
-    <div class="why">
-      <div class="card"><div class="why-num">01</div><h3>Learn, not cheat</h3><p>Every solution is broken into clear, readable steps with proper math notation — and the figure is drawn so you can see what's happening, not just read it.</p></div>
-      <div class="card"><div class="why-num">02</div><h3>Three tools in one</h3><p>A parametric 2D CAD sketcher, an interactive 3D viewer, and an AI tutor — no need to juggle separate apps for drawing and solving.</p></div>
-      <div class="card"><div class="why-num">03</div><h3>In your language</h3><p>Full step-by-step explanations in English, Russian, and Armenian, with an interface and notation that follow your choice.</p></div>
-      <div class="card"><div class="why-num">04</div><h3>Works anywhere</h3><p>Sketch, dimension, and review your saved work completely offline. Everything syncs to the cloud automatically once you reconnect.</p></div>
-      <div class="card"><div class="why-num">05</div><h3>Free to run</h3><p>Bring your own Gemini API key (add several — Lemma rotates to a backup automatically if one runs out), or unlock Pro.</p></div>
-      <div class="card"><div class="why-num">06</div><h3>Yours, everywhere</h3><p>Your solutions, drawings, profile, and keys are tied to your account and mirror across every device you sign in on.</p></div>
-    </div>
-  </section>
+      <rect x="28" y="52" width="244" height="228" rx="18" fill="var(--bg)" stroke="var(--border)"/>
+      <circle cx="150" cy="166" r="72" fill="none" stroke="var(--secondary)" stroke-width="2.6"/>
+      <line x1="63" y1="120" x2="253" y2="279" stroke="var(--gold)" stroke-width="3"/>
+      <line x1="150" y1="166" x2="196" y2="111" stroke="var(--secondary-light)" stroke-width="2"/>
+      <path d="M188 118 l7 6 -6 7" fill="none" stroke="var(--ink)" stroke-width="2"/>
+      <circle cx="150" cy="166" r="4.5" fill="var(--secondary-light)"/>
+      <circle cx="196" cy="111" r="4.5" fill="var(--gold)"/>
+      <text x="134" y="183" font-size="13" font-weight="700" fill="var(--ink)">O</text>
+      <text x="204" y="106" font-size="13" font-weight="700" fill="var(--ink)">P</text>
+      <text x="163" y="133" font-size="12" fill="var(--text-sub)">r</text>
 
-  <!-- FEATURES -->
-  <section id="features">
-    <div class="section-title">
-      <h2>Everything in the box</h2>
-      <p>Industrial-grade drafting and a patient AI tutor, in your pocket.</p>
-    </div>
-    <div class="grid">
-      <div class="card"><div class="icon">📐</div><h3>Parametric Sketcher</h3><p>A SolidWorks-style constraint engine keeps connected lines coincident. Change one length or angle and the whole shape adapts in real time.</p></div>
-      <div class="card"><div class="icon">🧠</div><h3>Step-by-step AI Tutor</h3><p>Fully formatted proofs and explanations with clean notation — in English, Russian, and Armenian.</p></div>
-      <div class="card"><div class="icon">📸</div><h3>Camera (OCR) Scanner</h3><p>Snap a textbook problem; Lemma transcribes it, rejects non-geometry images, then draws and solves it.</p></div>
-      <div class="card"><div class="icon">🎤</div><h3>Voice &amp; Image input</h3><p>Speak a problem or attach photos of the figure — describe it however is fastest for you.</p></div>
-      <div class="card"><div class="icon">🧊</div><h3>3D Geometry Viewport</h3><p>Planes, cylinders, cones, pyramids, and spheres in a rotatable, zoomable 3D workspace.</p></div>
-      <div class="card"><div class="icon">🔄</div><h3>Real-time Cloud Sync</h3><p>Drawings, history, and solutions are backed up and mirrored — renames and deletions sync across devices.</p></div>
-      <div class="card"><div class="icon">📥</div><h3>Copy &amp; Export</h3><p>Copy any step or the whole solution, save the figure as an image, or export a PDF with selectable text.</p></div>
-      <div class="card"><div class="icon">🌙</div><h3>Light &amp; Dark</h3><p>A polished dark theme that follows your device by default, or lock it from Settings.</p></div>
-      <div class="card"><div class="icon">🔑</div><h3>Bring your own key</h3><p>Add one or more Gemini API keys, toggle each on/off, and let Lemma fall back automatically when a key is exhausted.</p></div>
-    </div>
-  </section>
+      <rect x="28" y="296" width="244" height="52" rx="13" fill="var(--card)" stroke="var(--border)"/>
+      <circle cx="47" cy="316" r="9" fill="var(--secondary)"/>
+      <text x="44" y="320" font-size="10" font-weight="800" fill="#fff">1</text>
+      <rect x="64" y="309" width="148" height="7" rx="3.5" fill="var(--text-sub)" opacity=".45"/>
+      <rect x="64" y="325" width="190" height="7" rx="3.5" fill="var(--text-sub)" opacity=".22"/>
 
-  <!-- SCREENS -->
-  <section id="screens">
-    <div class="section-title">
-      <h2>A look inside</h2>
-      <p>Clean, modern, and consistent — in light and dark.</p>
-    </div>
-    <div class="showcase">
-      <div>
-        <div class="phone"><div class="screen">
-          <div class="app-bar"><div class="mini-logo">λ</div><div class="titles"><strong>Lemma CAD</strong><span>Interactive canvas</span></div><div class="chip">DRAW</div></div>
-          <div class="screen-body">
-            <div class="canvas"><svg viewBox="0 0 300 240">
-              <path d="M0,40 H300 M0,80 H300 M0,120 H300 M0,160 H300 M0,200 H300 M40,0 V240 M100,0 V240 M160,0 V240 M220,0 V240 M280,0 V240" stroke="rgba(125,160,210,.16)" stroke-width="1"/>
-              <rect x="70" y="70" width="150" height="100" rx="2" fill="rgba(59,130,246,.10)" stroke="#3B82F6" stroke-width="3"/>
-              <circle cx="70" cy="70" r="4" fill="#EF4444"/><circle cx="220" cy="70" r="4" fill="#EF4444"/><circle cx="220" cy="170" r="4" fill="#EF4444"/><circle cx="70" cy="170" r="4" fill="#EF4444"/>
-              <text x="145" y="60" fill="#1E3A8A" font-size="13" font-weight="800" text-anchor="middle">150.0</text>
-              <text x="232" y="125" fill="#8E44AD" font-size="13" font-weight="800">100</text>
-            </svg></div>
-            <div class="toolbar"><div class="tool">Line</div><div class="tool">Rect</div><div class="tool">Circle</div><div class="tool active">Dim</div></div>
-          </div>
-        </div></div>
-        <div class="cap"><b>Parametric sketcher</b><span>Smart dimensions &amp; coincident edges</span></div>
+      <rect x="28" y="358" width="244" height="52" rx="13" fill="var(--card)" stroke="var(--border)"/>
+      <circle cx="47" cy="378" r="9" fill="var(--secondary)"/>
+      <text x="44" y="382" font-size="10" font-weight="800" fill="#fff">2</text>
+      <rect x="64" y="371" width="174" height="7" rx="3.5" fill="var(--text-sub)" opacity=".45"/>
+      <rect x="64" y="387" width="130" height="7" rx="3.5" fill="var(--text-sub)" opacity=".22"/>
+
+      <rect x="28" y="420" width="244" height="46" rx="13" fill="none" stroke="var(--gold)" stroke-width="2"/>
+      <text x="46" y="449" font-size="13" font-weight="800" fill="var(--gold)">FINAL ANSWER</text>
+
+      <rect x="28" y="512" width="188" height="42" rx="21" fill="var(--bg)" stroke="var(--border)"/>
+      <text x="46" y="538" font-size="12" fill="var(--text-sub)">Ask about step 2…</text>
+      <circle cx="248" cy="533" r="21" fill="var(--secondary)"/>
+      <path d="M241 533 h13 M249 528 l6 5 -6 5" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    </svg>
+  </header>
+
+  <!-- The whole point of the product, in one screen -->
+  <section id="difference" class="wrap">
+    <p class="kicker">The difference</p>
+    <h2>A chatbot describes the figure.<br>Lemma <span class="grad">draws</span> it.</h2>
+    <p class="sub">
+      Ask a general AI a geometry question and you get paragraphs of text — and you still don't
+      know what the shape looks like. That's the problem Lemma exists to solve.
+    </p>
+
+    <div class="vs">
+      <div class="pane">
+        <h3>🤖 A general AI chatbot</h3>
+        <p class="note">A wall of text. You still have to imagine the figure yourself.</p>
+        <div class="fakeline" style="width:96%"></div>
+        <div class="fakeline" style="width:88%"></div>
+        <div class="fakeline" style="width:93%"></div>
+        <div class="fakeline" style="width:70%"></div>
+        <div class="fakeline" style="width:90%"></div>
+        <div class="fakeline" style="width:54%"></div>
       </div>
 
-      <div>
-        <div class="phone"><div class="screen">
-          <div class="app-bar"><div class="mini-logo">λ</div><div class="titles"><strong>3D Viewport</strong><span>Rotate &amp; zoom</span></div><div class="chip">3D</div></div>
-          <div class="screen-body">
-            <div class="canvas"><svg viewBox="0 0 300 240">
-              <path d="M150,30 L60,90 L150,150 L240,90 Z" fill="rgba(6,182,212,.12)" stroke="#06B6D4" stroke-width="2.5" stroke-linejoin="round"/>
-              <path d="M60,90 L60,170 L150,230 L150,150 Z" fill="rgba(59,130,246,.14)" stroke="#3B82F6" stroke-width="2.5" stroke-linejoin="round"/>
-              <path d="M240,90 L240,170 L150,230 L150,150 Z" fill="rgba(30,58,138,.16)" stroke="#1E3A8A" stroke-width="2.5" stroke-linejoin="round"/>
-              <text x="150" y="22" fill="#3B82F6" font-size="12" font-weight="800" text-anchor="middle">A</text>
-            </svg></div>
-            <div class="toolbar"><div class="tool">−X</div><div class="tool">+X</div><div class="tool">−Y</div><div class="tool">Reset</div></div>
-          </div>
-        </div></div>
-        <div class="cap"><b>3D figures</b><span>Auto-drawn from the solution</span></div>
-      </div>
-
-      <div>
-        <div class="phone"><div class="screen">
-          <div class="app-bar"><div class="mini-logo">λ</div><div class="titles"><strong>History</strong><span>Synced to cloud</span></div><div class="chip">SYNC</div></div>
-          <div class="screen-body">
-            <div class="seg"><span class="on">Solutions</span><span>Drawings</span></div>
-            <div class="list-row"><div class="dot">∑</div><div class="meta"><b>Isosceles triangle area</b><span>2026-05-20 · synced</span></div></div>
-            <div class="list-row"><div class="dot">◯</div><div class="meta"><b>Inscribed angle proof</b><span>2026-05-18 · synced</span></div></div>
-            <div class="list-row"><div class="dot">△</div><div class="meta"><b>Pythagorean setup</b><span>2026-05-15 · synced</span></div></div>
-            <div class="list-row"><div class="dot">▱</div><div class="meta"><b>Parallelogram sides</b><span>2026-05-11 · synced</span></div></div>
-          </div>
-        </div></div>
-        <div class="cap"><b>History &amp; sync</b><span>Swipe to delete · download anytime</span></div>
+      <div class="pane win">
+        <h3>📐 Lemma <span class="tag">DRAWS IT</span></h3>
+        <p class="note">The real figure — rotate it, zoom it, tap any part to ask about it.</p>
+        <svg viewBox="0 0 300 200" role="img"
+             aria-label="A circle with centre O, a tangent line touching it at point P, the radius OP drawn, and the right angle between them marked.">
+          <circle cx="150" cy="100" r="62" fill="none" stroke="var(--secondary)" stroke-width="2.6"/>
+          <line x1="76" y1="60" x2="242" y2="200" stroke="var(--gold)" stroke-width="3"/>
+          <line x1="150" y1="100" x2="190" y2="52" stroke="var(--secondary-light)" stroke-width="2"/>
+          <path d="M183 58 l7 6 -6 7" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <circle cx="150" cy="100" r="4.5" fill="var(--secondary-light)"/>
+          <circle cx="190" cy="52" r="4.5" fill="var(--gold)"/>
+          <text x="134" y="117" font-size="14" font-weight="700" fill="var(--ink)">O</text>
+          <text x="198" y="47" font-size="14" font-weight="700" fill="var(--ink)">P</text>
+          <text x="159" y="70" font-size="12" fill="var(--text-sub)">r</text>
+          <text x="192" y="184" font-size="12" font-weight="600" fill="var(--gold)">tangent</text>
+        </svg>
       </div>
     </div>
   </section>
 
-  <!-- HOW TO USE -->
-  <section id="howto">
-    <div class="section-title">
-      <h2>How to use Lemma</h2>
-      <p>From install to a fully explained solution in a couple of minutes.</p>
-    </div>
-    <div class="howto">
-      <div class="ht"><div class="n">1</div><div><h3>Install &amp; sign in</h3><p>Download the APK and install it. Create an account (or try guest mode) — signing in unlocks cloud sync across your devices.</p></div></div>
-      <div class="ht"><div class="n">2</div><div><h3>Enter the problem your way</h3><p>Type it, tap the 🎤 mic to speak it, attach a photo of the figure, or scan a textbook page with the 📸 camera. Add extra instructions if you like.</p></div></div>
-      <div class="ht"><div class="n">3</div><div><h3>Read the guided solution</h3><p>Lemma returns numbered step cards with clear notation and a highlighted final answer, and draws the figure on the 3D canvas above.</p></div></div>
-      <div class="ht"><div class="n">4</div><div><h3>Copy or download</h3><p>Copy a single step or the whole solution, save the drawing as an image, or export a PDF (figure + selectable solution text).</p></div></div>
-      <div class="ht"><div class="n">5</div><div><h3>Sketch it yourself</h3><p>Open the Drawing tool and use Line, Rectangle, and Circle with Smart Dimension to set exact lengths and angles — the parametric engine keeps everything connected.</p></div></div>
-      <div class="ht"><div class="n">6</div><div><h3>Make it yours</h3><p>In Settings, switch language (EN / RU / HY), choose Light / Dark / System theme, and add your own Gemini API keys (with automatic fallback).</p></div></div>
-      <div class="ht"><div class="n">7</div><div><h3>Find it later</h3><p>Everything lands in History and mirrors to the cloud. Swipe to delete (with undo), rename, or re-download on any device.</p></div></div>
-      <div class="ht"><div class="n">8</div><div><h3>Learn the theory</h3><p>Browse the built-in Theorems &amp; Formulas library by grade, with proofs, worked examples, and quick knowledge-check quizzes.</p></div></div>
+  <section id="features" class="wrap">
+    <p class="kicker">Features</p>
+    <h2>Everything in one app</h2>
+    <p class="sub">Built for the school geometry curriculum — not for general chat.</p>
+
+    <div class="grid g3">
+      <article class="card">
+        <div class="ico">📐</div><h3>It draws the figure</h3>
+        <p>Every solution comes with a real 2D or 3D diagram you can rotate, zoom and tap — not a paragraph telling you to imagine one.</p>
+      </article>
+      <article class="card">
+        <div class="ico">🪜</div><h3>Step by step, for a student</h3>
+        <p>Small, readable steps in plain language. No coordinate systems, no LaTeX — just the reasoning, the way a teacher would explain it.</p>
+      </article>
+      <article class="card">
+        <div class="ico">📸</div><h3>Scan from the textbook</h3>
+        <p>Point the camera at a printed problem. Lemma reads it, ignores anything that isn't geometry, then draws and solves it.</p>
+      </article>
+      <article class="card">
+        <div class="ico">📚</div><h3>Tap any theorem</h3>
+        <p>Theorem names inside a solution are links. Tap "Pythagorean theorem" and land on its page — the proof, where it's used, and a quiz.</p>
+      </article>
+      <article class="card">
+        <div class="ico">✏️</div><h3>Parametric sketcher</h3>
+        <p>Draw it yourself with a constraint engine. Change one length or angle and the whole shape adapts in real time.</p>
+      </article>
+      <article class="card">
+        <div class="ico">🧊</div><h3>3D workspace</h3>
+        <p>Pyramids, cones, cylinders, spheres and planes in a rotatable, zoomable 3D viewport.</p>
+      </article>
+      <article class="card">
+        <div class="ico">💬</div><h3>Ask about any step</h3>
+        <p>Stuck on step 3? Tap it and ask. The tutor already knows your problem, your figure, and where you got lost.</p>
+      </article>
+      <article class="card">
+        <div class="ico">👥</div><h3>Share with classmates</h3>
+        <p>Send a solved problem or a drawing to a friend or a study group — they can open the figure for free.</p>
+      </article>
+      <article class="card">
+        <div class="ico">☁️</div><h3>Yours on every device</h3>
+        <p>Solutions, drawings and chats sync to your account and follow you to any phone you sign in on.</p>
+      </article>
     </div>
   </section>
 
-  <!-- WORKFLOW -->
-  <section>
-    <div class="section-title"><h2>The workflow at a glance</h2><p>A simple, structured loop for solving and sketching.</p></div>
-    <div class="steps">
-      <div class="step"><div class="step-num">1</div><h3>Describe or scan</h3><p>Type, speak, photograph, or OCR-scan a problem.</p></div>
-      <div class="step"><div class="step-num">2</div><h3>Draft &amp; constrain</h3><p>Sketch shapes and lock exact parameters with Smart Dimension.</p></div>
-      <div class="step"><div class="step-num">3</div><h3>Solve with AI</h3><p>Get detailed proofs, formulas, and an auto-drawn figure.</p></div>
-      <div class="step"><div class="step-num">4</div><h3>Sync &amp; export</h3><p>Open it on any device, or export as image or PDF.</p></div>
+  <section id="how" class="wrap">
+    <p class="kicker">How it works</p>
+    <h2>From problem to understanding</h2>
+    <div class="steps" style="margin-top:24px">
+      <div class="step"><div class="n"></div><div>
+        <h3>Give Lemma the problem</h3>
+        <p>Type it, speak it, attach a photo of the figure, or scan the page with your camera.</p>
+      </div></div>
+      <div class="step"><div class="n"></div><div>
+        <h3>Watch it get drawn</h3>
+        <p>Lemma works out the configuration, renders the figure, and lays the solution out in numbered steps with the final answer highlighted.</p>
+      </div></div>
+      <div class="step"><div class="n"></div><div>
+        <h3>Ask until it clicks</h3>
+        <p>Tap a step — or a part of the drawing — and ask about it. Tap a theorem to read its proof and take the quiz.</p>
+      </div></div>
+      <div class="step"><div class="n"></div><div>
+        <h3>Keep it</h3>
+        <p>Save it, export a PDF, or share it with your class. Everything syncs to your account.</p>
+      </div></div>
     </div>
   </section>
 
-  <!-- DOWNLOAD -->
-  <section id="download">
-    <div class="download">
-      <div>
-        <h2>Get Lemma on Android</h2>
-        <p>Download the latest package directly from our server. Work offline, keep your drawings in a local database, and sync seamlessly the moment you're back online.</p>
-        <p class="site-link" style="margin-top:14px;">Source: <a href="https://github.com/Andi2010p/Lemm" target="_blank" rel="noopener">github.com/Andi2010p/Lemm</a></p>
+  <section id="plans" class="wrap">
+    <p class="kicker">Plans</p>
+    <h2>Start free. Upgrade only if you need to.</h2>
+    <p class="sub">
+      The theorem library, the sketcher, your saved work, and opening a solution a friend shared with
+      you are <strong>always free</strong>. Plans only add AI solving power.
+    </p>
+
+    <div class="grid g4">
+      <div class="plan">
+        <h3>Free</h3>
+        <div class="price">0</div><div class="per">forever</div>
+        <ul>
+          <li>3 solved problems a day</li>
+          <li>Full theorem library</li>
+          <li>Sketcher &amp; 3D viewer</li>
+          <li>Cloud sync</li>
+        </ul>
       </div>
-      <a class="btn" href="downloads/lemmageoai.apk" download>⬇ Download APK</a>
+      <div class="plan best">
+        <div class="badge">Most popular</div>
+        <h3>Plus</h3>
+        <div class="price">500</div><div class="per">problems a month</div>
+        <ul>
+          <li>No daily limit</li>
+          <li>Our smarter AI model</li>
+          <li>Choose your AI</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <h3>Family</h3>
+        <div class="price">6</div><div class="per">people · one payment</div>
+        <ul>
+          <li>500 problems each</li>
+          <li>Everyone keeps their own progress</li>
+          <li>You invite the rest</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <h3>Classroom</h3>
+        <div class="price">30</div><div class="per">students · one teacher</div>
+        <ul>
+          <li>400 problems each</li>
+          <li>Invite your whole class</li>
+        </ul>
+      </div>
     </div>
   </section>
 
-  <!-- FAQ -->
-  <section>
-    <div class="section-title"><h2>Frequently asked questions</h2></div>
-    <div class="faq">
-      <details><summary>Is Lemma usable offline?</summary><p>Yes. You can sketch, dimension, edit, and review your saved history entirely offline. When you reconnect on a signed-in device, the Cloud Sync Manager pushes your offline work to the database automatically.</p></details>
-      <details><summary>What is a parametric sketcher?</summary><p>Unlike a paint app, Lemma stores lines as mathematical relations. Select a line and change its length (say 50 → 100) and the connected edges stretch and follow it, preserving your geometry.</p></details>
-      <details><summary>How do I run the AI for free?</summary><p>Open Settings → Set Personal API Key and add one or more Gemini API keys. You can switch each key on or off, and Lemma automatically falls back to the next one if a key runs out of quota. You can also unlock Lemma Pro.</p></details>
-      <details><summary>Which languages are supported?</summary><p>The interface and the AI's step-by-step explanations are available in English, Russian, and Armenian. You can switch instantly from Settings or the language chip on the welcome screen.</p></details>
-      <details><summary>Can I export my solutions?</summary><p>Yes — copy any step or the whole solution to your clipboard, save the figure as an image to your gallery, or export a PDF that contains the figure plus the solution as real, selectable text.</p></details>
-      <details><summary>Where are my API keys stored?</summary><p>Keys are kept on your device and mirrored to your own account so they follow you across devices. For a hardened production setup, route requests through a server proxy rather than embedding keys on the client.</p></details>
+  <section id="faq" class="wrap">
+    <p class="kicker">FAQ</p>
+    <h2>Questions people ask</h2>
+    <div style="margin-top:32px">
+      <details open>
+        <summary>What is Lemma?</summary>
+        <p>Lemma is an Android app that helps students learn geometry. You scan, speak or type a
+        problem, and Lemma explains it step by step and <strong>draws the figure</strong> — so you can
+        see what the problem actually looks like instead of only reading about it.</p>
+      </details>
+      <details>
+        <summary>How is Lemma different from ChatGPT or Gemini?</summary>
+        <p>A general chatbot answers a geometry question with text. Lemma draws the actual figure — a
+        real 2D or 3D diagram you can rotate, zoom and tap — and links every theorem it uses to a page
+        with the proof and a quiz. It's built around a school geometry curriculum for grades 7–12, not
+        for general conversation.</p>
+      </details>
+      <details>
+        <summary>Is Lemma free?</summary>
+        <p>Yes. The free plan gives you 3 solved problems every day. The theorem library, the sketcher,
+        your saved work, and opening a solution a friend shared with you are always free. Paid plans add
+        more problems and a smarter AI model.</p>
+      </details>
+      <details>
+        <summary>Does Lemma work in Armenian?</summary>
+        <p>Yes — fully. The interface, the step-by-step explanations and the theorem library all work in
+        Armenian, Russian and English.</p>
+      </details>
+      <details>
+        <summary>Can it solve a problem from a photo of my textbook?</summary>
+        <p>Yes. Point the camera at a printed problem. Lemma reads the text, rejects images that aren't
+        geometry, then draws and solves it.</p>
+      </details>
+      <details>
+        <summary>Which Android version do I need?</summary>
+        <p>Android 7.0 or newer.</p>
+      </details>
     </div>
   </section>
 
-  <footer>© 2026 Lemma. All rights reserved. Open source under the MIT License.</footer>
+  <section id="get" class="wrap">
+    <div class="pane win" style="text-align:center;padding:48px 26px">
+      <h2>Get Lemma</h2>
+      <p class="sub" style="margin:14px auto 28px">
+        Android 7.0 or newer. Free to start — no card needed to try it.
+      </p>
+      <div class="cta" style="justify-content:center">
+        <a class="btn btn-p" href="downloads/lemmageoai.apk" download>⬇ Download the APK</a>
+        <a class="btn btn-s" href="https://github.com/Andi2010p/Lemm" rel="noopener">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span class="logo">Lem<em>ma</em></span>
+    <a href="privacy.html">Privacy policy</a>
+    <a href="https://github.com/Andi2010p/Lemm" rel="noopener">GitHub</a>
+    <span class="sp">© 2026 Lemma — an AI geometry tutor for students.</span>
+  </div>
+</footer>
 
 </body>
 </html>

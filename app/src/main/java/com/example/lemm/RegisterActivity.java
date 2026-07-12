@@ -91,32 +91,22 @@ public class RegisterActivity extends AppCompatActivity {
                 com.google.firebase.auth.FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, pass)
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
-                                try {
-                                    String uid = task.getResult().getUser().getUid();
-
-                                    // 2. SAVE USERNAME TO FIREBASE REALTIME DATABASE
-                                    FirebaseManager.getDatabase().getReference("users_info")
-                                            .child(uid).child("username").setValue(user);
-
-                                    // 3. SAVE TO LOCAL SQLITE
-                                    dbHelper.addUser(user, email, pass);
-
-                                    // 4. SEND BEAUTIFUL HTML EMAIL (Standard Registration)
-                                    String subject = "Welcome to Lemma!";
-                                    String headline = "Account Created Successfully";
-                                    String body = "Hello <b>" + user + "</b>,\n\n" +
-                                            "Welcome to your new AI-powered geometry tutor!\n\n" +
-                                            "<b>Your Account Details:</b>\n" +
-                                            "Username: " + user + "\n" +
-                                            "Email: " + email + "\n\n" +
-                                            "You can now scan math problems, draw 3D shapes, and sync your solutions securely to the cloud.";
-                                    EmailSender.sendOfficialEmail(email, subject, headline, body);
-
-                                    Toast.makeText(this, "Registration Successful!", Toast.LENGTH_LONG).show();
-                                    finish();
-                                } catch (Exception e) {
-                                    Toast.makeText(this, "Database Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                }
+                                // 2. CLAIM THE USERNAME ACCOUNT-WIDE.
+                                // checkUsernameExists() only consults this device's SQLite, so two
+                                // phones could otherwise register the same name — and since the cloud
+                                // node is users/{lowercased name}, they would silently share one
+                                // person's history. The claim table is the only global arbiter, so if
+                                // we lose the race we must undo the account we just created.
+                                Social.claimUsername(user, owned -> {
+                                    if (!owned) {
+                                        com.google.firebase.auth.FirebaseUser fresh =
+                                                com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+                                        if (fresh != null) fresh.delete();
+                                        Toast.makeText(this, R.string.username_taken_title, Toast.LENGTH_LONG).show();
+                                        return;
+                                    }
+                                    finishRegistration(task.getResult().getUser().getUid(), user, email, pass);
+                                });
                             } else {
                                 Toast.makeText(this, "Cloud Error: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                             }
@@ -128,6 +118,65 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         btnBackToLogin.setOnClickListener(v -> finish());
+    }
+
+    /** Runs only once the username has been claimed account-wide, so the cloud node is really ours. */
+    private void finishRegistration(String uid, String user, String email, String pass) {
+        try {
+            FirebaseManager.getDatabase().getReference("users_info")
+                    .child(uid).child("username").setValue(user);
+            // Make them findable in search right away, not only after they reach the home screen.
+            Social.writeDirectory(uid, user);
+
+            dbHelper.addUser(user, email, pass);
+
+            String subject = "Welcome to Lemma!";
+            String headline = "Account Created Successfully";
+            String body = "Hello <b>" + user + "</b>,\n\n" +
+                    "Welcome to your new AI-powered geometry tutor!\n\n" +
+                    "<b>Your Account Details:</b>\n" +
+                    "Username: " + user + "\n" +
+                    "Email: " + email + "\n\n" +
+                    "You can now scan math problems, draw 3D shapes, and sync your solutions securely to the cloud.";
+            EmailSender.sendOfficialEmail(email, subject, headline, body);
+
+            Toast.makeText(this, "Registration Successful!", Toast.LENGTH_LONG).show();
+            finish();
+        } catch (Exception e) {
+            Toast.makeText(this, "Database Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /** Runs after the user has picked a username for their new Google account. */
+    private void finishGoogleRegistration(GoogleSignInAccount account, String email, String username) {
+        com.google.firebase.auth.FirebaseUser user =
+                com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        String uid = user.getUid();
+
+        FirebaseManager.getDatabase().getReference("users_info").child(uid).child("username").setValue(username);
+        // Publish to the searchable directory NOW, so friends can find them immediately.
+        Social.writeDirectory(uid, username);
+        Social.claimUsername(username, null);
+
+        dbHelper.syncGoogleUser(username, email, account.getId());
+
+        if (email != null && !email.isEmpty()) {
+            String body = "Hello <b>" + username + "</b>,\n\n" +
+                    "Your account via Google Sign-In has been successfully registered!\n\n" +
+                    "<b>Your Account Details:</b>\n" +
+                    "Username: " + username + "\n" +
+                    "Email: " + email + "\n\n" +
+                    "You can now scan math problems, draw shapes, and sync your solutions securely to the cloud.";
+            EmailSender.sendOfficialEmail(email, "Welcome to Lemma!", "Account Linked Successfully", body);
+        }
+
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        pref.edit().putString("username", username).putBoolean("is_guest", false).apply();
+
+        Toast.makeText(this, getString(R.string.welcome, username), Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 
     @Override
@@ -150,36 +199,13 @@ public class RegisterActivity extends AppCompatActivity {
                         .addOnCompleteListener(this, task -> {
                             if (task.isSuccessful()) {
                                 String email = account.getEmail();
-                                String rawName = (account.getDisplayName() != null) ? account.getDisplayName() : email.split("@")[0];
-                                String safeUsername = UsernameRules.sanitize(rawName);
-
-                                // Save Cloud mapping and Local DB
-                                com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                                FirebaseManager.getDatabase().getReference("users_info")
-                                        .child(user.getUid()).child("username").setValue(safeUsername);
-
-                                dbHelper.syncGoogleUser(safeUsername, email, account.getId());
-
-                                // 4. SEND BEAUTIFUL HTML EMAIL (Google Registration)
-                                if (email != null && !email.isEmpty()) {
-                                    String subject = "Welcome to Lemma!";
-                                    String headline = "Account Linked Successfully";
-                                    String body = "Hello <b>" + safeUsername + "</b>,\n\n" +
-                                            "Your account via Google Sign-In has been successfully registered!\n\n" +
-                                            "<b>Your Account Details:</b>\n" +
-                                            "Username: " + safeUsername + "\n" +
-                                            "Email: " + email + "\n\n" +
-                                            "You can now scan math problems, draw 2D shapes, and sync your solutions securely to the cloud.";
-                                    EmailSender.sendOfficialEmail(email, subject, headline, body);
-                                }
-
-                                // Log them in
-                                SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-                                pref.edit().putString("username", safeUsername).putBoolean("is_guest", false).apply();
-
-                                Toast.makeText(this, getString(R.string.welcome, safeUsername), Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(this, MainActivity.class));
-                                finish();
+                                // Let the user CHOOSE their username instead of auto-naming them from
+                                // their email. Pre-fill a suggestion from their Google display name.
+                                String suggestion = (account.getDisplayName() != null)
+                                        ? account.getDisplayName()
+                                        : (email != null ? email.split("@")[0] : "");
+                                UsernamePrompt.choose(this, suggestion,
+                                        chosen -> finishGoogleRegistration(account, email, chosen));
                             } else {
                                 Toast.makeText(this, "Google Registration Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                             }

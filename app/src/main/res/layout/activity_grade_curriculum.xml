@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_gradient_light">
+    android:background="?attr/appScreenBg">
 
     <!-- Header -->
     <RelativeLayout
@@ -142,7 +142,7 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/surface_white"
+                app:cardBackgroundColor="?attr/appCardFill"
                 app:strokeColor="@color/primary_light"
                 app:strokeWidth="1dp"
                 android:layout_marginBottom="24dp"

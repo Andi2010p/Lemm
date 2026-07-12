@@ -49,4 +49,26 @@
     <color name="canvas_3d_bg">#0E1A2E</color>
     <color name="canvas_3d_line">#D6E2F5</color>
     <color name="canvas_3d_text">#BBDEFB</color>
+
+    <!-- Futuristic "glass + neon" theme — DARK overrides (deep space + bright neon). -->
+    <color name="neon_bg_top">#0B1026</color>
+    <color name="neon_bg_mid">#0E1533</color>
+    <color name="neon_bg_bottom">#05060F</color>
+    <color name="neon_glow_1">#4022D3EE</color>
+    <color name="neon_glow_1_end">#0022D3EE</color>
+    <color name="neon_glow_2">#3AA855F7</color>
+    <color name="neon_glow_2_end">#00A855F7</color>
+    <color name="neon_cyan">#22D3EE</color>
+    <color name="neon_blue">#3B82F6</color>
+    <color name="neon_purple">#A855F7</color>
+    <color name="neon_pink">#F472B6</color>
+    <color name="glass_fill">#1FFFFFFF</color>
+    <color name="glass_fill_strong">#2EFFFFFF</color>
+    <color name="glass_stroke">#5A22D3EE</color>
+    <color name="glass_icon_bg">#3322D3EE</color>
+    <color name="neon_text">#E6F0FF</color>
+    <color name="neon_text_dim">#9FB2D6</color>
+    <color name="neon_user_bubble">#2563EB</color>
+    <!-- Subtle border for BASIC-style solid cards (dark) -->
+    <color name="card_border_basic">#2EFFFFFF</color>
 </resources>

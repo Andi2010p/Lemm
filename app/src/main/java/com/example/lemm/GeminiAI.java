@@ -33,11 +33,12 @@ public class GeminiAI {
         SafetySetting sex = new SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH);
         SafetySetting danger = new SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH);
 
-        // 2. Low temperature for deterministic, accurate math; large output budget for long proofs.
+        // 2. Low temperature for deterministic, accurate math; large output budget so there's room for
+        //    the model's private "work out the configuration" reasoning PLUS the full drawing + proof.
         GenerationConfig.Builder cfg = new GenerationConfig.Builder();
         cfg.temperature = 0.2f;
         cfg.topP = 0.95f;
-        cfg.maxOutputTokens = 8192;
+        cfg.maxOutputTokens = 16384;
 
         if (modelName == null || modelName.isEmpty()) modelName = SOLVE_MODELS[0];
         GenerativeModel gm = new GenerativeModel(

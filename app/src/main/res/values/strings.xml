@@ -1004,4 +1004,210 @@
     <string name="th_a_12_4">20</string>
     <string name="th_q2_12_4">R = 3, H = 4. What is the lateral surface area divided by π?</string>
     <string name="th_a2_12_4">24</string>
+
+    <!-- AI Tutor Chat (Lemma) -->
+    <string name="main_ask_ai_title">Ask Lemma</string>
+    <string name="main_ask_ai_sub">Chat about any problem</string>
+    <string name="chat_title">Lemma</string>
+    <string name="chat_subtitle">Your geometry helper</string>
+    <string name="chat_hint">Ask anything about your problem…</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_attach">Attach</string>
+    <string name="chat_mic">Voice input</string>
+    <string name="chat_mic_prompt">Speak your question…</string>
+    <string name="chat_history">Chats</string>
+    <string name="chat_new">New chat</string>
+    <string name="chat_no_history">No chats yet.</string>
+    <string name="chat_photo">Photo</string>
+    <string name="chat_greeting">Hi! I\'m Lemma 👋 your geometry helper. Ask me anything — about a step, a drawing, or any problem you have. You can attach a photo, drawing or solution with the ➕ button, or tap the mic to talk.</string>
+    <string name="chat_greeting_step">Hi! I\'m Lemma 👋 Ask me anything about this step and I\'ll explain it in a simple way.</string>
+    <string name="chat_attach_title">Attach something</string>
+    <string name="chat_attach_solution">A saved solution</string>
+    <string name="chat_attach_drawing">A saved drawing</string>
+    <string name="chat_no_items">Nothing saved here yet.</string>
+    <string name="chat_attached">Attached: %1$s</string>
+    <string name="chat_attachment_removed">Attachment removed</string>
+    <string name="chat_empty_message">Type a question first.</string>
+    <string name="chat_thinking">Thinking…</string>
+    <string name="chat_error">Something went wrong. Please try again.</string>
+    <string name="chat_no_ai">AI is unavailable. Add an API key or upgrade to Pro in Settings.</string>
+    <string name="ask_about_step">Ask Lemma about this</string>
+    <string name="chat_ask_whole">Ask Lemma about this solution</string>
+    <string name="chat_solution_label">Solution</string>
+    <string name="chat_figure">Figure</string>
+    <string name="chat_tap_hint">Your figure — tap any part to ask about it</string>
+    <string name="chat_selected">Selected: %1$s</string>
+    <string name="chat_tap_prefill">Explain %1$s</string>
+    <string name="chat_greeting_solution">Hi! I\'m Lemma 👋 I\'ve loaded your solution and figure. Ask me about any step or detail — or tap a part of the figure above to ask about it.</string>
+    <!-- AI provider / model selection -->
+    <string name="settings_ai_model">AI model &amp; provider</string>
+    <string name="provider_gemini">Google Gemini (built-in)</string>
+    <string name="provider_openai">OpenAI (GPT) — your key</string>
+    <string name="provider_claude">Anthropic (Claude) — your key</string>
+    <string name="ext_api_key_hint">Paste your API key</string>
+    <string name="ext_model_hint">Model (e.g. gpt-4o / claude-opus-4-8)</string>
+    <string name="ext_byok_note">Uses your OWN API key and account (you pay the provider). Get a key from the provider\'s website, and type any model name they support.</string>
+    <string name="ext_suggested">Suggested models (tap to use) · ★ everyday pick:</string>
+    <string name="model_choice_plus">Choosing GPT / Claude is a Lemma Plus feature. Free users use the built-in Gemini.</string>
+    <string name="privacy_policy">Privacy policy</string>
+
+    <!-- Friends & messaging -->
+    <string name="back">Back</string>
+    <string name="friends_title">Friends &amp; chats</string>
+    <string name="friends_home_title">Friends</string>
+    <string name="friends_home_sub">Chat, share solutions</string>
+    <string name="search">Search</string>
+    <string name="search_users_hint">Search by username…</string>
+    <string name="search_results">Search results</string>
+    <string name="friend_requests">Friend requests</string>
+    <string name="your_friends">Your friends</string>
+    <string name="no_friends_yet">No friends yet. Search for a username above to add someone.</string>
+    <string name="no_users_found">No users found.</string>
+    <string name="add_friend">Add</string>
+    <string name="requested">Requested</string>
+    <string name="request_sent">Friend request sent.</string>
+    <string name="accept">Accept</string>
+    <string name="decline">Decline</string>
+    <string name="friend_added">You are now friends with %1$s.</string>
+    <string name="remove_friend">Remove</string>
+    <string name="remove_friend_confirm">Remove %1$s from your friends?</string>
+    <string name="message">Message</string>
+    <string name="sign_in_to_chat">Sign in with an account to chat with friends. Guest accounts can\'t send messages.</string>
+    <string name="message_hint">Write a message…</string>
+    <string name="send">Send</string>
+    <string name="attach">Attach</string>
+    <string name="send_solution">Send a solution</string>
+    <string name="send_drawing">Send a drawing</string>
+    <string name="open_solution">Tap to open the solution</string>
+    <string name="open_drawing">Tap to open the drawing</string>
+    <string name="preview_solution">📐 Solution</string>
+    <string name="preview_drawing">✏️ Drawing</string>
+    <string name="no_saved_solutions">You have no saved solutions to send yet.</string>
+    <string name="no_saved_drawings">You have no saved drawings to send yet.</string>
+
+    <!-- Group chats -->
+    <string name="new_group">New group</string>
+    <string name="your_groups">Your groups</string>
+    <string name="group_name_hint">Group name</string>
+    <string name="group_pick_members">Pick friends to add (up to %1$d people in a group)</string>
+    <string name="group_pick_someone">Pick at least one friend.</string>
+    <string name="group_too_big">A group can have at most %1$d people.</string>
+    <string name="group_needs_friends">Add a friend first — groups are made from your friends.</string>
+    <string name="group_created">Group created.</string>
+    <string name="group_create_failed">Couldn\'t create the group: %1$s</string>
+    <string name="create">Create</string>
+    <string name="leave_group">Leave</string>
+    <string name="leave_group_confirm">Leave the group “%1$s”?</string>
+
+    <!-- Reporting & blocking people (required by Play's User Generated Content policy) -->
+    <string name="report_message">Report this message</string>
+    <string name="report_message_title">Report message</string>
+    <string name="report_reason_abuse">Offensive or inappropriate</string>
+    <string name="report_reason_bullying">Bullying or harassment</string>
+    <string name="report_reason_spam">Spam or scam</string>
+    <string name="block_user">Block user</string>
+    <string name="block_user_confirm">Block %1$s? They won\'t be able to message you or send you a friend request, and you won\'t see their messages.</string>
+    <string name="user_blocked">%1$s is blocked.</string>
+    <string name="unblock">Unblock</string>
+    <string name="blocked_users">Blocked</string>
+    <string name="this_user">this user</string>
+    <string name="report_ai">Report this answer</string>
+    <string name="report_ai_title">Report AI answer</string>
+    <string name="report_reason_offensive">Offensive or unsafe</string>
+    <string name="report_reason_wrong">Wrong or misleading</string>
+    <string name="report_reason_nonsense">Confusing or nonsense</string>
+    <string name="report_reason_other">Something else</string>
+    <string name="report_sent">Thanks — reported. We use these reports to make Lemma safer.</string>
+    <string name="share_too_large">That item is too large to send in a chat.</string>
+    <string name="report_failed">Couldn\'t send the report. Please check your connection and try again.</string>
+    <string name="report_needs_signin">Please sign in to your account to send a report. Guest accounts can\'t report.</string>
+    <string name="username_taken_title">Username already taken</string>
+    <string name="username_taken_msg">Another account is already using your username, so your solutions and drawings will not sync to the cloud. Please choose a different username.</string>
+    <string name="username_taken_fix">Change username</string>
+    <string name="choose_username_title">Choose a username</string>
+    <string name="choose_username_msg">This is how friends will find you. 3–20 letters, numbers or underscores.</string>
+    <string name="choose_username_hint">Username</string>
+    <!-- Plans / paywall -->
+    <string name="plans_title">Plans</string>
+    <string name="plans_hero">Solve more. Understand more.</string>
+    <string name="plans_hero_sub">Lemma draws your problem, then teaches you why. Pick the plan that fits.</string>
+    <string name="plans_problems_left">problems left this month</string>
+    <string name="plans_problems_left_today">problems left today</string>
+    <string name="plans_how_it_works">How it works</string>
+    <string name="plans_chain_money">You pay</string>
+    <string name="plans_chain_credits">You get credits</string>
+    <string name="plans_chain_problems">Credits solve problems</string>
+    <string name="plans_rate_solve">📐  1 credit = 1 solved problem, drawn</string>
+    <string name="plans_rate_chat">💬  ¼ credit = 1 question to the tutor</string>
+    <string name="plans_rate_free_stuff">Free forever: theorems, drawings, saved work, and opening a solution a friend shared with you.</string>
+    <string name="plans_monthly">Monthly</string>
+    <string name="plans_annual">Annual · save</string>
+    <string name="plans_per_month">/month</string>
+    <string name="plans_per_year">/year</string>
+    <string name="plans_price_pending">Coming soon</string>
+    <string name="plans_most_popular">Most popular</string>
+    <string name="plans_current">Your current plan</string>
+    <string name="plans_choose">Get %1$s</string>
+    <string name="plans_thanks">You\'re all set. Thank you!</string>
+    <string name="plans_topup_title">Need more this month?</string>
+    <string name="plans_pack_line">%1$d more problems</string>
+    <string name="plans_footer">Payment is charged to your Google Play account. Cancel any time in Play Store → Subscriptions. Credits you buy never expire.</string>
+    <string name="plan_unavailable">This plan isn\'t available yet. Please try again later.</string>
+
+    <string name="plan_free_name">Free</string>
+    <string name="plan_plus_name">Lemma Plus</string>
+    <string name="plan_family_name">Family</string>
+    <string name="plan_classroom_name">Classroom</string>
+    <string name="plan_plus_tagline">For the student doing homework every night.</string>
+    <string name="plan_family_tagline">One payment. Up to 6 people, each with their own account.</string>
+    <string name="plan_classroom_tagline">For a teacher and their class.</string>
+
+    <string name="feat_500_problems">500 problems a month</string>
+    <string name="feat_smarter_model">Our smarter AI model</string>
+    <string name="feat_choose_model">Choose your AI (GPT / Claude)</string>
+    <string name="feat_no_daily_limit">No daily limit</string>
+    <string name="feat_6_seats">Up to 6 people</string>
+    <string name="feat_500_each">500 problems a month <b>each</b></string>
+    <string name="feat_own_progress">Everyone keeps their own progress</string>
+    <string name="feat_one_payment">You pay once — you invite the rest</string>
+    <string name="feat_30_seats">Up to 30 students</string>
+    <string name="feat_400_each">400 problems a month each</string>
+    <string name="feat_teacher_invite">Invite your class by username</string>
+
+    <!-- Collective plan seats -->
+    <string name="family_seats_title">Your plan\'s seats</string>
+    <string name="family_seats_used">%1$d of %2$d seats used</string>
+    <string name="family_seat_owner">%1$s (you pay)</string>
+    <string name="family_invite">Invite someone</string>
+    <string name="family_invite_msg">Enter their Lemma username. They\'ll get an invitation and keep their own account, their own work and their own credits.</string>
+    <string name="family_invite_send">Send invite</string>
+    <string name="family_invite_sent">Invitation sent to %1$s.</string>
+    <string name="family_invited_title">You\'ve been invited</string>
+    <string name="family_invited_msg">%1$s wants to add you to their Lemma plan. Accept to get their plan\'s benefits — your account and your work stay yours.</string>
+    <string name="family_joined">You\'ve joined the plan.</string>
+    <string name="credits_added">Added %1$d problems to your account.</string>
+
+    <string name="cloud_ai_toggle">Use Lemma Cloud AI (recommended)</string>
+    <string name="cloud_ai_note">Runs the AI on Lemma\'s secure servers with your plan credits — no key needed. Turn this on once the backend is deployed.</string>
+    <string name="tokens_out_title">Out of AI tokens</string>
+    <string name="tokens_out_msg">You\'ve used your monthly AI tokens. Buy a top-up pack to keep going, or wait for your monthly reset.</string>
+    <string name="tokens_buy">Buy AI tokens</string>
+    <string name="tokens_added">Added %1$d AI tokens</string>
+    <string name="tokens_balance">≈ %1$d problems of AI help left this month\n(%2$s tokens · resets monthly · tap to learn more)</string>
+    <string name="tokens_balance_hint">AI help: loading…</string>
+    <string name="tokens_pack_amount">≈ %1$d problems · %2$s tokens</string>
+    <string name="tokens_what_title">What are tokens?</string>
+    <string name="tokens_what_msg">Tokens are how you pay for AI help. Every time Lemma solves a problem or answers in chat, it uses some tokens — about %1$d for one full solved problem.\n\nEach month your plan refills your tokens. If you run out, you can buy more anytime — for example Lemma Plus gives %2$s tokens a month (≈ %3$d problems).\n\nUsing your own API key instead? That AI is billed by your provider, not by tokens here.</string>
+    <string name="ext_gemini_note">Uses the app\'s built-in Gemini (or your own Gemini key from the option above).</string>
+    <string name="ext_no_key">%1$s needs an API key. Add it in Settings → AI model &amp; provider.</string>
+    <string name="ext_saved">Saved: %1$s</string>
+    <string name="chat_sugg_simpler">Explain more simply</string>
+    <string name="chat_sugg_hint">Give me a hint</string>
+    <string name="chat_sugg_example">Show an example</string>
+    <string name="chat_sugg_why">Why this step?</string>
+    <string name="chat_sugg_check">Check my answer</string>
+    <!-- App style selector -->
+    <string name="settings_style">App style</string>
+    <string name="style_glass">Glass</string>
+    <string name="style_basic">Basic</string>
 </resources>

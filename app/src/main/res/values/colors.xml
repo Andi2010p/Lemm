@@ -64,4 +64,31 @@
     <color name="main_blue">#1E3A8A</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+
+    <!-- Futuristic "glass + neon" theme — LIGHT values (dark overrides live in values-night/colors.xml).
+         The whole app uses these names, so the glass look follows the app's light/dark theme. -->
+    <!-- Light = clean BLUE + WHITE contrast (mixes the main-page glass with the settings blue look).
+         Soft blue-white gradient + faint blue glows. -->
+    <color name="neon_bg_top">#E8F0FF</color>
+    <color name="neon_bg_mid">#F2F7FF</color>
+    <color name="neon_bg_bottom">#FFFFFF</color>
+    <color name="neon_glow_1">#242563EB</color>
+    <color name="neon_glow_1_end">#002563EB</color>
+    <color name="neon_glow_2">#1C3B82F6</color>
+    <color name="neon_glow_2_end">#003B82F6</color>
+    <!-- All accents are shades of blue on light, so it reads as blue-on-white -->
+    <color name="neon_cyan">#2563EB</color>
+    <color name="neon_blue">#1D4ED8</color>
+    <color name="neon_purple">#3B82F6</color>
+    <color name="neon_pink">#2563EB</color>
+    <!-- Frosted-white glass with a soft blue edge -->
+    <color name="glass_fill">#B8FFFFFF</color>
+    <color name="glass_fill_strong">#DCFFFFFF</color>
+    <color name="glass_stroke">#402563EB</color>
+    <color name="glass_icon_bg">#1F2563EB</color>
+    <color name="neon_text">#0F172A</color>
+    <color name="neon_text_dim">#5A6B86</color>
+    <color name="neon_user_bubble">#2563EB</color>
+    <!-- Subtle border for BASIC-style solid cards (light) -->
+    <color name="card_border_basic">#22335C99</color>
 </resources>

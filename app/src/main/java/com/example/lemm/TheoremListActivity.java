@@ -17,10 +17,14 @@ public class TheoremListActivity extends AppCompatActivity {
 
     private LinearLayout theoremListContainer;
 
+    private boolean styleGlass;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StyleManager.apply(this);
         setContentView(R.layout.activity_theorem_list);
+        styleGlass = StyleManager.isGlass(this);
 
         try {
             findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -67,8 +71,10 @@ public class TheoremListActivity extends AppCompatActivity {
         params.setMargins(0, 0, 0, 24);
         card.setLayoutParams(params);
         card.setRadius(16f);
-        card.setCardElevation(4f);
-        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.surface_white));
+        card.setCardElevation(0f);
+        card.setCardBackgroundColor(StyleManager.color(this, R.attr.appCardFill));
+        card.setStrokeColor(StyleManager.color(this, R.attr.appCardStroke));
+        card.setStrokeWidth((int) getResources().getDisplayMetrics().density);
         card.setClickable(true);
         card.setFocusable(true);
 
@@ -105,6 +111,12 @@ public class TheoremListActivity extends AppCompatActivity {
         });
 
         theoremListContainer.addView(card);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        StyleManager.recreateIfChanged(this, styleGlass);
     }
 
     @Override

@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_light"
+    android:background="?attr/appScreenBg"
     android:fitsSystemWindows="true">
 
     <!-- TOP HEADER SECTION -->
@@ -17,9 +17,7 @@
         android:paddingTop="32dp"
         android:paddingBottom="40dp"
         android:gravity="center_vertical"
-        android:background="@drawable/bg_header_gradient"
-        app:layout_constraintTop_toTopOf="parent"
-        android:elevation="6dp">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -31,15 +29,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Hello,"
-                android:textColor="#BBDEFB"
-                android:textSize="16sp" />
+                android:textColor="@color/neon_text_dim"
+                android:textSize="16sp"
+                android:letterSpacing="0.05" />
 
             <TextView
                 android:id="@+id/tvMainWelcome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="User"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/neon_text"
                 android:textSize="28sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -51,22 +50,23 @@
             android:layout_marginEnd="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_manage"
-            app:tint="#FFFFFF" />
+            app:tint="@color/neon_text" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="48dp"
             android:layout_height="48dp"
             app:cardCornerRadius="24dp"
             app:cardElevation="0dp"
-            app:strokeWidth="2dp"
-            app:strokeColor="#93C5FD">
+            app:cardBackgroundColor="?attr/appCardFill"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/appCardStroke">
             <ImageButton
                 android:id="@+id/btnProfile"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/surface_white"
+                android:background="@android:color/transparent"
                 android:src="@android:drawable/ic_menu_myplaces"
-                app:tint="@color/main_blue" />
+                app:tint="@color/neon_cyan" />
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 
@@ -78,13 +78,14 @@
         android:paddingBottom="24dp"
         app:layout_constraintTop_toBottomOf="@id/headerLayout"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginTop="-20dp">
+        android:layout_marginTop="-16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp">
+            android:paddingHorizontal="16dp"
+            android:layoutAnimation="@anim/layout_reveal">
 
             <!-- MAIN ACTION: NEW PROBLEM -->
             <com.google.android.material.card.MaterialCardView
@@ -92,9 +93,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="140dp"
                 android:layout_margin="8dp"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="6dp"
-                app:cardBackgroundColor="@color/surface_white"
+                app:cardCornerRadius="26dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="?attr/appCardFill"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/appCardStroke"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -107,7 +110,7 @@
                         android:layout_width="56dp"
                         android:layout_height="56dp"
                         app:cardCornerRadius="28dp"
-                        app:cardBackgroundColor="@color/icon_bg_blue"
+                        app:cardBackgroundColor="@color/glass_icon_bg"
                         app:strokeWidth="0dp"
                         android:layout_centerVertical="true">
                         <ImageView
@@ -115,7 +118,7 @@
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
                             android:src="@android:drawable/ic_menu_add"
-                            app:tint="@color/primary_light" />
+                            app:tint="@color/neon_cyan" />
                     </com.google.android.material.card.MaterialCardView>
 
                     <LinearLayout
@@ -130,7 +133,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/new_problem"
-                            android:textColor="@color/main_blue"
+                            android:textColor="@color/neon_text"
                             android:textSize="22sp"
                             android:textStyle="bold" />
 
@@ -138,7 +141,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/geometry_solver"
-                            android:textColor="@color/text_subtitle"
+                            android:textColor="@color/neon_text_dim"
                             android:textSize="14sp" />
                     </LinearLayout>
                 </RelativeLayout>
@@ -159,8 +162,10 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="8dp"
                     app:cardCornerRadius="24dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="@color/surface_white"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="?attr/appCardFill"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/appCardStroke"
                     android:clickable="true"
                     android:focusable="true">
 
@@ -170,8 +175,8 @@
                         android:orientation="vertical"
                         android:gravity="center"
                         android:padding="16dp">
-                        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@android:drawable/ic_menu_camera" app:tint="@color/primary_light" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/scan_ocr" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/text_title" />
+                        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@android:drawable/ic_menu_camera" app:tint="@color/neon_cyan" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/scan_ocr" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/neon_text" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -183,8 +188,10 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="8dp"
                     app:cardCornerRadius="24dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="@color/surface_white"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="?attr/appCardFill"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/appCardStroke"
                     android:clickable="true"
                     android:focusable="true">
 
@@ -194,8 +201,8 @@
                         android:orientation="vertical"
                         android:gravity="center"
                         android:padding="16dp">
-                        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@android:drawable/ic_menu_edit" app:tint="@color/secondary" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/draw_geometry" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/text_title" />
+                        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@android:drawable/ic_menu_edit" app:tint="@color/neon_purple" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/draw_geometry" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/neon_text" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -207,8 +214,10 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="8dp"
                     app:cardCornerRadius="24dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="@color/surface_white"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="?attr/appCardFill"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/appCardStroke"
                     android:clickable="true"
                     android:focusable="true">
 
@@ -218,8 +227,8 @@
                         android:orientation="vertical"
                         android:gravity="center"
                         android:padding="16dp">
-                        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@android:drawable/ic_menu_agenda" app:tint="@color/primary_light" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/theorems_title" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/text_title" />
+                        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@android:drawable/ic_menu_agenda" app:tint="@color/neon_cyan" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/theorems_title" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/neon_text" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -231,8 +240,10 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="8dp"
                     app:cardCornerRadius="24dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="@color/surface_white"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="?attr/appCardFill"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/appCardStroke"
                     android:clickable="true"
                     android:focusable="true">
 
@@ -242,12 +253,133 @@
                         android:orientation="vertical"
                         android:gravity="center"
                         android:padding="16dp">
-                        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@android:drawable/ic_menu_recent_history" app:tint="@color/secondary" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/history" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/text_title" />
+                        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@android:drawable/ic_menu_recent_history" app:tint="@color/neon_purple" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/history" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/neon_text" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
             </GridLayout>
+
+            <!-- ASK LEMMA (CHAT) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAskAI"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="26dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="?attr/appCardFill"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/appCardStroke"
+                android:clickable="true"
+                android:focusable="true">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="24dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        app:cardCornerRadius="28dp"
+                        app:cardBackgroundColor="@color/glass_icon_bg"
+                        app:strokeWidth="0dp"
+                        android:layout_centerVertical="true">
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:src="@android:drawable/sym_action_chat"
+                            app:tint="@color/neon_cyan" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:gravity="end">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/main_ask_ai_title"
+                            android:textColor="@color/neon_text"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/main_ask_ai_sub"
+                            android:textColor="@color/neon_text_dim"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- FRIENDS & CHATS -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardFriends"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="26dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="?attr/appCardFill"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/appCardStroke"
+                android:clickable="true"
+                android:focusable="true">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="24dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        app:cardCornerRadius="28dp"
+                        app:cardBackgroundColor="@color/glass_icon_bg"
+                        app:strokeWidth="0dp"
+                        android:layout_centerVertical="true">
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_person"
+                            android:contentDescription="@string/friends_home_title"
+                            app:tint="@color/neon_cyan" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:gravity="end">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/friends_home_title"
+                            android:textColor="@color/neon_text"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/friends_home_sub"
+                            android:textColor="@color/neon_text_dim"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
