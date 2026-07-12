@@ -16,3 +16,21 @@ local.properties
 
 # Built APKs belong in GitHub Releases, never in the source tree
 *.apk
+
+# Node dependencies (Cloud Functions + the rules test harness).
+# Without this, `git add -A` tries to commit ~36,000 files.
+node_modules/
+npm-debug.log*
+.firebase/
+firebase-debug.log*
+database-debug.log*
+
+# Firebase service-account keys — NEVER commit these. They grant full admin
+# access to the database, bypassing every security rule.
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+
+# The signing keystore. Losing it means never being able to update the app;
+# leaking it means someone else can sign as you.
+*.jks
+*.keystore

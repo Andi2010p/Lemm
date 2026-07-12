@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://andi2010p.github.io/Lemm/sitemap.xml
