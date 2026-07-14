@@ -709,16 +709,17 @@ public class DrawingActivity extends AppCompatActivity {
             }
 
             // 2. Direct Write to Cloud Database
-            if (!currentUser.startsWith("GuestUser")) {
+            com.google.firebase.database.DatabaseReference userRef = FirebaseManager.getUserRef();
+            if (userRef != null && !currentUser.startsWith("GuestUser")) {
                 HashMap<String, Object> map = new HashMap<>();
                 map.put("title", drawingName);
                 map.put("data", serializedData);
                 map.put("date", date);
 
-                FirebaseManager.getUserRef(currentUser).child("drawings").child(cloudKey).setValue(map)
+                userRef.child("drawings").child(cloudKey).setValue(map)
                         .addOnSuccessListener(x -> dbHelper.markDrawingSynced(currentUser, date))
                         .addOnFailureListener(e -> Toast.makeText(getApplicationContext(),
-                                "Saved locally. Couldn't sync to cloud — please check your Wi-Fi connection.",
+                                getString(R.string.history_backup_broken),
                                 Toast.LENGTH_LONG).show());
             }
 

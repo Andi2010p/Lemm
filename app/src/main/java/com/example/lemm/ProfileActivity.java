@@ -341,7 +341,8 @@ public class ProfileActivity extends AppCompatActivity {
         // Load Counts
         // Single-value events: setupUserData() runs on every onResume, so persistent
         // listeners would accumulate (leak). One-shot reads refresh the counts each time.
-        com.google.firebase.database.DatabaseReference userRef = FirebaseManager.getUserRef(username);
+        com.google.firebase.database.DatabaseReference userRef = FirebaseManager.getUserRef();
+        if (userRef == null) return; // guest / local-only account: no cloud counts to show
         userRef.child("history").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot snapshot) { tvHistoryCount.setText(String.valueOf(snapshot.getChildrenCount())); }
             @Override public void onCancelled(DatabaseError error) {}
@@ -514,14 +515,14 @@ public class ProfileActivity extends AppCompatActivity {
                     .child(fbUser.getUid()).child("username").setValue(newName);
         }
 
-        // 4. Move the cloud data node: re-push the now-renamed local rows under the NEW name first
-        //    (the claim above makes this write legal), and only then drop the old node and give the
-        //    old name back so somebody else can take it.
+        // 4. Nothing to move. The cloud node is keyed by uid, not by username, so a rename does not
+        //    relocate a single byte of the user's work.
+        //
+        //    It used to: it re-pushed everything under the new name and then DELETED the old node.
+        //    If the re-push was rejected — which it always was, since the claim it depended on could
+        //    never be granted — the delete still ran, and renaming yourself destroyed your history.
         CloudSyncManager.syncLocalToCloud(dbHelper, newName);
-        if (!FirebaseManager.sanitizeUser(oldName).equals(FirebaseManager.sanitizeUser(newName))) {
-            FirebaseManager.getUserRef(oldName).removeValue();
-            Social.releaseUsername(oldName);
-        }
+        Social.releaseUsername(oldName);
 
         Toast.makeText(this, getString(R.string.username_updated), Toast.LENGTH_SHORT).show();
         tvUsername.setText(newName);

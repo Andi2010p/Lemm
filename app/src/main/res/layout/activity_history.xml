@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
@@ -60,6 +61,21 @@
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:textColor="@color/main_blue"/>
     </LinearLayout>
+
+    <!-- Cloud status. An empty list means one of two VERY different things — "you haven't saved
+         anything yet" or "your backup is broken and your work is gone" — and the user cannot tell
+         them apart. This line says which. -->
+    <TextView
+        android:id="@+id/tvCloudStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="10dp"
+        android:textSize="13sp"
+        android:background="@drawable/bg_cloud_status"
+        android:visibility="gone"
+        tools:text="☁️ Restoring your work…"
+        tools:visibility="visible" />
 
     <TextView
         android:id="@+id/tvTestModeWarning"

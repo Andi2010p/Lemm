@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
 
@@ -55,6 +56,18 @@ public class Drawing3DActivity extends AppCompatActivity {
     private String editId = null; // set when reopened from History (update instead of insert)
     private int roundShapeCount = 0; // auto-labels circles (C1, C2…) and spheres (S1, S2…)
 
+    /**
+     * The scene as it was when last saved (or loaded). Leaving with something different on screen
+     * means there is work to lose, so we ask first.
+     *
+     * <p>Compared against {@code canvas3D.toJson()}, which serialises the GEOMETRY only — rotating or
+     * zooming the model is not an edit and must not trigger the prompt.
+     *
+     * <p>{@code null} means "nothing here has ever been saved": that is the extrude-from-2D case,
+     * where the solid on screen is real, new, unsaved work. Leaving must always ask.
+     */
+    private String savedSnapshot = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,18 +78,26 @@ public class Drawing3DActivity extends AppCompatActivity {
         btnModeToggle = findViewById(R.id.btnModeToggle);
 
         ImageButton btnBack = findViewById(R.id.btnBack);
-        if (btnBack != null) btnBack.setOnClickListener(v -> finish());
+        if (btnBack != null) btnBack.setOnClickListener(v -> confirmExit());
+
+        // The hardware / gesture back button must ask too, or the toolbar arrow is the only safe way
+        // out and every other exit silently destroys the drawing.
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override public void handleOnBackPressed() { confirmExit(); }
+        });
 
         // Reopen a saved 3D drawing, OR build an extruded solid from the 2D editor, OR seed a sample.
         String load3d = getIntent().getStringExtra("LOAD_3D_DATA");
         float[] ex = getIntent().getFloatArrayExtra("EXTRUDE_X");
         float[] ez = getIntent().getFloatArrayExtra("EXTRUDE_Z");
         float eh = getIntent().getFloatExtra("EXTRUDE_H", 0f);
+        boolean extruded = false;
         if (load3d != null && !load3d.isEmpty()) {
             canvas3D.loadFromJson(load3d);
             editId = getIntent().getStringExtra("EDIT_ID");
         } else if (ex != null && ez != null && ex.length >= 3 && ex.length == ez.length && eh > 0) {
             canvas3D.extrudeProfileToSolid(ex, ez, -eh / 2f, eh); // real vertices (a rectangle → 8 points)
+            extruded = true;
         } else {
             seedSample();
         }
@@ -144,6 +165,31 @@ public class Drawing3DActivity extends AppCompatActivity {
 
         setTool(TOOL_INSPECT);
         canvas3D.initHistory(); // baseline for undo/redo
+
+        // Baseline for "has anything changed?". An extruded solid is new, unsaved work, so it stays
+        // null and leaving always asks. A reopened drawing and the seeded sample are both already
+        // "as saved", so backing straight out of them asks nothing.
+        savedSnapshot = extruded ? null : canvas3D.toJson();
+    }
+
+    /** True when there is work on screen that would be destroyed by leaving. */
+    private boolean hasUnsavedWork() {
+        if (canvas3D.isEmpty()) return false;
+        return savedSnapshot == null || !savedSnapshot.equals(canvas3D.toJson());
+    }
+
+    private void confirmExit() {
+        if (!hasUnsavedWork()) {
+            finish();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.save_drawing) + "?")
+                .setMessage(getString(R.string.msg_confirm_exit))
+                .setPositiveButton(getString(R.string.save), (d, w) -> promptForSave())
+                .setNegativeButton(getString(R.string.dont_save), (d, w) -> finish())
+                .setNeutralButton(getString(R.string.cancel), null) // stay in the editor
+                .show();
     }
 
     private void seedSample() {
@@ -304,19 +350,23 @@ public class Drawing3DActivity extends AppCompatActivity {
             } else {
                 db.addDrawingWithDate(user, name, data, date);
             }
-            if (!user.startsWith("GuestUser")) {
-                String cloudKey = date.replaceAll("[^a-zA-Z0-9]", "");
+            com.google.firebase.database.DatabaseReference userRef = FirebaseManager.getUserRef();
+            if (userRef != null && !user.startsWith("GuestUser")) {
                 HashMap<String, Object> map = new HashMap<>();
                 map.put("title", name);
                 map.put("data", data);
                 map.put("date", date);
                 final String u = user;
-                FirebaseManager.getUserRef(user).child("drawings").child(cloudKey).setValue(map)
-                        .addOnSuccessListener(x -> db.markDrawingSynced(u, date));
+                userRef.child("drawings").child(CloudSyncManager.cloudKey(date)).setValue(map)
+                        .addOnSuccessListener(x -> db.markDrawingSynced(u, date))
+                        .addOnFailureListener(e -> toast(getString(R.string.history_backup_broken)));
             }
+            savedSnapshot = data; // this scene is now on disk — leaving it has nothing to lose
             toast(getString(R.string.save) + " ✓");
             finish();
         } catch (Exception e) {
+            // The save FAILED, so savedSnapshot is deliberately left alone: the work is still
+            // unsaved, and confirmExit() must keep saying so rather than let it be dropped.
             toast("Save failed: " + e.getMessage());
         }
     }

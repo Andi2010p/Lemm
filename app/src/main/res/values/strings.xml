@@ -228,6 +228,22 @@
     <string name="help_watch_guide">Watch the guide</string>
     <string name="history_weak_internet">Weak or no internet connection. Showing your saved data — it will sync when you reconnect.</string>
     <string name="history_sync_failed">Couldn\'t sync with the cloud right now. Showing your saved data.</string>
+    <string name="history_backup_broken">⚠️ Cloud backup is not working — your work is saved on this device ONLY, and will be lost if you uninstall the app. Please report this.</string>
+
+    <!-- Cloud status line on the History screen. An empty list means either "nothing saved yet" or
+         "your work is gone", and the user cannot tell which. These say which. -->
+    <string name="cloud_restoring">☁️ Restoring your work from your account…</string>
+    <string name="cloud_backed_up">☁️ Backed up to your account — safe if you change or reinstall your phone.</string>
+    <string name="cloud_nothing_yet">☁️ Nothing saved yet. Anything you solve or draw is backed up to your account automatically.</string>
+    <string name="cloud_device_only">⚠️ Saved on this device only. Sign in to back your work up — otherwise it is lost if you uninstall the app.</string>
+    <plurals name="cloud_restored_solutions">
+        <item quantity="one">☁️ Restored %1$d solution from your account.</item>
+        <item quantity="other">☁️ Restored %1$d solutions from your account.</item>
+    </plurals>
+    <plurals name="cloud_restored_drawings">
+        <item quantity="one">☁️ Restored %1$d drawing from your account.</item>
+        <item quantity="other">☁️ Restored %1$d drawings from your account.</item>
+    </plurals>
     <string name="help_title">How to use this screen</string>
 
     <string name="help_3d_body">3D Sketch Editor — pick a tool, then tap the figure.\n\n• Select — tap a point, line, midpoint, angle or face to see its details (length, coordinates…).\n• Draw — tap the grid to drop points and join them by hand; tap the first point to close a face.\n• Dim — show or hide the length on each edge.\n• Angle — tap a corner point, then the two arm points, to mark an angle with its value.\n• Finish — end the current sketch.\n• + Point — add a point by typing its X, Y, Z.\n• + Line — connect two existing points.\n• Extrude — turn a closed shape into a 3D solid (a rectangle becomes a box with 8 points).\n• Delete — remove the selected element. Clear — empty the canvas.\n• Save — save your 3D drawing to History.\n• Undo / Redo — step back or forward.\n• Rotate/Pan — orbit or move the view; Reset re-centres it; +/− zoom.</string>
@@ -1133,6 +1149,34 @@
     <string name="plans_hero_sub">Lemma draws your problem, then teaches you why. Pick the plan that fits.</string>
     <string name="plans_problems_left">problems left this month</string>
     <string name="plans_problems_left_today">problems left today</string>
+    <!-- "Why would I pay for this when Gemini is free?" — answered where the user decides. -->
+    <string name="why_title">Why not just use a chatbot?</string>
+    <string name="why_headline">A chatbot describes the figure.\nLemma draws it.</string>
+    <string name="why_sub">Ask a general AI a geometry question and you get paragraphs of text — and you still can\'t see the shape. That is the whole reason Lemma exists.</string>
+    <string name="why_col_ai">Chatbot</string>
+    <string name="why_col_lemma">Lemma</string>
+    <string name="why_footer">The AI is only the engine. What you are paying for is the figure, the theorem library and the classroom — not the chat.</string>
+    <string name="why_a11y_both">%1$s: both a chatbot and Lemma</string>
+    <string name="why_a11y_lemma_only">%1$s: Lemma only — a chatbot cannot do this</string>
+
+    <!-- Things a general chatbot genuinely does too. Listed first, on purpose: the comparison is
+         only believable if it is fair. -->
+    <string-array name="why_both">
+        <item>Answers a geometry question</item>
+    </string-array>
+
+    <!-- Things it cannot do. -->
+    <string-array name="why_only_lemma">
+        <item>Draws the real figure — not a description of it</item>
+        <item>Rotate, zoom and tap the figure in 3D</item>
+        <item>Tap any theorem it used → its proof and a quiz</item>
+        <item>Built on the grades 7–12 geometry curriculum</item>
+        <item>Full Armenian, not machine-translated</item>
+        <item>Saves your work and syncs it to every device</item>
+        <item>Send a solved problem to a friend or your class</item>
+        <item>A teacher can run a whole class on it</item>
+    </string-array>
+
     <string name="plans_how_it_works">How it works</string>
     <string name="plans_chain_money">You pay</string>
     <string name="plans_chain_credits">You get credits</string>

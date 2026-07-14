@@ -52,6 +52,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -69,6 +70,7 @@ public class HistoryActivity extends AppCompatActivity {
 
     private DatabaseReference cloudRef;
     private ValueEventListener cloudListener;
+    private TextView tvCloudStatus;
 
     // Serializes all DB writes/reads off the UI thread so the cloud merge never freezes the list.
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
@@ -85,14 +87,21 @@ public class HistoryActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         currentUsername = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("username", "GuestUser");
 
-        // Push local history up to the cloud (real accounts only; guests don't sync).
-        if (!currentUsername.startsWith("GuestUser")) {
-            CloudSyncManager.syncLocalToCloud(dbHelper, currentUsername);
-        }
+        // Push local history up to the cloud (real accounts only; guests don't sync). If the backup
+        // is refused, SAY SO — a backup nobody knows is broken is worse than no backup.
+        CloudSyncManager.syncLocalToCloud(dbHelper, currentUsername, new CloudSyncManager.SyncCallback() {
+            @Override public void onSynced(int pushed) { }
+            @Override public void onFailed(String reason) {
+                if ("guest".equals(reason) || "signed-out".equals(reason)) return; // expected, not an error
+                runOnUiThread(() -> Toast.makeText(HistoryActivity.this,
+                        R.string.history_backup_broken, Toast.LENGTH_LONG).show());
+            }
+        });
 
         rvHistory = findViewById(R.id.rvHistory);
         btnShowSolutions = findViewById(R.id.btnShowSolutions);
         btnShowDrawings = findViewById(R.id.btnShowDrawings);
+        tvCloudStatus = findViewById(R.id.tvCloudStatus);
 
         View backBtn = findViewById(R.id.btnBack);
         if (backBtn != null) backBtn.setOnClickListener(v -> finish());
@@ -174,14 +183,18 @@ public class HistoryActivity extends AppCompatActivity {
             cloudRef.removeEventListener(cloudListener);
         }
 
-        // Guests don't use cloud sync
-        if (currentUsername.startsWith("GuestUser")) {
+        // Guests and the local-only Admin account have no cloud node at all. Say so plainly — this
+        // is the account whose work an uninstall really does destroy.
+        cloudRef = cloudNode(showingSolutions);
+        if (cloudRef == null) {
+            showCloudStatus(getString(R.string.cloud_device_only), true);
             loadLocalHistoryOnly();
             return;
         }
 
-        String node = showingSolutions ? "history" : "drawings";
-        cloudRef = FirebaseManager.getUserRef(currentUsername).child(node);
+        // We are about to go and fetch their work. Say that, instead of showing an empty list and
+        // letting them conclude it is gone.
+        showCloudStatus(getString(R.string.cloud_restoring), false);
 
         cloudListener = new ValueEventListener() {
             @Override
@@ -190,12 +203,18 @@ public class HistoryActivity extends AppCompatActivity {
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                int msg = NetworkUtil.isOnline(HistoryActivity.this)
-                        ? R.string.history_sync_failed
-                        : R.string.history_weak_internet;
+                // The server REFUSED to hand over this user's own history. That is not a transient
+                // network blip and must not be dressed up as one: silently falling back to an empty
+                // local database is exactly how a reinstall looked like "my solutions are gone".
+                boolean denied = error.getCode() == DatabaseError.PERMISSION_DENIED;
+                int msg = denied ? R.string.history_backup_broken
+                        : NetworkUtil.isOnline(HistoryActivity.this)
+                                ? R.string.history_sync_failed
+                                : R.string.history_weak_internet;
+                showCloudStatus(getString(msg), true);
                 Toast.makeText(HistoryActivity.this, msg, Toast.LENGTH_LONG).show();
-                Log.e("FirebaseSync", "Cloud sync failed: " + error.getMessage());
-                loadLocalHistoryOnly(); // Fallback to offline
+                Log.e("FirebaseSync", "Cloud read refused (" + error.getCode() + "): " + error.getMessage());
+                loadLocalHistoryOnly(); // show whatever is on the device
             }
         };
         cloudRef.addValueEventListener(cloudListener);
@@ -246,6 +265,19 @@ public class HistoryActivity extends AppCompatActivity {
         // freeze), then reload the list off-thread and hand the finished result to the UI.
         final String table = solutions ? "history" : "drawings";
         ioExecutor.execute(() -> {
+            // What was already on this device BEFORE the cloud answered. Anything the cloud has that
+            // this set does not is something we are genuinely restoring — which is the number the
+            // user actually cares about after a reinstall.
+            final Set<String> alreadyHere = new HashSet<>();
+            for (GenericItem g : queryLocalHistory(solutions)) {
+                if (g.date != null) alreadyHere.add(g.date);
+            }
+            int restoredCount = 0;
+            for (ContentValues v : rows) {
+                if (!alreadyHere.contains(v.getAsString("date"))) restoredCount++;
+            }
+            final int restored = restoredCount;
+
             try {
                 android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
                 db.beginTransaction();
@@ -269,8 +301,31 @@ public class HistoryActivity extends AppCompatActivity {
                 displayList.clear();
                 displayList.addAll(fresh);
                 adapter.notifyDataSetChanged();
+
+                if (restored > 0) {
+                    // The reinstall case. This is the message that tells them their work came back.
+                    showCloudStatus(getResources().getQuantityString(
+                            solutions ? R.plurals.cloud_restored_solutions : R.plurals.cloud_restored_drawings,
+                            restored, restored), false);
+                } else if (fresh.isEmpty()) {
+                    showCloudStatus(getString(R.string.cloud_nothing_yet), false);
+                } else {
+                    showCloudStatus(getString(R.string.cloud_backed_up), false);
+                }
             });
         });
+    }
+
+    /**
+     * The one line on this screen that explains an empty list. Without it, "you have not saved
+     * anything yet" and "your backup is broken and your work is gone" look identical.
+     */
+    private void showCloudStatus(String text, boolean warn) {
+        if (tvCloudStatus == null) return;
+        tvCloudStatus.setText(text);
+        tvCloudStatus.setVisibility(View.VISIBLE);
+        tvCloudStatus.setTextColor(ContextCompat.getColor(this,
+                warn ? R.color.error_red : R.color.text_sub));
     }
     private void showRenameDialog(GenericItem item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -292,11 +347,9 @@ public class HistoryActivity extends AppCompatActivity {
                 else dbHelper.renameDrawing(id, newName);
 
                 // Push rename to cloud immediately
-                if (!currentUsername.startsWith("GuestUser")) {
-                    String cloudKey = item.date.replaceAll("[^a-zA-Z0-9]", "");
-                    FirebaseManager.getUserRef(currentUsername)
-                            .child(showingSolutions ? "history" : "drawings")
-                            .child(cloudKey).child("title").setValue(newName);
+                DatabaseReference ref = cloudNode(showingSolutions);
+                if (ref != null) {
+                    ref.child(CloudSyncManager.cloudKey(item.date)).child("title").setValue(newName);
                 }
 
                 Toast.makeText(this, "Renamed successfully", Toast.LENGTH_SHORT).show();
@@ -316,10 +369,8 @@ public class HistoryActivity extends AppCompatActivity {
                     else dbHelper.deleteDrawing(id);
 
                     // Push deletion to cloud immediately
-                    if (!currentUsername.startsWith("GuestUser")) {
-                        String cloudKey = item.date.replaceAll("[^a-zA-Z0-9]", "");
-                        FirebaseManager.getUserRef(currentUsername).child(showingSolutions ? "history" : "drawings").child(cloudKey).removeValue();
-                    }
+                    DatabaseReference ref = cloudNode(showingSolutions);
+                    if (ref != null) ref.child(CloudSyncManager.cloudKey(item.date)).removeValue();
 
                     Toast.makeText(HistoryActivity.this, getString(R.string.deleted_toast), Toast.LENGTH_SHORT).show();
                     loadLocalHistoryOnly(); // Refresh screen
@@ -400,9 +451,9 @@ public class HistoryActivity extends AppCompatActivity {
             int id = Integer.parseInt(item.id);
             if (solutions) dbHelper.deleteHistory(id); else dbHelper.deleteDrawing(id);
         } catch (Exception ignored) {}
-        if (!currentUsername.startsWith("GuestUser") && item.date != null) {
-            String cloudKey = item.date.replaceAll("[^a-zA-Z0-9]", "");
-            FirebaseManager.getUserRef(currentUsername).child(solutions ? "history" : "drawings").child(cloudKey).removeValue();
+        DatabaseReference ref = cloudNode(solutions);
+        if (ref != null && item.date != null) {
+            ref.child(CloudSyncManager.cloudKey(item.date)).removeValue();
         }
     }
 
@@ -412,16 +463,27 @@ public class HistoryActivity extends AppCompatActivity {
         } else {
             dbHelper.addDrawingWithDate(currentUsername, item.title, item.data, item.date);
         }
-        if (!currentUsername.startsWith("GuestUser") && item.date != null) {
+        DatabaseReference ref = cloudNode(solutions);
+        if (ref != null && item.date != null) {
             HashMap<String, Object> map = new HashMap<>();
             map.put("title", item.title);
             map.put("date", item.date);
             if (solutions) { map.put("problem", item.subtext); map.put("raw_response", item.data); }
             else { map.put("data", item.data); }
-            String cloudKey = item.date.replaceAll("[^a-zA-Z0-9]", "");
-            FirebaseManager.getUserRef(currentUsername).child(solutions ? "history" : "drawings").child(cloudKey).setValue(map);
+            ref.child(CloudSyncManager.cloudKey(item.date)).setValue(map);
         }
         loadLocalHistoryOnly();
+    }
+
+    /**
+     * {@code users/{uid}/history} or {@code .../drawings}, or {@code null} when this account has no
+     * cloud identity (a guest, or the local-only Admin account). Callers must treat null as
+     * "device-only" — never fall back to a path the server will reject.
+     */
+    private DatabaseReference cloudNode(boolean solutions) {
+        DatabaseReference root = FirebaseManager.getUserRef();
+        if (root == null) return null;
+        return root.child(solutions ? "history" : "drawings");
     }
 
     private void openItem(GenericItem item) {

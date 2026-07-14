@@ -1815,17 +1815,18 @@ public class GeometryInputActivity extends AppCompatActivity {
                 }
 
                 // 2. Direct Write to Cloud Database
-                if (!user.startsWith("GuestUser")) {
+                com.google.firebase.database.DatabaseReference userRef = FirebaseManager.getUserRef();
+                if (userRef != null && !user.startsWith("GuestUser")) {
                     HashMap<String, Object> map = new HashMap<>();
                     map.put("title", title);
                     map.put("problem", prob);
                     map.put("raw_response", lastAIResponse);
                     map.put("date", date);
 
-                    FirebaseManager.getUserRef(user).child("history").child(cloudKey).setValue(map)
+                    userRef.child("history").child(cloudKey).setValue(map)
                             .addOnSuccessListener(x -> dbHelper.markHistorySynced(user, date))
                             .addOnFailureListener(e -> Toast.makeText(GeometryInputActivity.this,
-                                    "Saved locally. Couldn't sync to cloud — please check your Wi-Fi connection.",
+                                    getString(R.string.history_backup_broken),
                                     Toast.LENGTH_LONG).show());
                 }
 
