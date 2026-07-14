@@ -1205,4 +1205,28 @@
     <string name="settings_style">Հավելվածի ոճ</string>
     <string name="style_glass">Ապակի</string>
     <string name="style_basic">Հիմնական</string>
+
+    <!-- Պրոֆիլ՝ դեր, դասարան, դպրոց -->
+    <string name="setup_title_first">Պատմեք ձեր մասին</string>
+    <string name="setup_title_edit">Խմբագրել տվյալները</string>
+    <string name="setup_name_label">Ձեր անունը (ըստ ցանկության)</string>
+    <string name="setup_name_hint">Ինչպես ընկերները ձեզ կտեսնեն</string>
+    <string name="setup_role_label">Դուք…</string>
+    <string name="setup_grade_label">Դասարան</string>
+    <string name="setup_grade_none">Նշված չէ</string>
+    <string name="setup_school_label">Դպրոց (ըստ ցանկության)</string>
+    <string name="setup_school_hint">օր.՝ Երևանի թիվ 42 դպրոց</string>
+    <string name="setup_school_why">Այսպես ձեզ կգտնեն դասընկերները: Գրեք այնպես, ինչպես նրանք կգրեին: Կարող եք ջնջել ցանկացած պահի:</string>
+    <string name="role_student">Աշակերտ</string>
+    <string name="role_teacher">Ուսուցիչ</string>
+    <string name="grade_n">%1$d-րդ դասարան</string>
+    <string name="profile_edit_details">Խմբագրել</string>
+    <string name="profile_no_details">Նշեք դասարանն ու դպրոցը, որ դասընկերները ձեզ գտնեն</string>
+
+    <!-- Ընկերների որոնում -->
+    <string name="suggest_classmates">Ձեր դպրոցից</string>
+    <string name="invite_friends">Հրավիրել ընկերոջ</string>
+    <string name="invite_text">Ավելացրու ինձ Lemma-ում — իմ օգտանունը %1$s է: Այն լուծում է երկրաչափության խնդիրներ և գծում է գծագիրը՝ %2$s</string>
+    <string name="time_yesterday">Երեկ %1$s</string>
+    <string name="terms_of_service">Օգտագործման պայմաններ</string>
 </resources>

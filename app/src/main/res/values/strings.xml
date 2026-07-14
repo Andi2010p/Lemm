@@ -1210,4 +1210,28 @@
     <string name="settings_style">App style</string>
     <string name="style_glass">Glass</string>
     <string name="style_basic">Basic</string>
+
+    <!-- Profile: role, grade, school -->
+    <string name="setup_title_first">Tell us about you</string>
+    <string name="setup_title_edit">Edit your details</string>
+    <string name="setup_name_label">Your name (optional)</string>
+    <string name="setup_name_hint">How friends will see you</string>
+    <string name="setup_role_label">You are a…</string>
+    <string name="setup_grade_label">Grade</string>
+    <string name="setup_grade_none">Not set</string>
+    <string name="setup_school_label">School (optional)</string>
+    <string name="setup_school_hint">e.g. Yerevan School 42</string>
+    <string name="setup_school_why">This is how your classmates find you. Type it the same way they would. You can clear it any time.</string>
+    <string name="role_student">Student</string>
+    <string name="role_teacher">Teacher</string>
+    <string name="grade_n">Grade %1$d</string>
+    <string name="profile_edit_details">Edit details</string>
+    <string name="profile_no_details">Add your grade and school so classmates can find you</string>
+
+    <!-- Finding friends -->
+    <string name="suggest_classmates">People from your school</string>
+    <string name="invite_friends">Invite a friend</string>
+    <string name="invite_text">Add me on Lemma — my username is %1$s. It solves geometry problems and actually draws the figure: %2$s</string>
+    <string name="time_yesterday">Yesterday %1$s</string>
+    <string name="terms_of_service">Terms of Service</string>
 </resources>

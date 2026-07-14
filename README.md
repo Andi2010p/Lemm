@@ -40,7 +40,7 @@ combining an **AI geometry solver** with a **full CAD drawing editor** (2D and 3
 - **Firebase Realtime Database** sync with offline support and background sync.
 
 ### Onboarding
-- An animated, kid‑friendly how‑to guide on first launch (Next / Back / Skip with confirm),
+- An animated, student‑friendly how‑to guide on first launch (Next / Back / Skip with confirm),
   replayable from Settings.
 
 ### Accounts

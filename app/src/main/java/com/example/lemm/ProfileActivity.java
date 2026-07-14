@@ -17,6 +17,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,6 +74,14 @@ public class ProfileActivity extends AppCompatActivity {
         // NOTE: setupUserData() is no longer here! It is now inside onResume below.
 
         btnBack.setOnClickListener(v -> finish());
+
+        // Who you are: student/teacher, grade, school. Editing it re-publishes the searchable
+        // directory row, so classmates start seeing you (or stop, if you clear your school).
+        View btnEditProfile = findViewById(R.id.btnEditProfile);
+        if (btnEditProfile != null) {
+            btnEditProfile.setOnClickListener(v ->
+                    ProfileSetup.show(this, false, this::showProfileFields));
+        }
 
         cardProfileAvatar.setOnClickListener(v -> showImageSourceDialog());
 
@@ -274,6 +283,8 @@ public class ProfileActivity extends AppCompatActivity {
         TextView tvEmail = findViewById(R.id.tvProfileEmail);
         TextView tvTier = findViewById(R.id.tvProfileTier);
 
+        showProfileFields();
+
         String email = "No Email Provided";
         com.google.firebase.auth.FirebaseUser fbUser = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
 
@@ -458,6 +469,14 @@ public class ProfileActivity extends AppCompatActivity {
      * server denied, because nothing had claimed the new name. The cloud copy of the user's history
      * and drawings was destroyed and never rewritten. Claim first, and abort if the name is taken.
      */
+    /** Renders "Grade 9 · Yerevan School 42" (or the teacher equivalent) under the username. */
+    private void showProfileFields() {
+        TextView tv = findViewById(R.id.tvProfileRole);
+        if (tv == null) return;
+        String sub = UserProfile.mine(this).subtitle(this);
+        tv.setText(sub.isEmpty() ? getString(R.string.profile_no_details) : sub);
+    }
+
     private void applyUsernameChange(String oldName, String newName) {
         Social.claimUsername(newName, owned -> {
             if (isFinishing() || isDestroyed()) return;

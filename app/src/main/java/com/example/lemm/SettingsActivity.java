@@ -33,8 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
-    /** Must stay in sync with the URL entered in the Play Console listing. Source: docs/privacy.html */
+    /** Must stay in sync with the URL entered in the Play Console listing. Source: /privacy.html */
     private static final String PRIVACY_POLICY_URL = "https://andi2010p.github.io/Lemm/privacy.html";
+    private static final String TERMS_URL = "https://andi2010p.github.io/Lemm/terms.html";
 
     private int proTapCount = 0;
     private String currentLang;
@@ -146,6 +147,10 @@ public class SettingsActivity extends AppCompatActivity {
         View btnPrivacy = findViewById(R.id.btnPrivacy);
         if (btnPrivacy != null) btnPrivacy.setOnClickListener(v ->
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL))));
+
+        View btnTerms = findViewById(R.id.btnTerms);
+        if (btnTerms != null) btnTerms.setOnClickListener(v ->
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(TERMS_URL))));
 
         findViewById(R.id.btnHowToUse).setOnClickListener(v ->
                 startActivity(new Intent(this, OnboardingActivity.class)));
@@ -390,7 +395,7 @@ public class SettingsActivity extends AppCompatActivity {
         if (btnBuyTokens != null) btnBuyTokens.setVisibility(plus ? View.VISIBLE : View.GONE);
     }
 
-    /** Kid-friendly explainer of what tokens are and how money buys them. */
+    /** Plain-language explainer of what credits are and how money buys them. */
     private void showTokensInfoDialog() {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.tokens_what_title)

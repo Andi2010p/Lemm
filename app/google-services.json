@@ -15,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "459186735300-3vulcoh9ga3djvg4t1lgmg4u1ej6fq2v.apps.googleusercontent.com",
+          "client_id": "459186735300-n9d4secum9l7lhmukhok28foqf0a1277.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.lemm",
-            "certificate_hash": "ba244c2315b42908add1c7b9e47ac9640a606181"
+            "certificate_hash": "9dfa9a4a0fecb67ae622f10110456e55841b19e9"
           }
         },
         {

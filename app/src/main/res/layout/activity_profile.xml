@@ -116,6 +116,23 @@
                         android:background="#E8F5E9"/>
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- "Grade 9 · Yerevan School 42" — what makes you findable by classmates. -->
+                <TextView
+                    android:id="@+id/tvProfileRole"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_subtitle" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEditProfile"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/profile_edit_details" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
         <!-- Stats Card -->

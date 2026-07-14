@@ -1205,4 +1205,28 @@
     <string name="settings_style">Стиль приложения</string>
     <string name="style_glass">Стекло</string>
     <string name="style_basic">Обычный</string>
+
+    <!-- Профиль: роль, класс, школа -->
+    <string name="setup_title_first">Расскажите о себе</string>
+    <string name="setup_title_edit">Изменить данные</string>
+    <string name="setup_name_label">Ваше имя (необязательно)</string>
+    <string name="setup_name_hint">Как вас увидят друзья</string>
+    <string name="setup_role_label">Вы…</string>
+    <string name="setup_grade_label">Класс</string>
+    <string name="setup_grade_none">Не указан</string>
+    <string name="setup_school_label">Школа (необязательно)</string>
+    <string name="setup_school_hint">напр. Ереванская школа 42</string>
+    <string name="setup_school_why">Так вас найдут одноклассники. Напишите так же, как написали бы они. Можно очистить в любой момент.</string>
+    <string name="role_student">Ученик</string>
+    <string name="role_teacher">Учитель</string>
+    <string name="grade_n">%1$d класс</string>
+    <string name="profile_edit_details">Изменить данные</string>
+    <string name="profile_no_details">Укажите класс и школу, чтобы одноклассники вас нашли</string>
+
+    <!-- Поиск друзей -->
+    <string name="suggest_classmates">Из вашей школы</string>
+    <string name="invite_friends">Пригласить друга</string>
+    <string name="invite_text">Добавь меня в Lemma — мой ник %1$s. Приложение решает задачи по геометрии и рисует чертёж: %2$s</string>
+    <string name="time_yesterday">Вчера %1$s</string>
+    <string name="terms_of_service">Условия использования</string>
 </resources>

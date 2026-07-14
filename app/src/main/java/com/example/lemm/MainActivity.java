@@ -175,6 +175,15 @@ public class MainActivity extends AppCompatActivity {
         // refuses to push, so a fresh install can't overwrite purchased tokens with its local zero.
         TokenWallet.syncFromCloud(this, null);
 
+        // Ask who they are — once. Wiring it HERE rather than in each sign-up screen covers every
+        // path at once: email registration, Google sign-up, and users who signed up before this
+        // existed. Pull from the cloud first, so a user who set it up on another phone isn't asked
+        // the same questions again.
+        UserProfile.syncFromCloud(this, () -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (UserProfile.needsSetup(this)) ProfileSetup.show(this, true, null);
+        });
+
         // Keep this account findable by username, and claim the name that proves we own our cloud
         // history. If another account already holds it, this account's work will NOT sync — say so.
         Social.publishDirectoryEntry(this, () -> {
