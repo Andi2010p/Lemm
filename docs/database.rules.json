@@ -1,0 +1,327 @@
+// Lemma - Firebase Realtime Database security rules.  (v2 - backend-owned)
+//
+// Paste into: Firebase console -> Realtime Database -> Rules -> Publish.
+// Firebase's rules parser accepts // comments, so this file can be pasted as-is.
+//
+// These rules are EXECUTED as tests, not merely believed:
+//     cd tools/rules-tests && npm test
+//
+// ============================ READ THIS BEFORE PUBLISHING ============================
+// 1. Deploy the Cloud Functions FIRST (`firebase deploy --only functions`). Several nodes below
+//    are now server-only, so an app talking to a project without the functions will fail to
+//    accept friends, create groups, or claim a username.
+// 2. Run `node tools/backfill-usernames.js --apply` so every existing user owns their claim.
+//    Until then their `users/{name}` history node is unreachable by anyone, themselves included.
+// 3. THEN publish these rules.
+//
+// WHAT CHANGED IN v2, AND WHY
+// ---------------------------
+// `usernames`, `friends`, `groups`, `user_groups`, `entitlements`, `wallet` and `families` are now
+// `.write: false` for every client. They are written exclusively by the Cloud Functions, which use
+// the Admin SDK and bypass rules by design.
+//
+// This is not tidiness. Rules can check *who you are*; they cannot check *whether someone agreed*.
+// Two holes proved that, and both were reproduced in tools/rules-tests before being closed:
+//   - a stranger could write `friends/{victim}/{stranger}` and appear in a victim's friend list;
+//   - anyone could claim an unclaimed username and thereby seize that user's entire history node.
+// Consent, member counts, and money all require reading state the rules cannot reach. So the server
+// owns them.
+// ====================================================================================
+
+{
+  "rules": {
+
+    // ---------------------------------------------------------------------------
+    // PRIVATE. Holds the user's own AI API keys (ai_keys) and their username.
+    // Owner-only. NEVER make this readable by other users - username search must use
+    // users_public instead.
+    // ---------------------------------------------------------------------------
+    "users_info": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": "auth != null && $uid === auth.uid"
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // PUBLIC directory: the searchable profile. This is how people find each other.
+    //
+    // Deliberately NON-SENSITIVE: no age, no address, no real name required. School is optional and
+    // the user can clear it at any time. Nothing private (API keys, purchases) lives here — that is
+    // users_info, which is owner-only.
+    // ---------------------------------------------------------------------------
+    "users_public": {
+      ".read": "auth != null",
+      ".indexOn": ["usernameLower", "schoolLower"],
+      "$uid": {
+        ".write": "auth != null && $uid === auth.uid",
+        "username":      { ".validate": "newData.isString() && newData.val().length <= 64" },
+        "usernameLower": { ".validate": "newData.isString() && newData.val().length <= 64" },
+
+        // Profile fields. Username search alone was useless in practice — you could only find
+        // someone if you already knew the exact name they picked. School + grade are what let
+        // classmates be suggested to each other.
+        "displayName": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "role":        { ".validate": "newData.val() === 'student' || newData.val() === 'teacher'" },
+        "grade":       { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 12" },
+        "school":      { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "schoolLower": { ".validate": "newData.isString() && newData.val().length <= 80" },
+
+        // Anything not listed above is rejected — a client cannot invent fields here.
+        "$other": { ".validate": false }
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // Claim table: usernames/{sanitizedUsername} = uid. SERVER-ONLY (claimUsername function).
+    //
+    // When clients could write here, anyone could enumerate `users_public`, find a user who had not
+    // yet claimed their own name, claim it, and take ownership of that user's `users/{name}` node -
+    // reading, defacing or deleting their entire history, and locking the owner out permanently.
+    // ---------------------------------------------------------------------------
+    "usernames": {
+      ".read": false,
+      ".write": false
+    },
+
+    // ---------------------------------------------------------------------------
+    // Saved solutions + drawings. KEYED BY UID.
+    //
+    // This node used to be keyed by sanitized username, and ownership was proven through the
+    // `usernames/` claim table above. That table is server-only, the backend was not deployed, so it
+    // was EMPTY — which meant nobody could prove they owned anything, and every read and write of
+    // every user's own history was denied. The app logged the rejection and carried on, so the only
+    // copy of a user's work was the local SQLite file. Uninstalling the app destroyed it.
+    //
+    // `$uid === auth.uid` proves itself from the request alone: no table, no backend, no round-trip,
+    // nothing to deploy, nothing to go stale. It is also rename-safe — changing your username no
+    // longer moves your data.
+    //
+    // The legacy branch is kept so a user who DOES hold a claim (i.e. anyone migrated by
+    // tools/backfill-usernames.js) can still reach their old node until
+    // tools/migrate-history-to-uid.js has moved it.
+    // ---------------------------------------------------------------------------
+    "users": {
+      "$key": {
+        ".read":  "auth != null && ($key === auth.uid || root.child('usernames').child($key).val() === auth.uid)",
+        ".write": "auth != null && ($key === auth.uid || root.child('usernames').child($key).val() === auth.uid)"
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // Friend graph. Edges are SERVER-ONLY: an edge means "both people agreed", and only
+    // acceptFriendRequest() can know that. Requests stay client-writable because the rules CAN
+    // prove the sender is who they say they are, and that the recipient hasn't blocked them.
+    // ---------------------------------------------------------------------------
+    "friends": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": false
+      }
+    },
+    
+
+    "friend_requests": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        "$from": {
+          // A sender may only create the entry keyed by their OWN uid (no spoofing).
+          // The recipient may delete it (decline). Accepting goes through the function.
+          // A user the recipient has BLOCKED cannot send them a request at all.
+          ".write": "auth != null && (auth.uid === $from || auth.uid === $uid) && !root.child('blocked').child($uid).child(auth.uid).exists()",
+          ".validate": "newData.isString() && newData.val().length <= 64"
+        }
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // blocked/{me}/{peerUid} = peerUsername. My own list, so I may write it. The rules for `dm`
+    // and `friend_requests` read it server-side, so a block is ENFORCED, not merely hidden.
+    // ---------------------------------------------------------------------------
+    "blocked": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        "$blockedUid": {
+          ".write": "auth != null && $uid === auth.uid",
+          ".validate": "newData.isString() && newData.val().length <= 64"
+        }
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // Groups: SERVER-ONLY.
+    //
+    // Realtime Database rules cannot count children (there is no numChildren(); that is Firestore's
+    // size()), and they cannot ask "is this person a friend of the caller". So the 2..40 cap and the
+    // consent check both live in createGroup()/addToGroup(), where membership is counted for real.
+    // ---------------------------------------------------------------------------
+    "groups": {
+      "$gid": {
+        ".read":  "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": false
+      }
+    },
+
+    "user_groups": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": false
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // Direct messages. chatId is the two uids sorted and joined, so membership is
+    // provable from the key alone - no chat index needs to be stored anywhere.
+    //
+    // .write lives on $msgId, NOT on $chatId: a granted .write on an ancestor cannot be
+    // revoked by a descendant, so putting it here is what makes messages APPEND-ONLY
+    // (`!data.exists()` blocks editing and deleting someone's words after the fact).
+    //
+    // Blocking is enforced here, not just in the UI. The peer's uid is recovered from the key:
+    // chatId "A_B" with auth.uid = A  ->  replace(A,'') = "_B"  ->  replace('_','') = "B".
+    // If that peer has blocked me, the write is denied by the server.
+    // ---------------------------------------------------------------------------
+    "dm": {
+      "$chatId": {
+        ".read": "auth != null && $chatId.contains(auth.uid)",
+        "$msgId": {
+          ".write": "auth != null && $chatId.contains(auth.uid) && !data.exists() && !root.child('blocked').child($chatId.replace(auth.uid, '').replace('_', '')).child(auth.uid).exists()",
+          ".validate": "newData.hasChildren(['from', 'type', 'ts'])",
+          "from":     { ".validate": "newData.val() === auth.uid" },
+          "fromName": { ".validate": "newData.isString() && newData.val().length <= 64" },
+          "type":     { ".validate": "newData.val() === 'text' || newData.val() === 'solution' || newData.val() === 'drawing'" },
+          "ts":       { ".validate": "newData.isNumber()" },
+          "text":     { ".validate": "newData.isString() && newData.val().length <= 4000" },
+          "title":    { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "problem":  { ".validate": "newData.isString() && newData.val().length <= 4000" },
+          "raw":      { ".validate": "newData.isString() && newData.val().length <= 200000" },
+          "data":     { ".validate": "newData.isString() && newData.val().length <= 300000" },
+          "$other":   { ".validate": false }
+        }
+      }
+    },
+
+    // Group messages. Same append-only shape; membership is looked up in `groups/`.
+    "gm": {
+      "$gid": {
+        ".read": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists()",
+        "$msgId": {
+          ".write": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists() && !data.exists()",
+          ".validate": "newData.hasChildren(['from', 'type', 'ts'])",
+          "from":     { ".validate": "newData.val() === auth.uid" },
+          "fromName": { ".validate": "newData.isString() && newData.val().length <= 64" },
+          "type":     { ".validate": "newData.val() === 'text' || newData.val() === 'solution' || newData.val() === 'drawing'" },
+          "ts":       { ".validate": "newData.isNumber()" },
+          "text":     { ".validate": "newData.isString() && newData.val().length <= 4000" },
+          "title":    { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "problem":  { ".validate": "newData.isString() && newData.val().length <= 4000" },
+          "raw":      { ".validate": "newData.isString() && newData.val().length <= 200000" },
+          "data":     { ".validate": "newData.isString() && newData.val().length <= 300000" },
+          "$other":   { ".validate": false }
+        }
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // MONEY. All server-only. A client that could write any of this could give itself a
+    // free subscription, so it cannot write any of it. It may read its own row, because the
+    // paywall has to render something.
+    // ---------------------------------------------------------------------------
+    "entitlements": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": false
+      }
+    },
+
+    "wallet": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": false
+      }
+    },
+
+    "usage": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": false
+      }
+    },
+
+    // Developer-facing cost roll-up, and the Play purchase-token ledger that prevents one
+    // purchase being redeemed by two accounts. Neither is any client's business.
+    "usage_totals": { ".read": false, ".write": false },
+    "play_tokens":  { ".read": false, ".write": false },
+    "otp":          { ".read": false, ".write": false },
+
+    // Collective plans. A seat-holder may see who is in their family; nobody may edit it.
+    "families": {
+      "$familyId": {
+        ".read":  "auth != null && (data.child('owner').val() === auth.uid || data.child('seats').child(auth.uid).exists())",
+        ".write": false
+      }
+    },
+
+    "family_of": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": false
+      }
+    },
+
+    "family_invites": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": false
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // AI tutor chat history. chat_history/{uid}/{sessionId} = one session serialised as a JSON
+    // string. Owner-only: a student's tutoring chats are private to their own account, and cannot be
+    // read or written by anyone else. Each session is capped so the tree can't be bloated.
+    // ---------------------------------------------------------------------------
+    "chat_history": {
+      "$uid": {
+        ".read":  "auth != null && $uid === auth.uid",
+        ".write": "auth != null && $uid === auth.uid",
+        "$sessionId": {
+          ".validate": "newData.isString() && newData.val().length <= 100000"
+        }
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // AI content reports (required by Google Play's AI-Generated Content policy).
+    // Users file them; nobody can read or alter them from a client. Read in the console.
+    // ---------------------------------------------------------------------------
+    "ai_reports": {
+      ".read": false,
+      "$reportId": {
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.hasChildren(['reason', 'content', 'ts'])",
+        "content": { ".validate": "newData.isString() && newData.val().length <= 4000" }
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // Reports about other USERS and their messages (Play's User Generated Content policy).
+    // Append-only, unreadable from any client, and a reporter cannot forge someone else's
+    // name onto a report. `content` is the plaintext the reporter actually saw.
+    // ---------------------------------------------------------------------------
+    "user_reports": {
+      ".read": false,
+      "$reportId": {
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.hasChildren(['reporter', 'reason', 'ts']) && newData.child('reporter').val() === auth.uid",
+        "content": { ".validate": "newData.isString() && newData.val().length <= 4000" }
+      }
+    },
+
+    // Deny anything not explicitly listed above.
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
