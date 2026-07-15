@@ -10,12 +10,15 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -29,6 +32,7 @@ public class LoginActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
 
     private static final int RC_SIGN_IN = 100;
+    private static final int RC_PLAY_SERVICES = 101;
     private GoogleSignInClient mGoogleSignInClient;
 
     @Override
@@ -202,10 +206,7 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
         // --- GOOGLE LOGIN ---
-        btnGoogleLogin.setOnClickListener(v -> {
-            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-            startActivityForResult(signInIntent, RC_SIGN_IN);
-        });
+        btnGoogleLogin.setOnClickListener(v -> startGoogleSignIn());
 
         tvSignUp.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, RegisterActivity.class)));
         tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
@@ -268,9 +269,38 @@ public class LoginActivity extends AppCompatActivity {
         builder.show();
     }
 
+    /**
+     * Launches Google Sign-In, but first verifies Google Play Services is present and current.
+     * A missing or outdated Play Services is the usual reason the button seems to "do nothing":
+     * the sign-in intent cancels instantly with no account chooser and no error. Surfacing it as a
+     * resolvable dialog (or a clear toast) turns a silent no-op into something the user can act on.
+     */
+    private void startGoogleSignIn() {
+        GoogleApiAvailability avail = GoogleApiAvailability.getInstance();
+        int status = avail.isGooglePlayServicesAvailable(this);
+        if (status != ConnectionResult.SUCCESS) {
+            android.util.Log.e("GoogleSignIn", "Google Play Services unavailable, status=" + status);
+            if (avail.isUserResolvableError(status)) {
+                android.app.Dialog d = avail.getErrorDialog(this, status, RC_PLAY_SERVICES);
+                if (d != null) d.show();
+            } else {
+                Toast.makeText(this, "This device has no usable Google Play Services, so Google Sign-In can't run here. Use email login instead.", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+        try {
+            startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_SIGN_IN);
+        } catch (Exception e) {
+            android.util.Log.e("GoogleSignIn", "Failed to launch the sign-in intent", e);
+            Toast.makeText(this, "Couldn't open Google Sign-In: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        android.util.Log.d("GoogleSignIn", "onActivityResult req=" + requestCode
+                + " resultCode=" + resultCode + " hasData=" + (data != null));
 
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
@@ -286,6 +316,22 @@ public class LoginActivity extends AppCompatActivity {
             } catch (ApiException e) {
                 android.util.Log.e("GoogleSignIn", "ApiException code=" + e.getStatusCode() + " "
                         + com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.getStatusCodeString(e.getStatusCode()), e);
+
+                if (e.getStatusCode() == com.google.android.gms.common.api.CommonStatusCodes.DEVELOPER_ERROR) {
+                    // Status 10. Google is saying "no OAuth client exists for the package + signing
+                    // certificate this APK actually has". Re-pasting the SHA-1 you THINK you have is
+                    // the standard response and it fixes nothing, because the fingerprint that
+                    // matters is the one below — read off the installed app, not off the build
+                    // machine. Show it, so the guessing stops.
+                    String report = AuthDiagnostics.report(this);
+                    android.util.Log.e("GoogleSignIn", "DEVELOPER_ERROR (10). Config as the phone sees it:\n" + report);
+                    new AlertDialog.Builder(this)
+                            .setTitle("Google Sign-In misconfigured")
+                            .setMessage(report)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show();
+                    return;
+                }
                 Toast.makeText(this, AuthManager.googleSignInError(e.getStatusCode()), Toast.LENGTH_LONG).show();
             }
         }

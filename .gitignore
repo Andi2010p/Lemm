@@ -34,3 +34,13 @@ serviceAccountKey.json
 # leaking it means someone else can sign as you.
 *.jks
 *.keystore
+
+# Editor / tooling / OS scratch — never belongs in the repo.
+.vscode/
+.claude/
+*.tmp
+.~lock.*#
+
+# Server-side env files (secrets live in `firebase functions:secrets:set`, not here).
+.env
+*.env

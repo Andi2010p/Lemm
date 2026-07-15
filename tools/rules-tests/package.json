@@ -1,0 +1,18 @@
+{
+  "name": "lemma-rules-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Executable security tests for Lemma's Realtime Database rules, run against the Firebase emulator.",
+  "main": "rules.test.js",
+  "scripts": {
+    "test": "firebase emulators:exec --only database --project demo-lemma --config ../../firebase.json \"node --test rules.test.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "firebase-tools": "^15.23.0"
+  }
+}

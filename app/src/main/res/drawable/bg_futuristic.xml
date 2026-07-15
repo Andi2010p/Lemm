@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Theme-aware backdrop: soft light gradient in day / deep space in night (see neon_bg_* colors),
+     with two faint neon glows in the top corners. All colors resolve per light/dark theme. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="135"
+                android:startColor="@color/neon_bg_top"
+                android:centerColor="@color/neon_bg_mid"
+                android:endColor="@color/neon_bg_bottom" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="620dp"
+                android:centerX="0.15"
+                android:centerY="0.02"
+                android:startColor="@color/neon_glow_1"
+                android:endColor="@color/neon_glow_1_end" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="560dp"
+                android:centerX="0.92"
+                android:centerY="0.06"
+                android:startColor="@color/neon_glow_2"
+                android:endColor="@color/neon_glow_2_end" />
+        </shape>
+    </item>
+</layer-list>

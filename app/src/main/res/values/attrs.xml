@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Style-switch attributes: resolved by the Glass or Basic theme overlay (see StyleManager),
+         so screen backgrounds and cards follow the one style chosen in Settings. -->
+    <attr name="appScreenBg" format="reference" />
+    <attr name="appCardFill" format="color" />
+    <attr name="appCardStroke" format="color" />
+    <attr name="appCardStrokeWidth" format="dimension" />
+</resources>
