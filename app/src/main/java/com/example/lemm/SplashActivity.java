@@ -23,16 +23,18 @@ public class SplashActivity extends AppCompatActivity {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                 
-                Intent intent;
                 // If a username exists, the user is logged in (Guest, Admin, or Registered)
-                if (pref.contains("username")) {
-                    intent = new Intent(SplashActivity.this, MainActivity.class);
+                Class<?> next = pref.contains("username") ? MainActivity.class : StartActivity.class;
+
+                // App-lock gate. Enabled only when the user set a PIN; we re-lock once per cold start
+                // (their "only on full app restart" choice), which is exactly where this launcher runs.
+                if (AppLock.isEnabled(SplashActivity.this)) {
+                    Intent lock = new Intent(SplashActivity.this, AppLockActivity.class);
+                    lock.putExtra(AppLockActivity.EXTRA_NEXT, next.getName());
+                    startActivity(lock);
                 } else {
-                    // First time or logged out: go to StartActivity
-                    intent = new Intent(SplashActivity.this, StartActivity.class);
+                    startActivity(new Intent(SplashActivity.this, next));
                 }
-                
-                startActivity(intent);
                 finish();
             }, 800);
 

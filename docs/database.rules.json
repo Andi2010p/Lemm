@@ -6,7 +6,7 @@
 // These rules are EXECUTED as tests, not merely believed:
 //     cd tools/rules-tests && npm test
 //
-// ============================ READ THIS BEFORE PUBLISHING ============================
+// ============================ READ THIS BEFORE PUBLISHING ======.======================
 // 1. Deploy the Cloud Functions FIRST (`firebase deploy --only functions`). Several nodes below
 //    are now server-only, so an app talking to a project without the functions will fail to
 //    accept friends, create groups, or claim a username.
@@ -185,40 +185,142 @@
       "$chatId": {
         ".read": "auth != null && $chatId.contains(auth.uid)",
         "$msgId": {
-          ".write": "auth != null && $chatId.contains(auth.uid) && !data.exists() && !root.child('blocked').child($chatId.replace(auth.uid, '').replace('_', '')).child(auth.uid).exists()",
+          // Create a NEW message, OR let the ORIGINAL AUTHOR edit / unsend their own one (edit + delete
+          // for everyone). `data.child('from').val() === auth.uid` means a non-author still cannot alter
+          // it, so "you can't change someone else's words" still holds — only the writer of a message may.
+          // Blocking is still enforced on the peer recovered from the key.
+          ".write": "auth != null && $chatId.contains(auth.uid) && (!data.exists() || data.child('from').val() === auth.uid) && !root.child('blocked').child($chatId.replace(auth.uid, '').replace('_', '')).child(auth.uid).exists()",
           ".validate": "newData.hasChildren(['from', 'type', 'ts'])",
           "from":     { ".validate": "newData.val() === auth.uid" },
           "fromName": { ".validate": "newData.isString() && newData.val().length <= 64" },
-          "type":     { ".validate": "newData.val() === 'text' || newData.val() === 'solution' || newData.val() === 'drawing'" },
+          "type":     { ".validate": "newData.val() === 'text' || newData.val() === 'solution' || newData.val() === 'drawing' || newData.val() === 'image' || newData.val() === 'voice' || newData.val() === 'file'" },
           "ts":       { ".validate": "newData.isNumber()" },
           "text":     { ".validate": "newData.isString() && newData.val().length <= 4000" },
           "title":    { ".validate": "newData.isString() && newData.val().length <= 120" },
           "problem":  { ".validate": "newData.isString() && newData.val().length <= 4000" },
           "raw":      { ".validate": "newData.isString() && newData.val().length <= 200000" },
           "data":     { ".validate": "newData.isString() && newData.val().length <= 300000" },
+          "replyTo":   { ".validate": "newData.isString() && newData.val().length <= 64" },
+          "replyName": { ".validate": "newData.isString() && newData.val().length <= 64" },
+          "replyText": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "edited":    { ".validate": "newData.isBoolean()" },
+          "editedTs":  { ".validate": "newData.isNumber()" },
+          "deleted":   { ".validate": "newData.isBoolean()" },
+          "mediaUrl":  { ".validate": "newData.isString() && newData.val().length <= 2000" },
+          "mediaName": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "mediaMime": { ".validate": "newData.isString() && newData.val().length <= 100" },
+          "mediaSize": { ".validate": "newData.isNumber()" },
+          "mediaDurationMs": { ".validate": "newData.isNumber()" },
           "$other":   { ".validate": false }
         }
       }
     },
 
-    // Group messages. Same append-only shape; membership is looked up in `groups/`.
+    // Group messages. Same shape as dm; the author may likewise edit / unsend their own. Membership is
+    // looked up in `groups/`.
     "gm": {
       "$gid": {
         ".read": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists()",
         "$msgId": {
-          ".write": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists() && !data.exists()",
+          ".write": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists() && (!data.exists() || data.child('from').val() === auth.uid)",
           ".validate": "newData.hasChildren(['from', 'type', 'ts'])",
           "from":     { ".validate": "newData.val() === auth.uid" },
           "fromName": { ".validate": "newData.isString() && newData.val().length <= 64" },
-          "type":     { ".validate": "newData.val() === 'text' || newData.val() === 'solution' || newData.val() === 'drawing'" },
+          "type":     { ".validate": "newData.val() === 'text' || newData.val() === 'solution' || newData.val() === 'drawing' || newData.val() === 'image' || newData.val() === 'voice' || newData.val() === 'file'" },
           "ts":       { ".validate": "newData.isNumber()" },
           "text":     { ".validate": "newData.isString() && newData.val().length <= 4000" },
           "title":    { ".validate": "newData.isString() && newData.val().length <= 120" },
           "problem":  { ".validate": "newData.isString() && newData.val().length <= 4000" },
           "raw":      { ".validate": "newData.isString() && newData.val().length <= 200000" },
           "data":     { ".validate": "newData.isString() && newData.val().length <= 300000" },
+          "replyTo":   { ".validate": "newData.isString() && newData.val().length <= 64" },
+          "replyName": { ".validate": "newData.isString() && newData.val().length <= 64" },
+          "replyText": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "edited":    { ".validate": "newData.isBoolean()" },
+          "editedTs":  { ".validate": "newData.isNumber()" },
+          "deleted":   { ".validate": "newData.isBoolean()" },
+          "mediaUrl":  { ".validate": "newData.isString() && newData.val().length <= 2000" },
+          "mediaName": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "mediaMime": { ".validate": "newData.isString() && newData.val().length <= 100" },
+          "mediaSize": { ".validate": "newData.isNumber()" },
+          "mediaDurationMs": { ".validate": "newData.isNumber()" },
           "$other":   { ".validate": false }
         }
+      }
+    },
+
+    // ---------------------------------------------------------------------------
+    // Live chat side-channels: reactions, read receipts, typing, presence. All keyed so a user may
+    // only write their OWN entry, and only within a thread they are a party to. Kept OUT of the message
+    // node because a reaction/receipt is written by someone who is NOT the message's author, and the
+    // message node is author-only.
+    // ---------------------------------------------------------------------------
+
+    // reactions/{dm|gm}/{threadId}/{msgId}/{uid} = emoji. Each user owns their one reaction per message.
+    "dm_reactions": {
+      "$chatId": {
+        ".read": "auth != null && $chatId.contains(auth.uid)",
+        "$msgId": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid && $chatId.contains(auth.uid)",
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          }
+        }
+      }
+    },
+    "gm_reactions": {
+      "$gid": {
+        ".read": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists()",
+        "$msgId": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid && root.child('groups').child($gid).child('members').child(auth.uid).exists()",
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          }
+        }
+      }
+    },
+
+    // dm_receipts/{chatId}/{uid} = the ts up to which that user has read. The peer reads it to show
+    // the ✓✓ / "Seen" marker. DM only — per-member group receipts are deliberately not tracked.
+    "dm_receipts": {
+      "$chatId": {
+        ".read": "auth != null && $chatId.contains(auth.uid)",
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid && $chatId.contains(auth.uid)",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+
+    // {dm|gm}_typing/{threadId}/{uid} = ts. Ephemeral; cleared on send and by onDisconnect.
+    "dm_typing": {
+      "$chatId": {
+        ".read": "auth != null && $chatId.contains(auth.uid)",
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid && $chatId.contains(auth.uid)",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "gm_typing": {
+      "$gid": {
+        ".read": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists()",
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid && root.child('groups').child($gid).child('members').child(auth.uid).exists()",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+
+    // presence/{uid} = { state, lastChanged }. Any signed-in user can read online / last-seen (as in
+    // mainstream messengers); only the owner writes it, kept fresh via onDisconnect.
+    "presence": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && $uid === auth.uid",
+        "state":       { ".validate": "newData.isString() && newData.val().length <= 16" },
+        "lastChanged": { ".validate": "newData.isNumber()" },
+        "$other":      { ".validate": false }
       }
     },
 

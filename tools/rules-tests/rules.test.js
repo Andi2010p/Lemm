@@ -296,10 +296,14 @@ test('dm: SECURITY — you cannot forge the `from` field', async () => {
   await assertFails(set(ref(as(BOB), `dm/${chatId(ALICE, BOB)}/m1`), msg(ALICE)));
 });
 
-test('dm: messages are APPEND-ONLY — no editing or deleting what was said', async () => {
+test('dm: only the AUTHOR may edit / unsend their own message; a non-author cannot touch it', async () => {
   await seed((db) => set(ref(db, `dm/${chatId(ALICE, BOB)}/m1`), msg(ALICE)));
-  await assertFails(set(ref(as(ALICE), `dm/${chatId(ALICE, BOB)}/m1`), msg(ALICE)));
-  await assertFails(remove(ref(as(ALICE), `dm/${chatId(ALICE, BOB)}/m1`)));
+  // Bob cannot alter or delete Alice's words — "you can't change someone else's message" still holds.
+  await assertFails(set(ref(as(BOB), `dm/${chatId(ALICE, BOB)}/m1`), { ...msg(ALICE), text: 'tampered' }));
+  await assertFails(remove(ref(as(BOB), `dm/${chatId(ALICE, BOB)}/m1`)));
+  // Alice may edit and unsend her own message (edit + delete-for-everyone).
+  await assertSucceeds(set(ref(as(ALICE), `dm/${chatId(ALICE, BOB)}/m1`), { ...msg(ALICE), text: 'edited', edited: true }));
+  await assertSucceeds(remove(ref(as(ALICE), `dm/${chatId(ALICE, BOB)}/m1`)));
 });
 
 test('dm: SECURITY — a blocked user cannot write into the thread', async () => {
@@ -348,10 +352,45 @@ test('gm: only members may read and post', async () => {
   await assertFails(get(ref(as(MALLORY), 'gm/g1')));
 });
 
-test('gm: group messages are append-only too', async () => {
+test('gm: the author may edit / unsend their own group message; other members cannot', async () => {
   await seedGroup('g1', { [ALICE]: 'Alice', [BOB]: 'Bob' });
   await seed((db) => set(ref(db, 'gm/g1/m1'), msg(ALICE)));
-  await assertFails(remove(ref(as(ALICE), 'gm/g1/m1')));
+  // A fellow member cannot delete Alice's message...
+  await assertFails(remove(ref(as(BOB), 'gm/g1/m1')));
+  // ...but Alice can edit and unsend her own.
+  await assertSucceeds(set(ref(as(ALICE), 'gm/g1/m1'), { ...msg(ALICE), text: 'edited', edited: true }));
+  await assertSucceeds(remove(ref(as(ALICE), 'gm/g1/m1')));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// live chat side-channels: reactions, receipts, typing, presence
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('reactions: a participant reacts under their OWN uid, never under anyone else\'s', async () => {
+  const c = chatId(ALICE, BOB);
+  await assertSucceeds(set(ref(as(ALICE), `dm_reactions/${c}/m1/${ALICE}`), '❤️'));
+  await assertFails(set(ref(as(ALICE), `dm_reactions/${c}/m1/${BOB}`), '❤️'));   // can't react as Bob
+  await assertFails(set(ref(as(MALLORY), `dm_reactions/${c}/m1/${MALLORY}`), '❤️')); // not in the thread
+});
+
+test('receipts: I may set my own read-marker; a third party can\'t see the thread\'s receipts', async () => {
+  const c = chatId(ALICE, BOB);
+  await assertSucceeds(set(ref(as(ALICE), `dm_receipts/${c}/${ALICE}`), 123));
+  await assertFails(set(ref(as(ALICE), `dm_receipts/${c}/${BOB}`), 123));  // can't forge Bob's receipt
+  await assertFails(get(ref(as(MALLORY), `dm_receipts/${c}`)));
+});
+
+test('typing: only a participant may set their own typing flag', async () => {
+  const c = chatId(ALICE, BOB);
+  await assertSucceeds(set(ref(as(ALICE), `dm_typing/${c}/${ALICE}`), 123));
+  await assertFails(set(ref(as(MALLORY), `dm_typing/${c}/${MALLORY}`), 123));
+});
+
+test('presence: I write only my own row; anyone signed in may read it', async () => {
+  await assertSucceeds(set(ref(as(ALICE), `presence/${ALICE}`), { state: 'online', lastChanged: 1 }));
+  await assertFails(set(ref(as(BOB), `presence/${ALICE}`), { state: 'online', lastChanged: 1 }));
+  await seed((db) => set(ref(db, `presence/${ALICE}`), { state: 'online', lastChanged: 1 }));
+  await assertSucceeds(get(ref(as(MALLORY), `presence/${ALICE}`)));
 });
 
 test('groups: SERVER-ONLY — a member cannot edit membership or the counter', async () => {

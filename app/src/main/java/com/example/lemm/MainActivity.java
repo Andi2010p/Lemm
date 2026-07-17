@@ -93,6 +93,10 @@ public class MainActivity extends AppCompatActivity {
             @Override public void onBillingError() {}
         });
         proRestoreBilling.startConnection();
+
+        // First-run: offer to protect the app with a PIN + biometric (shown once). Self-guards via
+        // AppLock.shouldOfferSetup(), so it's a no-op once the user has set a lock or declined.
+        AppLockUi.offerSetup(this);
     }
 
     @Override

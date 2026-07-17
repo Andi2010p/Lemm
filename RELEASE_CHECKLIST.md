@@ -80,6 +80,23 @@ Firebase console → Realtime Database → open the **`users`** node.
   migrate.
 - Nothing at all → the data was never accepted by the server. It is gone. I'm sorry.
 
+### A5. Chat upgrade — republish the DB rules, and turn on Storage for media
+
+The messenger now has replies, reactions, read receipts, typing, online/last-seen presence, edit +
+unsend, and photo/voice/file attachments. Two console steps make it live:
+
+1. **Republish `docs/database.rules.json`** (same place as A1). The new version adds the
+   `dm_reactions` / `gm_reactions` / `dm_receipts` / `dm_typing` / `gm_typing` / `presence` nodes and
+   lets a message's **author** (only) edit or unsend it. Until you republish, those writes are denied
+   and the new features silently do nothing. Verified by 67 tests (`cd tools/rules-tests && npm test`).
+2. **Cloud Storage for photos/voice/files.** Firebase console → **Storage** → get started (a project
+   this age requires **Blaze** — the same plan Part B needs anyway). Then deploy the rules:
+   `firebase deploy --only storage` (config is in `firebase.json` → `docs/storage.rules`). If Storage
+   is off, text/reactions/etc. still work and media just shows a clear "couldn't send" message.
+
+> App-lock (PIN + fingerprint/face) needs **no** server setup — it's fully on-device. Users enable it
+> in Settings → Security, and they're offered it once on first launch.
+
 ---
 
 ## PART B — The backend. Unlocks AI, payments, groups, usernames.

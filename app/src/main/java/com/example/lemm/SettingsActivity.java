@@ -155,6 +155,9 @@ public class SettingsActivity extends AppCompatActivity {
         findViewById(R.id.btnHowToUse).setOnClickListener(v ->
                 startActivity(new Intent(this, OnboardingActivity.class)));
 
+        View btnAppLock = findViewById(R.id.btnAppLock);
+        if (btnAppLock != null) btnAppLock.setOnClickListener(v -> AppLockUi.manage(this));
+
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 

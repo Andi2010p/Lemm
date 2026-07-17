@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:background="?attr/appScreenBg">
 
-    <!-- Header: back + peer name -->
+    <!-- Header: back + peer name/status + search + overflow -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -22,17 +22,89 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/back" />
 
-        <TextView
-            android:id="@+id/tvPeer"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="12dp"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textColor="@color/neon_text" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvPeer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/neon_text" />
+
+            <TextView
+                android:id="@+id/tvPeerStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="gone"
+                android:textColor="@color/neon_cyan" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnSearch"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@android:drawable/ic_menu_search"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/chat_search" />
+
+        <ImageButton
+            android:id="@+id/btnMore"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/more_options" />
+    </LinearLayout>
+
+    <!-- Search bar (hidden until the search icon is tapped) -->
+    <LinearLayout
+        android:id="@+id/searchBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="6dp"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/chat_search"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:textColor="@color/neon_text"
+            android:textColorHint="@color/neon_text_dim" />
+
+        <TextView
+            android:id="@+id/tvSearchCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="12sp"
+            android:textColor="@color/neon_text_dim" />
+
+        <ImageButton
+            android:id="@+id/btnSearchClose"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cancel" />
     </LinearLayout>
 
     <ScrollView
@@ -51,6 +123,91 @@
             android:orientation="vertical"
             android:paddingBottom="12dp" />
     </ScrollView>
+
+    <!-- Upload progress (hidden unless a media upload is in flight) -->
+    <LinearLayout
+        android:id="@+id/uploadBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/uploadProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/tvUpload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:textSize="12sp"
+            android:text="@string/uploading"
+            android:textColor="@color/neon_text_dim" />
+    </LinearLayout>
+
+    <!-- Reply preview (hidden unless replying) -->
+    <LinearLayout
+        android:id="@+id/replyBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:visibility="gone">
+
+        <View
+            android:layout_width="3dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="10dp"
+            android:background="@color/neon_cyan" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvReplyName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/neon_cyan" />
+
+            <TextView
+                android:id="@+id/tvReplyPreview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/neon_text_dim" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnCancelReply"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cancel" />
+    </LinearLayout>
 
     <!-- Input bar -->
     <LinearLayout
@@ -83,12 +240,22 @@
             android:textColorHint="@color/neon_text_dim" />
 
         <ImageButton
+            android:id="@+id/btnMic"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:src="@android:drawable/ic_btn_speak_now"
+            android:background="@drawable/bg_neon_send"
+            android:contentDescription="@string/record_voice" />
+
+        <ImageButton
             android:id="@+id/btnSend"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginStart="8dp"
             android:src="@android:drawable/ic_menu_send"
             android:background="@drawable/bg_neon_send"
+            android:visibility="gone"
             android:contentDescription="@string/send" />
     </LinearLayout>
 </LinearLayout>

@@ -140,6 +140,8 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     // Callable Cloud Functions: the AI proxy, OTP email, and every consent-checked social write.
     implementation("com.google.firebase:firebase-functions")
+    // Cloud Storage: chat photos, voice notes and files (bytes live here, only the URL goes in the DB).
+    implementation("com.google.firebase:firebase-storage")
     // App Check + Play Integrity: proves a request came from a genuine, unmodified Lemma install.
     // Without it, anyone can pull google-services.json out of the APK and talk to the backend
     // with a script — security rules cannot tell your app from curl.
@@ -147,6 +149,8 @@ dependencies {
     debugImplementation("com.google.firebase:firebase-appcheck-debug")
     // Google Sign-In Library
     implementation("com.google.android.gms:play-services-auth:21.1.1")
+    // App-lock: fingerprint / face unlock prompt with a PIN fallback.
+    implementation("androidx.biometric:biometric:1.1.0")
     // Google Generative AI
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
     // ML Kit & Text Recognition

@@ -64,6 +64,12 @@ public final class Social {
     private static final String GM = "gm";
     private static final String BLOCKED = "blocked";
     private static final String USER_REPORTS = "user_reports";
+    private static final String DM_REACTIONS = "dm_reactions";
+    private static final String GM_REACTIONS = "gm_reactions";
+    private static final String DM_RECEIPTS = "dm_receipts";
+    private static final String DM_TYPING = "dm_typing";
+    private static final String GM_TYPING = "gm_typing";
+    private static final String PRESENCE = "presence";
 
     /** Highest code point Firebase orders on: [q, q+PREFIX_MAX] is a prefix range. */
     private static final char PREFIX_MAX = (char) 0xF8FF;
@@ -71,6 +77,9 @@ public final class Social {
     public static final String TYPE_TEXT = "text";
     public static final String TYPE_SOLUTION = "solution";
     public static final String TYPE_DRAWING = "drawing";
+    public static final String TYPE_IMAGE = "image";
+    public static final String TYPE_VOICE = "voice";
+    public static final String TYPE_FILE = "file";
 
     /** A group is at least the creator + 1, and never more than 40 (mirrored in the DB rules). */
     public static final int MIN_GROUP_MEMBERS = 2;
@@ -452,8 +461,18 @@ public final class Social {
     /** One message. Only the fields its {@code type} uses are populated. */
     public static final class Message {
         public String id, from, fromName, type, text, title, problem, raw, data;
+        // Reply context (a cached preview of the quoted message, so no second read is needed).
+        public String replyTo, replyName, replyText;
+        // Media (image / voice / file) points at a Storage download URL.
+        public String mediaUrl, mediaName, mediaMime;
+        public long mediaSize, mediaDurationMs;
+        // edited = shows an "(edited)" marker; deleted = a "message deleted" tombstone.
+        public boolean edited, deleted;
         public long ts;
         public boolean mine(String me) { return me != null && me.equals(from); }
+        public boolean isMedia() {
+            return TYPE_IMAGE.equals(type) || TYPE_VOICE.equals(type) || TYPE_FILE.equals(type);
+        }
 
         static Message from(DataSnapshot s) {
             Message m = new Message();
@@ -466,11 +485,40 @@ public final class Social {
             m.problem = s.child("problem").getValue(String.class);
             m.raw = s.child("raw").getValue(String.class);
             m.data = s.child("data").getValue(String.class);
+            m.replyTo = s.child("replyTo").getValue(String.class);
+            m.replyName = s.child("replyName").getValue(String.class);
+            m.replyText = s.child("replyText").getValue(String.class);
+            m.mediaUrl = s.child("mediaUrl").getValue(String.class);
+            m.mediaName = s.child("mediaName").getValue(String.class);
+            m.mediaMime = s.child("mediaMime").getValue(String.class);
+            Long size = s.child("mediaSize").getValue(Long.class);
+            m.mediaSize = (size == null) ? 0L : size;
+            Long dur = s.child("mediaDurationMs").getValue(Long.class);
+            m.mediaDurationMs = (dur == null) ? 0L : dur;
+            Boolean ed = s.child("edited").getValue(Boolean.class);
+            m.edited = ed != null && ed;
+            Boolean del = s.child("deleted").getValue(Boolean.class);
+            m.deleted = del != null && del;
             Long ts = s.child("ts").getValue(Long.class);
             m.ts = (ts == null) ? 0L : ts;
             if (m.type == null) m.type = TYPE_TEXT;
             return m;
         }
+    }
+
+    /** A quoted message, cached onto the reply so rendering needs no extra read. */
+    public static final class Reply {
+        public final String toId, name, text;
+        public Reply(String toId, String name, String text) {
+            this.toId = toId; this.name = name; this.text = text;
+        }
+    }
+
+    private static void applyReply(Map<String, Object> m, Reply r) {
+        if (r == null) return;
+        if (r.toId != null) m.put("replyTo", clip(r.toId, 64));
+        if (r.name != null) m.put("replyName", clip(r.name, 64));
+        if (r.text != null) m.put("replyText", clip(r.text, 200));
     }
 
     private static Map<String, Object> base(Context c, String type) {
@@ -482,12 +530,180 @@ public final class Social {
         return m;
     }
 
-    public static void sendText(Context c, Thread t, String text) {
+    public static void sendText(Context c, Thread t, String text) { sendText(c, t, text, null); }
+
+    public static void sendText(Context c, Thread t, String text, Reply reply) {
         if (text == null) return;
         if (text.length() > MAX_TEXT) text = text.substring(0, MAX_TEXT);
         Map<String, Object> m = base(c, TYPE_TEXT);
         m.put("text", text);
+        applyReply(m, reply);
         threadRef(t).push().setValue(m);
+        setTyping(t, false); // sending ends the "typing…" state
+    }
+
+    /**
+     * Sends an already-uploaded image / voice note / file. The bytes live in Firebase Storage; only the
+     * download URL and a little metadata travel through the database. See {@link ChatMedia} for the
+     * upload half.
+     */
+    public static void sendMedia(Context c, Thread t, String type, String url, String name,
+                                 String mime, long size, long durationMs, String caption, Reply reply) {
+        if (url == null || url.isEmpty()) return;
+        Map<String, Object> m = base(c, type);
+        m.put("mediaUrl", clip(url, 2000));
+        if (name != null) m.put("mediaName", clip(name, 200));
+        if (mime != null) m.put("mediaMime", clip(mime, 100));
+        if (size > 0) m.put("mediaSize", size);
+        if (durationMs > 0) m.put("mediaDurationMs", durationMs);
+        if (caption != null && !caption.trim().isEmpty()) m.put("text", clip(caption, MAX_TEXT));
+        applyReply(m, reply);
+        threadRef(t).push().setValue(m);
+        setTyping(t, false);
+    }
+
+    // ---------- edit / delete (author-only; the rules enforce it) ----------
+
+    /** Replaces a text message's body and flags it "(edited)". Server allows this only for its author. */
+    public static void editText(Context c, Thread t, Message orig, String newText) {
+        if (orig == null || orig.id == null || newText == null || newText.trim().isEmpty()) return;
+        Map<String, Object> m = new HashMap<>();
+        m.put("from", uid());
+        m.put("fromName", myUsername(c));
+        m.put("type", TYPE_TEXT);
+        m.put("ts", orig.ts > 0 ? orig.ts : ServerValue.TIMESTAMP); // keep original order
+        m.put("text", clip(newText, MAX_TEXT));
+        m.put("edited", true);
+        m.put("editedTs", ServerValue.TIMESTAMP);
+        // Preserve the quote, if this message was itself a reply.
+        if (orig.replyTo != null) m.put("replyTo", orig.replyTo);
+        if (orig.replyName != null) m.put("replyName", orig.replyName);
+        if (orig.replyText != null) m.put("replyText", orig.replyText);
+        threadRef(t).child(orig.id).setValue(m);
+    }
+
+    /** "Unsend": replaces the message with a tombstone everyone sees as "message deleted". */
+    public static void deleteForEveryone(Context c, Thread t, Message orig) {
+        if (orig == null || orig.id == null) return;
+        Map<String, Object> m = new HashMap<>();
+        m.put("from", uid());
+        m.put("fromName", orig.fromName != null ? orig.fromName : myUsername(c));
+        m.put("type", TYPE_TEXT);
+        m.put("ts", orig.ts > 0 ? orig.ts : ServerValue.TIMESTAMP);
+        m.put("deleted", true);
+        threadRef(t).child(orig.id).setValue(m);
+    }
+
+    /** "Delete for me": hides a message on this device only. No server write, so it needs no rule. */
+    private static SharedPreferences hidden(Context c) {
+        return c.getSharedPreferences("ChatHidden", Context.MODE_PRIVATE);
+    }
+    public static void hideForMe(Context c, Thread t, String msgId) {
+        if (msgId == null) return;
+        hidden(c).edit().putBoolean(t.seenKey() + "|" + msgId, true).apply();
+    }
+    public static boolean isHiddenForMe(Context c, Thread t, String msgId) {
+        return msgId != null && hidden(c).getBoolean(t.seenKey() + "|" + msgId, false);
+    }
+
+    // ---------- reactions ----------
+
+    /** The reactions node for the whole thread — listen here to get every message's reactions. */
+    public static DatabaseReference reactionsThreadRef(Thread t) {
+        String base = t.isGroup() ? GM_REACTIONS : DM_REACTIONS;
+        String tid = t.isGroup() ? t.groupId : chatId(uid(), t.peerUid);
+        return db(base).child(tid);
+    }
+
+    public static DatabaseReference reactionsRef(Thread t, String msgId) {
+        return reactionsThreadRef(t).child(msgId);
+    }
+
+    /** Sets (or, with an empty emoji, clears) my reaction to a message. One reaction per person. */
+    public static void setReaction(Thread t, String msgId, String emoji) {
+        String me = uid();
+        if (me == null || msgId == null) return;
+        DatabaseReference r = reactionsRef(t, msgId).child(me);
+        if (emoji == null || emoji.isEmpty()) r.removeValue();
+        else r.setValue(emoji);
+    }
+
+    // ---------- read receipts (DM only) ----------
+
+    public static DatabaseReference receiptsRef(Thread t) {
+        if (t.isGroup()) return null;
+        return db(DM_RECEIPTS).child(chatId(uid(), t.peerUid));
+    }
+
+    /** Records that I've read the thread up to {@code ts}; the peer renders it as ✓✓ / Seen. */
+    public static void markRead(Context c, Thread t, long ts) {
+        String me = uid();
+        if (me == null || t.isGroup() || ts <= 0) return;
+        db(DM_RECEIPTS).child(chatId(me, t.peerUid)).child(me).setValue(ts);
+    }
+
+    // ---------- typing indicator ----------
+
+    public static DatabaseReference typingRef(Thread t) {
+        String base = t.isGroup() ? GM_TYPING : DM_TYPING;
+        String tid = t.isGroup() ? t.groupId : chatId(uid(), t.peerUid);
+        return db(base).child(tid);
+    }
+
+    /** Flags/unflags me as typing. Uses onDisconnect so a crash doesn't leave "typing…" stuck on. */
+    public static void setTyping(Thread t, boolean typing) {
+        String me = uid();
+        if (me == null) return;
+        DatabaseReference r = typingRef(t).child(me);
+        if (typing) {
+            r.setValue(ServerValue.TIMESTAMP);
+            r.onDisconnect().removeValue();
+        } else {
+            r.removeValue();
+        }
+    }
+
+    // ---------- presence (online / last seen) ----------
+
+    public static DatabaseReference presenceRef(String uid) { return db(PRESENCE).child(uid); }
+
+    private static boolean presenceStarted = false;
+
+    /**
+     * Publishes my online state and keeps it fresh: sets "online" now and, via onDisconnect, "offline"
+     * with a server timestamp the moment this device drops off. Idempotent — safe to call from every
+     * screen. Any signed-in user may read {@code presence/{uid}} (as mainstream messengers do).
+     */
+    public static void startPresence() {
+        final String me = uid();
+        if (me == null || presenceStarted) return;
+        presenceStarted = true;
+        final DatabaseReference mine = db(PRESENCE).child(me);
+        FirebaseManager.getDatabase().getReference(".info/connected")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override public void onDataChange(@NonNull DataSnapshot snap) {
+                        Boolean connected = snap.getValue(Boolean.class);
+                        if (connected == null || !connected) return;
+                        Map<String, Object> off = new HashMap<>();
+                        off.put("state", "offline");
+                        off.put("lastChanged", ServerValue.TIMESTAMP);
+                        mine.onDisconnect().setValue(off);
+                        Map<String, Object> on = new HashMap<>();
+                        on.put("state", "online");
+                        on.put("lastChanged", ServerValue.TIMESTAMP);
+                        mine.setValue(on);
+                    }
+                    @Override public void onCancelled(@NonNull DatabaseError e) {}
+                });
+    }
+
+    // ---------- mute (local) ----------
+
+    public static void setMuted(Context c, Thread t, boolean muted) {
+        seen(c).edit().putBoolean("mute|" + t.seenKey(), muted).apply();
+    }
+    public static boolean isMuted(Context c, Thread t) {
+        return seen(c).getBoolean("mute|" + t.seenKey(), false);
     }
 
     /** Clips a string to a cap the rules enforce, so the write is never rejected for length. */

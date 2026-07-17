@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Firebase Cloud Storage rules for Lemma chat media (photos, voice notes, files).
+//
+// Deploy with:  firebase deploy --only storage
+// (Storage on a project created in/after Oct 2024 requires the Blaze plan — the app degrades to a
+//  clear "media needs setup" message if the bucket is unavailable.)
+//
+// Model: bytes live under chat_media/{uid}/... . A user may only write into THEIR OWN folder (so
+// nobody can plant files under someone else's identity), each file is size- and type-capped, and any
+// signed-in user may read — the download URL is the capability, and it is only ever delivered to a
+// participant through a thread the database rules already protect.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /chat_media/{uid}/{fileName} {
+      allow read: if request.auth != null;
+
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 25 * 1024 * 1024
+                   && (
+                        request.resource.contentType.matches('image/.*') ||
+                        request.resource.contentType.matches('audio/.*') ||
+                        request.resource.contentType.matches('video/.*') ||
+                        request.resource.contentType.matches('application/.*') ||
+                        request.resource.contentType.matches('text/.*')
+                      );
+
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Everything else is denied.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
