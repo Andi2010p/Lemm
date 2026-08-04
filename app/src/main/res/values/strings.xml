@@ -1281,6 +1281,9 @@
 
     <!-- Messenger -->
     <string name="chat_search">Search</string>
+    <string name="chat_today">Today</string>
+    <string name="chat_yesterday">Yesterday</string>
+    <string name="chat_empty">No messages yet — say hi 👋</string>
     <string name="more_options">More</string>
     <string name="uploading">Uploading…</string>
     <string name="record_voice">Record voice message</string>

@@ -1270,6 +1270,9 @@
 
     <!-- Messenger -->
     <string name="chat_search">Որոնում</string>
+    <string name="chat_today">Այսօր</string>
+    <string name="chat_yesterday">Երեկ</string>
+    <string name="chat_empty">Դեռ հաղորդագրություններ չկան — բարևե՛ք 👋</string>
     <string name="more_options">Ավելին</string>
     <string name="uploading">Բեռնվում է…</string>
     <string name="record_voice">Ձայնագրել ձայնային հաղորդագրություն</string>

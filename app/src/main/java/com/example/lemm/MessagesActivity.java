@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
@@ -38,6 +39,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.shape.CornerFamily;
+import com.google.android.material.shape.ShapeAppearanceModel;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -55,13 +58,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A conversation — a 1:1 DM or a group — with the feature set people expect from a messenger:
- * replies, reactions, edit &amp; unsend, read receipts, a typing indicator, online / last-seen presence,
- * photo / voice / file attachments (via {@link ChatMedia}), in-chat search, and mute. Solution and
- * drawing sharing and theorem links are carried over from the original screen.
+ * A conversation — a 1:1 DM or a group — with a modern messenger feel: date separators, grouped
+ * consecutive messages, colourful group avatars, tailed bubbles, a compact in-bubble time/receipt
+ * footer, replies, reactions, edit &amp; unsend, typing/presence, media (via {@link ChatMedia}),
+ * search and mute.
  *
- * <p>Rows are keyed by message id so edits, reactions and deletes update in place — the child listener
- * handles add / change / remove rather than only appending.
+ * <p>Rows are keyed by message id so edits, reactions and deletes update in place; grouping and the
+ * date chip are computed from the message's predecessor in the ordered {@link #messages} map.
  */
 public class MessagesActivity extends AppCompatActivity {
 
@@ -72,7 +75,11 @@ public class MessagesActivity extends AppCompatActivity {
 
     private static final int HISTORY_LIMIT = 300;
     private static final long TYPING_TIMEOUT_MS = 6000;
+    private static final long GROUP_WINDOW_MS = 4 * 60 * 1000; // consecutive-message grouping window
     private static final String[] REACTIONS = {"❤️", "👍", "😂", "😮", "😢", "🙏"};
+    private static final int[] AVATAR_COLORS = {
+            0xFF26C6DA, 0xFF7E57C2, 0xFF26A69A, 0xFFEF5350,
+            0xFF5C6BC0, 0xFFFFA726, 0xFF66BB6A, 0xFFEC407A};
 
     private Social.Thread thread;
     private String myUid;
@@ -81,14 +88,13 @@ public class MessagesActivity extends AppCompatActivity {
     private LinearLayout container;
     private ScrollView scroll;
     private EditText etInput;
-    private TextView tvPeerStatus;
+    private TextView tvPeerStatus, tvEmpty;
     private ImageButton btnSend, btnMic;
     private View replyBar, uploadBar, searchBar;
     private TextView tvReplyName, tvReplyPreview, tvUpload, tvSearchCount;
     private ProgressBar uploadProgress;
     private EditText etSearch;
 
-    // Live listeners.
     private Query msgQuery;
     private ChildEventListener msgListener;
     private DatabaseReference reactionsRoot;
@@ -112,12 +118,10 @@ public class MessagesActivity extends AppCompatActivity {
 
     private Social.Message replyDraft;
 
-    // Media.
     private ActivityResultLauncher<String> galleryLauncher, fileLauncher, micPermLauncher;
     private ActivityResultLauncher<Uri> cameraLauncher;
     private Uri cameraPhotoUri;
 
-    // Voice recording.
     private MediaRecorder recorder;
     private File voiceFile;
     private boolean recording;
@@ -126,7 +130,6 @@ public class MessagesActivity extends AppCompatActivity {
     private Runnable recordTick;
     private MediaPlayer player;
 
-    // Typing signal debounce.
     private long lastTypingPing;
     private Runnable typingStop;
 
@@ -141,6 +144,7 @@ public class MessagesActivity extends AppCompatActivity {
         scroll = findViewById(R.id.scrollMessages);
         etInput = findViewById(R.id.etInput);
         tvPeerStatus = findViewById(R.id.tvPeerStatus);
+        tvEmpty = findViewById(R.id.tvEmpty);
         btnSend = findViewById(R.id.btnSend);
         btnMic = findViewById(R.id.btnMic);
         replyBar = findViewById(R.id.replyBar);
@@ -152,6 +156,7 @@ public class MessagesActivity extends AppCompatActivity {
         tvSearchCount = findViewById(R.id.tvSearchCount);
         uploadProgress = findViewById(R.id.uploadProgress);
         etSearch = findViewById(R.id.etSearch);
+        styleInputPill();
 
         myUid = Social.uid();
         registerLaunchers();
@@ -184,9 +189,9 @@ public class MessagesActivity extends AppCompatActivity {
             return;
         }
         ((TextView) findViewById(R.id.tvPeer)).setText(thread.title);
+        updateEmptyState();
         Social.startPresence();
 
-        // Load the block list BEFORE the thread, so a blocked sender's messages are never rendered.
         Social.blockedRef().addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot snap) {
                 for (DataSnapshot child : snap.getChildren()) blocked.add(child.getKey());
@@ -196,6 +201,15 @@ public class MessagesActivity extends AppCompatActivity {
                 if (!isFinishing() && !isDestroyed()) startListening();
             }
         });
+    }
+
+    private void styleInputPill() {
+        View pill = findViewById(R.id.inputPill);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(26));
+        bg.setColor(StyleManager.color(this, R.attr.appCardFill));
+        bg.setStroke(dp(1), StyleManager.color(this, R.attr.appCardStroke));
+        pill.setBackground(bg);
     }
 
     // ================= lifecycle =================
@@ -249,6 +263,7 @@ public class MessagesActivity extends AppCompatActivity {
                 rows.put(m.id, row);
                 bindRow(row, m);
                 container.addView(row);
+                updateEmptyState();
                 scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
                 Social.markRead(MessagesActivity.this, thread, newestTs);
             }
@@ -264,6 +279,7 @@ public class MessagesActivity extends AppCompatActivity {
                 LinearLayout row = rows.remove(id);
                 if (row != null) container.removeView(row);
                 messages.remove(id);
+                updateEmptyState();
             }
             @Override public void onChildMoved(@NonNull DataSnapshot s, String p) {}
             @Override public void onCancelled(@NonNull DatabaseError e) {}
@@ -272,7 +288,7 @@ public class MessagesActivity extends AppCompatActivity {
     }
 
     private void listenReactions() {
-        reactionsRoot = Social.reactionsThreadRef(thread); // .../reactions/{threadId}
+        reactionsRoot = Social.reactionsThreadRef(thread);
         if (reactionsRoot == null) return;
         reactionsListener = new ChildEventListener() {
             @Override public void onChildAdded(@NonNull DataSnapshot s, String p) { applyReactions(s); }
@@ -309,21 +325,14 @@ public class MessagesActivity extends AppCompatActivity {
         typingListener = new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot snap) {
                 long now = System.currentTimeMillis();
-                String who = null;
                 int count = 0;
                 for (DataSnapshot u : snap.getChildren()) {
                     if (u.getKey() == null || u.getKey().equals(myUid)) continue;
                     Long ts = u.getValue(Long.class);
-                    if (ts != null && now - ts < TYPING_TIMEOUT_MS) {
-                        count++;
-                        who = u.getKey();
-                    }
+                    if (ts != null && now - ts < TYPING_TIMEOUT_MS) count++;
                 }
-                if (count == 0) typingLabel = null;
-                else if (thread.isGroup()) typingLabel = getString(R.string.typing);
-                else typingLabel = getString(R.string.typing);
+                typingLabel = count == 0 ? null : getString(R.string.typing);
                 refreshStatus();
-                // Re-evaluate shortly, since a stale ts should stop showing "typing…".
                 ui.postDelayed(MessagesActivity.this::expireTyping, TYPING_TIMEOUT_MS);
             }
             @Override public void onCancelled(@NonNull DatabaseError e) {}
@@ -332,7 +341,6 @@ public class MessagesActivity extends AppCompatActivity {
     }
 
     private void expireTyping() {
-        // Cheap: the value listener re-fires on any change; this just clears a lingering label.
         if (typingLabel != null) { typingLabel = null; refreshStatus(); }
     }
 
@@ -362,7 +370,6 @@ public class MessagesActivity extends AppCompatActivity {
                         if (ts != null) peerReadTs = Math.max(peerReadTs, ts);
                     }
                 }
-                // Update ticks on my sent messages.
                 for (Map.Entry<String, Social.Message> e : messages.entrySet()) {
                     if (e.getValue().mine(myUid)) rebind(e.getKey());
                 }
@@ -380,11 +387,15 @@ public class MessagesActivity extends AppCompatActivity {
         else if (peerOnline) text = getString(R.string.online);
         else if (peerLastSeen > 0) text = getString(R.string.last_seen, formatLastSeen(peerLastSeen));
         else text = null;
-        if (text == null) { tvPeerStatus.setVisibility(View.GONE); }
+        if (text == null) tvPeerStatus.setVisibility(View.GONE);
         else { tvPeerStatus.setText(text); tvPeerStatus.setVisibility(View.VISIBLE); }
     }
 
-    // ================= sending =================
+    private void updateEmptyState() {
+        if (tvEmpty != null) tvEmpty.setVisibility(messages.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    // ================= composing =================
 
     private void wireInputWatcher() {
         etInput.addTextChangedListener(new TextWatcher() {
@@ -399,7 +410,6 @@ public class MessagesActivity extends AppCompatActivity {
         });
     }
 
-    /** Signals "typing" at most every couple of seconds, and auto-clears after a pause. */
     private void pingTyping() {
         long now = System.currentTimeMillis();
         if (now - lastTypingPing > 2000) {
@@ -418,11 +428,9 @@ public class MessagesActivity extends AppCompatActivity {
         Social.sendText(this, thread, text, consumeReply());
     }
 
-    /** Returns the pending reply (and clears the reply bar), or null if not replying. */
     private Social.Reply consumeReply() {
         if (replyDraft == null) return null;
-        Social.Reply r = new Social.Reply(replyDraft.id,
-                nameOf(replyDraft), previewTextOf(replyDraft));
+        Social.Reply r = new Social.Reply(replyDraft.id, nameOf(replyDraft), previewTextOf(replyDraft));
         clearReply();
         return r;
     }
@@ -457,18 +465,56 @@ public class MessagesActivity extends AppCompatActivity {
 
     // ================= rendering =================
 
+    /** Builds a whole row: optional date chip, then [avatar?][name? + bubble + reactions]. */
     private void bindRow(LinearLayout row, Social.Message m) {
         row.removeAllViews();
         boolean mine = m.mine(myUid);
+        Social.Message pred = predecessorOf(m.id);
+        boolean newDay = pred == null || !sameDay(pred.ts, m.ts);
+        if (newDay) row.addView(dateChip(m.ts));
+
+        boolean grouped = pred != null && !newDay && pred.from != null
+                && pred.from.equals(m.from) && (m.ts - pred.ts) < GROUP_WINDOW_MS;
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-1, -2);
+        clp.topMargin = grouped ? dp(2) : dp(8);
+        content.setLayoutParams(clp);
+        content.setGravity(mine ? Gravity.END : Gravity.START);
+
+        boolean avatarSlot = thread.isGroup() && !mine;
+        if (avatarSlot) content.addView(grouped ? avatarSpacer() : avatarView(m.fromName));
+
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams collp = new LinearLayout.LayoutParams(-2, -2);
+        collp.leftMargin = mine ? dp(48) : 0;
+        collp.rightMargin = mine ? 0 : dp(48);
+        col.setLayoutParams(collp);
+        col.setGravity(mine ? Gravity.END : Gravity.START);
+
+        if (thread.isGroup() && !mine && !grouped) col.addView(senderName(m.fromName));
 
         View bubble = m.deleted ? deletedBubble(mine) : buildBubble(m, mine);
-        row.addView(bubble);
+        applyBubbleShape(bubble, mine);
+        col.addView(bubble);
         if (!m.deleted) attachLongPressMenu(bubble, m, mine);
 
         View strip = reactionStrip(m);
-        if (strip != null) row.addView(strip);
+        if (strip != null) col.addView(strip);
 
-        row.addView(metaLine(m, mine));
+        content.addView(col);
+        row.addView(content);
+    }
+
+    private Social.Message predecessorOf(String msgId) {
+        Social.Message prev = null;
+        for (Map.Entry<String, Social.Message> e : messages.entrySet()) {
+            if (e.getKey().equals(msgId)) return prev;
+            prev = e.getValue();
+        }
+        return prev;
     }
 
     private View buildBubble(Social.Message m, boolean mine) {
@@ -482,14 +528,7 @@ public class MessagesActivity extends AppCompatActivity {
 
     private MaterialCardView bubbleShell(boolean mine) {
         MaterialCardView card = new MaterialCardView(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-        lp.topMargin = dp(6);
-        lp.bottomMargin = dp(2);
-        lp.gravity = mine ? Gravity.END : Gravity.START;
-        lp.leftMargin = mine ? dp(52) : 0;
-        lp.rightMargin = mine ? 0 : dp(52);
-        card.setLayoutParams(lp);
-        card.setRadius(dp(18));
+        card.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
         card.setCardElevation(0f);
         if (mine) {
             card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.neon_user_bubble));
@@ -501,40 +540,86 @@ public class MessagesActivity extends AppCompatActivity {
         return card;
     }
 
-    /** Sender label (group incoming) + quoted-reply preview, prepended to a bubble's content column. */
+    /** Rounds every corner except the bottom one on the sender's side — a subtle "tail". */
+    private void applyBubbleShape(View bubble, boolean mine) {
+        if (!(bubble instanceof MaterialCardView)) return;
+        float r = dp(18), tail = dp(5);
+        ShapeAppearanceModel shape = ShapeAppearanceModel.builder()
+                .setTopLeftCorner(CornerFamily.ROUNDED, r)
+                .setTopRightCorner(CornerFamily.ROUNDED, r)
+                .setBottomLeftCorner(CornerFamily.ROUNDED, mine ? r : tail)
+                .setBottomRightCorner(CornerFamily.ROUNDED, mine ? tail : r)
+                .build();
+        ((MaterialCardView) bubble).setShapeAppearanceModel(shape);
+    }
+
+    /** Prepends the quoted-reply preview (if any) to a bubble's content column. */
     private void decorateHeader(LinearLayout col, Social.Message m, boolean mine) {
-        if (thread.isGroup() && !mine) col.addView(senderLabel(m.fromName));
-        if (m.replyTo != null) {
-            LinearLayout quote = new LinearLayout(this);
-            quote.setOrientation(LinearLayout.VERTICAL);
-            quote.setPadding(dp(8), dp(4), dp(8), dp(4));
-            LinearLayout.LayoutParams qlp = new LinearLayout.LayoutParams(-1, -2);
-            qlp.bottomMargin = dp(4);
-            quote.setLayoutParams(qlp);
-            quote.setBackgroundColor(mine ? 0x33FFFFFF : StyleManager.color(this, R.attr.appCardStroke));
+        if (m.replyTo == null) return;
+        LinearLayout quote = new LinearLayout(this);
+        quote.setOrientation(LinearLayout.VERTICAL);
+        quote.setPadding(dp(8), dp(4), dp(8), dp(4));
+        LinearLayout.LayoutParams qlp = new LinearLayout.LayoutParams(-1, -2);
+        qlp.bottomMargin = dp(4);
+        quote.setLayoutParams(qlp);
+        GradientDrawable qb = new GradientDrawable();
+        qb.setCornerRadius(dp(8));
+        qb.setColor(mine ? 0x33FFFFFF : StyleManager.color(this, R.attr.appCardStroke));
+        quote.setBackground(qb);
 
-            TextView who = new TextView(this);
-            who.setText(m.replyName == null ? "" : m.replyName);
-            who.setTextSize(11f);
-            who.setTypeface(null, Typeface.BOLD);
-            who.setTextColor(mine ? Color.WHITE : ContextCompat.getColor(this, R.color.neon_cyan));
-            quote.addView(who);
+        TextView who = new TextView(this);
+        who.setText(m.replyName == null ? "" : m.replyName);
+        who.setTextSize(11f);
+        who.setTypeface(null, Typeface.BOLD);
+        who.setTextColor(mine ? Color.WHITE : ContextCompat.getColor(this, R.color.neon_cyan));
+        quote.addView(who);
 
-            TextView what = new TextView(this);
-            what.setText(m.replyText == null ? "" : m.replyText);
-            what.setTextSize(12f);
-            what.setMaxLines(1);
-            what.setTextColor(mine ? 0xCCFFFFFF : ContextCompat.getColor(this, R.color.neon_text_dim));
-            quote.addView(what);
-            col.addView(quote);
+        TextView what = new TextView(this);
+        what.setText(m.replyText == null ? "" : m.replyText);
+        what.setTextSize(12f);
+        what.setMaxLines(1);
+        what.setTextColor(mine ? 0xCCFFFFFF : ContextCompat.getColor(this, R.color.neon_text_dim));
+        quote.addView(what);
+        col.addView(quote);
+    }
+
+    /** Compact bottom-right footer inside a bubble: (edited) · time · ✓/✓✓. */
+    private void appendFooter(LinearLayout col, Social.Message m, boolean mine) {
+        LinearLayout f = new LinearLayout(this);
+        f.setOrientation(LinearLayout.HORIZONTAL);
+        f.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+        lp.gravity = Gravity.END;
+        lp.topMargin = dp(3);
+        f.setLayoutParams(lp);
+
+        int dim = mine ? 0xCCFFFFFF : ContextCompat.getColor(this, R.color.neon_text_dim);
+        TextView t = new TextView(this);
+        t.setTextSize(10f);
+        t.setTextColor(dim);
+        StringBuilder s = new StringBuilder();
+        if (m.edited && !m.deleted) s.append(getString(R.string.edited_marker)).append("  ");
+        s.append(shortTime(m.ts));
+        t.setText(s.toString());
+        f.addView(t);
+
+        if (mine && !thread.isGroup() && !m.deleted) {
+            TextView tick = new TextView(this);
+            tick.setTextSize(10f);
+            tick.setPadding(dp(3), 0, 0, 0);
+            boolean seen = peerReadTs > 0 && m.ts > 0 && m.ts <= peerReadTs;
+            tick.setText(seen ? "✓✓" : "✓");
+            tick.setTextColor(seen ? 0xFFB3E5FC : dim);
+            f.addView(tick);
         }
+        col.addView(f);
     }
 
     private View textBubble(Social.Message m, boolean mine) {
         MaterialCardView card = bubbleShell(mine);
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
-        col.setPadding(dp(14), dp(10), dp(14), dp(10));
+        col.setPadding(dp(12), dp(8), dp(12), dp(6));
         decorateHeader(col, m, mine);
 
         TextView tv = new TextView(this);
@@ -544,6 +629,7 @@ public class MessagesActivity extends AppCompatActivity {
         tv.setText(m.text == null ? "" : m.text);
         TheoremLinker.linkify(this, tv);
         col.addView(tv);
+        appendFooter(col, m, mine);
         card.addView(col);
         return card;
     }
@@ -552,15 +638,23 @@ public class MessagesActivity extends AppCompatActivity {
         MaterialCardView card = bubbleShell(mine);
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
-        col.setPadding(dp(6), dp(6), dp(6), dp(6));
+        col.setPadding(dp(5), dp(5), dp(5), dp(5));
         decorateHeader(col, m, mine);
 
         ImageView img = new ImageView(this);
-        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(200), dp(200));
-        img.setLayoutParams(ilp);
+        img.setLayoutParams(new LinearLayout.LayoutParams(dp(210), dp(210)));
         img.setScaleType(ImageView.ScaleType.CENTER_CROP);
         img.setImageResource(android.R.drawable.ic_menu_gallery);
-        ChatMedia.loadImage(m.mediaUrl, bmp -> img.setImageBitmap(bmp));
+        GradientDrawable clip = new GradientDrawable();
+        clip.setCornerRadius(dp(14));
+        img.setClipToOutline(true);
+        img.setBackground(clip);
+        img.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override public void getOutline(View v, android.graphics.Outline o) {
+                o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), dp(14));
+            }
+        });
+        ChatMedia.loadImage(m.mediaUrl, img::setImageBitmap);
         img.setOnClickListener(v -> openMediaExternally(m));
         col.addView(img);
 
@@ -568,20 +662,25 @@ public class MessagesActivity extends AppCompatActivity {
             TextView cap = new TextView(this);
             cap.setText(m.text);
             cap.setTag("body");
-            cap.setPadding(dp(8), dp(6), dp(8), dp(2));
+            cap.setPadding(dp(8), dp(6), dp(8), dp(0));
             cap.setTextColor(mine ? Color.WHITE : ContextCompat.getColor(this, R.color.neon_text));
             col.addView(cap);
         }
+        appendFooter(col, m, mine);
         card.addView(col);
         return card;
     }
 
     private View voiceBubble(Social.Message m, boolean mine) {
         MaterialCardView card = bubbleShell(mine);
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setPadding(dp(10), dp(8), dp(14), dp(6));
+        decorateHeader(col, m, mine);
+
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(12), dp(10), dp(14), dp(10));
         row.setTag("body");
 
         ImageView play = new ImageView(this);
@@ -595,18 +694,23 @@ public class MessagesActivity extends AppCompatActivity {
         label.setPadding(dp(10), 0, 0, 0);
         label.setTextColor(mine ? Color.WHITE : ContextCompat.getColor(this, R.color.neon_text));
         row.addView(label);
-
         row.setOnClickListener(v -> playVoice(m.mediaUrl));
-        card.addView(row);
+        col.addView(row);
+        appendFooter(col, m, mine);
+        card.addView(col);
         return card;
     }
 
     private View fileBubble(Social.Message m, boolean mine) {
         MaterialCardView card = bubbleShell(mine);
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setPadding(dp(10), dp(10), dp(14), dp(6));
+        decorateHeader(col, m, mine);
+
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(12), dp(12), dp(14), dp(12));
         row.setTag("body");
 
         ImageView icon = new ImageView(this);
@@ -615,32 +719,34 @@ public class MessagesActivity extends AppCompatActivity {
         icon.setColorFilter(mine ? Color.WHITE : ContextCompat.getColor(this, R.color.neon_cyan));
         row.addView(icon);
 
-        LinearLayout col = new LinearLayout(this);
-        col.setOrientation(LinearLayout.VERTICAL);
-        col.setPadding(dp(10), 0, 0, 0);
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        info.setPadding(dp(10), 0, 0, 0);
         TextView name = new TextView(this);
         name.setText(m.mediaName == null ? getString(R.string.file) : m.mediaName);
         name.setTypeface(null, Typeface.BOLD);
         name.setMaxLines(1);
         name.setTextColor(mine ? Color.WHITE : ContextCompat.getColor(this, R.color.neon_text));
-        col.addView(name);
+        info.addView(name);
         if (m.mediaSize > 0) {
             TextView size = new TextView(this);
             size.setText(ChatMedia.humanSize(m.mediaSize));
             size.setTextSize(12f);
             size.setTextColor(mine ? 0xCCFFFFFF : ContextCompat.getColor(this, R.color.neon_text_dim));
-            col.addView(size);
+            info.addView(size);
         }
-        row.addView(col);
+        row.addView(info);
         row.setOnClickListener(v -> openMediaExternally(m));
-        card.addView(row);
+        col.addView(row);
+        appendFooter(col, m, mine);
+        card.addView(col);
         return card;
     }
 
     private View deletedBubble(boolean mine) {
         MaterialCardView card = bubbleShell(mine);
         TextView tv = new TextView(this);
-        tv.setPadding(dp(14), dp(10), dp(14), dp(10));
+        tv.setPadding(dp(12), dp(9), dp(12), dp(9));
         tv.setText(getString(R.string.message_deleted));
         tv.setTextColor(ContextCompat.getColor(this, R.color.neon_text_dim));
         tv.setTypeface(null, Typeface.ITALIC);
@@ -651,7 +757,6 @@ public class MessagesActivity extends AppCompatActivity {
     private View reactionStrip(Social.Message m) {
         Map<String, String> byUser = reactions.get(m.id);
         if (byUser == null || byUser.isEmpty()) return null;
-        // Aggregate emoji -> count.
         Map<String, Integer> counts = new java.util.LinkedHashMap<>();
         for (String emoji : byUser.values()) counts.merge(emoji, 1, Integer::sum);
         StringBuilder sb = new StringBuilder();
@@ -664,59 +769,85 @@ public class MessagesActivity extends AppCompatActivity {
         TextView tv = new TextView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
         lp.gravity = mine ? Gravity.END : Gravity.START;
+        lp.topMargin = dp(2);
         lp.leftMargin = mine ? 0 : dp(6);
         lp.rightMargin = mine ? dp(6) : 0;
         tv.setLayoutParams(lp);
         tv.setText(sb.toString().trim());
         tv.setTextSize(13f);
-        tv.setPadding(dp(8), dp(2), dp(8), dp(2));
-        tv.setBackgroundColor(StyleManager.color(this, R.attr.appCardFill));
+        tv.setPadding(dp(8), dp(2), dp(8), dp(3));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(12));
+        bg.setColor(StyleManager.color(this, R.attr.appCardFill));
+        bg.setStroke(dp(1), StyleManager.color(this, R.attr.appCardStroke));
+        tv.setBackground(bg);
         tv.setOnClickListener(v -> showReactionPicker(m));
         return tv;
     }
 
-    private View metaLine(Social.Message m, boolean mine) {
-        LinearLayout line = new LinearLayout(this);
-        line.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-        lp.gravity = mine ? Gravity.END : Gravity.START;
-        lp.leftMargin = mine ? 0 : dp(8);
-        lp.rightMargin = mine ? dp(8) : 0;
-        lp.bottomMargin = dp(4);
-        line.setLayoutParams(lp);
-
-        TextView tv = new TextView(this);
-        tv.setTextSize(11f);
-        tv.setTextColor(ContextCompat.getColor(this, R.color.neon_text_dim));
-        StringBuilder s = new StringBuilder(formatTime(m.ts));
-        if (m.edited && !m.deleted) s.append("  ").append(getString(R.string.edited_marker));
-        tv.setText(s.toString());
-        line.addView(tv);
-
-        // Read receipts: DM, my own, non-deleted messages get ✓ / ✓✓.
-        if (mine && !thread.isGroup() && !m.deleted) {
-            TextView tick = new TextView(this);
-            tick.setTextSize(11f);
-            tick.setPadding(dp(4), 0, 0, 0);
-            boolean seen = peerReadTs > 0 && m.ts > 0 && m.ts <= peerReadTs;
-            tick.setText(seen ? "✓✓" : "✓");
-            tick.setTextColor(seen ? ContextCompat.getColor(this, R.color.neon_cyan)
-                    : ContextCompat.getColor(this, R.color.neon_text_dim));
-            line.addView(tick);
-        }
-        return line;
-    }
-
-    private TextView senderLabel(String name) {
+    private TextView senderName(String name) {
         TextView tv = new TextView(this);
         tv.setText(name == null ? "" : name);
         tv.setTextSize(12f);
         tv.setTypeface(null, Typeface.BOLD);
+        tv.setPadding(dp(6), 0, 0, dp(2));
         tv.setTextColor(ContextCompat.getColor(this, R.color.neon_cyan));
         return tv;
     }
 
-    // ---- attachment (solution / drawing) bubbles carried over ----
+    private View dateChip(long ts) {
+        TextView t = new TextView(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
+        lp.topMargin = dp(12);
+        lp.bottomMargin = dp(4);
+        t.setLayoutParams(lp);
+        t.setText(dayLabel(ts));
+        t.setTextSize(12f);
+        t.setPadding(dp(12), dp(4), dp(12), dp(4));
+        t.setTextColor(ContextCompat.getColor(this, R.color.neon_text_dim));
+        GradientDrawable g = new GradientDrawable();
+        g.setCornerRadius(dp(14));
+        g.setColor(StyleManager.color(this, R.attr.appCardFill));
+        t.setBackground(g);
+        return t;
+    }
+
+    private View avatarView(String name) {
+        TextView t = new TextView(this);
+        int s = dp(34);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(s, s);
+        lp.rightMargin = dp(8);
+        lp.gravity = Gravity.BOTTOM;
+        t.setLayoutParams(lp);
+        GradientDrawable g = new GradientDrawable();
+        g.setShape(GradientDrawable.OVAL);
+        g.setColor(avatarColor(name));
+        t.setBackground(g);
+        t.setGravity(Gravity.CENTER);
+        t.setTextColor(Color.WHITE);
+        t.setTextSize(15f);
+        t.setText(initial(name));
+        return t;
+    }
+
+    private View avatarSpacer() {
+        View v = new View(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(34), dp(1));
+        lp.rightMargin = dp(8);
+        v.setLayoutParams(lp);
+        return v;
+    }
+
+    private int avatarColor(String name) {
+        int h = (name == null || name.isEmpty()) ? 0 : Math.abs(name.hashCode());
+        return AVATAR_COLORS[h % AVATAR_COLORS.length];
+    }
+
+    private String initial(String name) {
+        if (name == null || name.trim().isEmpty()) return "?";
+        return name.trim().substring(0, 1).toUpperCase(Locale.ROOT);
+    }
 
     private View solutionBubble(Social.Message m, boolean mine) {
         MaterialCardView card = bubbleShell(mine);
@@ -760,7 +891,7 @@ public class MessagesActivity extends AppCompatActivity {
         int dim = mine ? Color.parseColor("#CCFFFFFF") : ContextCompat.getColor(this, R.color.neon_text_dim);
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
-        col.setPadding(dp(14), dp(12), dp(14), dp(12));
+        col.setPadding(dp(14), dp(12), dp(14), dp(8));
         decorateHeader(col, m, mine);
 
         TextView tvKind = new TextView(this);
@@ -792,6 +923,7 @@ public class MessagesActivity extends AppCompatActivity {
         tvCta.setPadding(0, dp(6), 0, 0);
         tvCta.setTextColor(mine ? Color.WHITE : ContextCompat.getColor(this, R.color.neon_cyan));
         col.addView(tvCta);
+        appendFooter(col, m, mine);
         return col;
     }
 
@@ -844,9 +976,14 @@ public class MessagesActivity extends AppCompatActivity {
             t.setTextSize(28f);
             int pad = dp(8);
             t.setPadding(pad, pad, pad, pad);
-            if (emoji.equals(mineReaction)) t.setBackgroundColor(StyleManager.color(this, R.attr.appCardFill));
+            if (emoji.equals(mineReaction)) {
+                GradientDrawable sel = new GradientDrawable();
+                sel.setCornerRadius(dp(10));
+                sel.setColor(StyleManager.color(this, R.attr.appCardFill));
+                t.setBackground(sel);
+            }
             t.setOnClickListener(v -> {
-                Social.setReaction(thread, m.id, emoji.equals(mineReaction) ? "" : emoji); // tap again to clear
+                Social.setReaction(thread, m.id, emoji.equals(mineReaction) ? "" : emoji);
                 dialog.dismiss();
             });
             row.addView(t);
@@ -886,6 +1023,7 @@ public class MessagesActivity extends AppCompatActivity {
         LinearLayout row = rows.remove(m.id);
         if (row != null) container.removeView(row);
         messages.remove(m.id);
+        updateEmptyState();
     }
 
     private void confirmBlock(Social.Message m) {
@@ -971,7 +1109,7 @@ public class MessagesActivity extends AppCompatActivity {
         }
     }
 
-    // ================= media: attach / pickers / upload =================
+    // ================= media =================
 
     private void registerLaunchers() {
         galleryLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(),
@@ -1030,8 +1168,7 @@ public class MessagesActivity extends AppCompatActivity {
             }
             @Override public void onError(String message) {
                 showUpload(false, 0);
-                Toast.makeText(MessagesActivity.this,
-                        getString(R.string.media_failed, message), Toast.LENGTH_LONG).show();
+                Toast.makeText(MessagesActivity.this, getString(R.string.media_failed, message), Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -1041,7 +1178,7 @@ public class MessagesActivity extends AppCompatActivity {
         uploadProgress.setProgress(percent);
     }
 
-    // ================= voice recording =================
+    // ================= voice =================
 
     private void toggleRecording() {
         if (recording) { stopRecordingAndSend(); return; }
@@ -1096,8 +1233,7 @@ public class MessagesActivity extends AppCompatActivity {
                 @Override public void onProgress(int percent) { showUpload(true, percent); }
                 @Override public void onComplete(String url, String name, String mime, long size) {
                     showUpload(false, 0);
-                    Social.sendMedia(MessagesActivity.this, thread, Social.TYPE_VOICE, url,
-                            name, mime, size, dur, null, reply);
+                    Social.sendMedia(MessagesActivity.this, thread, Social.TYPE_VOICE, url, name, mime, size, dur, null, reply);
                 }
                 @Override public void onError(String message) {
                     showUpload(false, 0);
@@ -1155,7 +1291,7 @@ public class MessagesActivity extends AppCompatActivity {
         }
     }
 
-    // ================= saved solution / drawing pickers (carried over) =================
+    // ================= saved solution / drawing pickers =================
 
     private static final class Saved {
         final String title, problem, payload;
@@ -1174,13 +1310,11 @@ public class MessagesActivity extends AppCompatActivity {
             }
         }
         if (items.isEmpty()) { Toast.makeText(this, R.string.no_saved_solutions, Toast.LENGTH_SHORT).show(); return; }
-        final Social.Reply reply = consumeReply();
         showPicker(R.string.send_solution, items, s -> {
             if (!Social.sendSolution(this, thread, s.title, s.problem, s.payload)) {
                 Toast.makeText(this, R.string.share_too_large, Toast.LENGTH_LONG).show();
             }
         });
-        if (reply != null) { /* reply consumed; solution shares don't currently carry it */ }
     }
 
     private void pickDrawing() {
@@ -1216,25 +1350,36 @@ public class MessagesActivity extends AppCompatActivity {
 
     // ================= time helpers =================
 
-    private String formatTime(long ts) {
+    private String shortTime(long ts) {
         if (ts <= 0) return "";
+        return android.text.format.DateFormat.getTimeFormat(this).format(new java.util.Date(ts));
+    }
+
+    private String dayLabel(long ts) {
         java.util.Calendar msg = java.util.Calendar.getInstance();
         msg.setTimeInMillis(ts);
         java.util.Calendar now = java.util.Calendar.getInstance();
-        String time = android.text.format.DateFormat.getTimeFormat(this).format(new java.util.Date(ts));
         boolean sameYear = msg.get(java.util.Calendar.YEAR) == now.get(java.util.Calendar.YEAR);
         int dayDiff = now.get(java.util.Calendar.DAY_OF_YEAR) - msg.get(java.util.Calendar.DAY_OF_YEAR);
-        if (sameYear && dayDiff == 0) return time;
-        if (sameYear && dayDiff == 1) return getString(R.string.time_yesterday, time);
-        String date = android.text.format.DateFormat.getMediumDateFormat(this).format(new java.util.Date(ts));
-        return date + " " + time;
+        if (sameYear && dayDiff == 0) return getString(R.string.chat_today);
+        if (sameYear && dayDiff == 1) return getString(R.string.chat_yesterday);
+        return android.text.format.DateFormat.getMediumDateFormat(this).format(new java.util.Date(ts));
+    }
+
+    private boolean sameDay(long a, long b) {
+        if (a <= 0 || b <= 0) return false;
+        java.util.Calendar ca = java.util.Calendar.getInstance(); ca.setTimeInMillis(a);
+        java.util.Calendar cb = java.util.Calendar.getInstance(); cb.setTimeInMillis(b);
+        return ca.get(java.util.Calendar.YEAR) == cb.get(java.util.Calendar.YEAR)
+                && ca.get(java.util.Calendar.DAY_OF_YEAR) == cb.get(java.util.Calendar.DAY_OF_YEAR);
     }
 
     private String formatLastSeen(long ts) {
         if (ts <= 0) return "";
         long diff = System.currentTimeMillis() - ts;
         if (diff < 60_000) return getString(R.string.just_now);
-        return formatTime(ts);
+        if (sameDay(ts, System.currentTimeMillis())) return shortTime(ts);
+        return dayLabel(ts) + " " + shortTime(ts);
     }
 
     private String formatDuration(long ms) {

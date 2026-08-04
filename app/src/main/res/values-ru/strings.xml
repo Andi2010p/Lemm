@@ -1274,6 +1274,9 @@
 
     <!-- Messenger -->
     <string name="chat_search">Поиск</string>
+    <string name="chat_today">Сегодня</string>
+    <string name="chat_yesterday">Вчера</string>
+    <string name="chat_empty">Пока нет сообщений — поздоровайтесь 👋</string>
     <string name="more_options">Ещё</string>
     <string name="uploading">Загрузка…</string>
     <string name="record_voice">Записать голосовое</string>
