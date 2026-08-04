@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21   # Firebase emulator needs a newer JDK than 17; passes locally on 21+
       - name: Install rules-test deps
         run: npm ci
         working-directory: tools/rules-tests
