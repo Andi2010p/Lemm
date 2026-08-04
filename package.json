@@ -1,0 +1,17 @@
+{
+  "name": "lemma",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lemma — geometry tutor. Root scripts orchestrate hosting: test, lint, deploy, and a readiness doctor. See docs/HOSTING.md.",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "test": "npm --prefix tools/rules-tests test",
+    "lint": "npm --prefix functions run lint",
+    "emulators": "firebase emulators:start",
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:rules": "node scripts/deploy.mjs --only database,storage",
+    "deploy:functions": "node scripts/deploy.mjs --only functions",
+    "deploy:all": "node scripts/deploy.mjs --only database,storage,functions"
+  }
+}

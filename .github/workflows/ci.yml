@@ -1,0 +1,58 @@
+name: CI
+
+# Runs on every push and PR: proves the security rules still hold, the Cloud Functions parse, and the
+# Android app still builds — so a broken rule or a compile error is caught before it ships, not after.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Rules tests + functions lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Install rules-test deps
+        run: npm ci
+        working-directory: tools/rules-tests
+      - name: Security-rules tests (Firebase emulator)
+        run: npm test
+        working-directory: tools/rules-tests
+      - name: Install functions deps
+        run: npm ci
+        working-directory: functions
+      - name: Functions lint
+        run: npm run lint
+        working-directory: functions
+
+  android:
+    name: Android debug build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lemma-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: ignore

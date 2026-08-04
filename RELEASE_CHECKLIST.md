@@ -1,7 +1,11 @@
 # Lemma — everything YOU have to do (Firebase, Play, site)
 
-Verified against the repo on **2026-07-14**. Nothing here can be automated from code — it all needs
-your Google account, your bank, a keystore, or a paid Firebase plan.
+Verified against the repo on **2026-07-14**. The console/account/billing steps below still need your
+Google account, your bank, a keystore, or a paid Firebase plan — but **deploying is now automated**.
+
+> ⚡ **Quick deploy.** From the repo root: `npm run doctor` (what's set up) → `npm run setup` (one-time
+> login + secrets) → `npm run deploy` (tests the rules, lints the functions, then deploys DB + Storage
+> + Functions). Or deploy from the GitHub **Actions → Deploy** button. Full guide: **`docs/HOSTING.md`**.
 
 **Do it in this order.** Later steps depend on earlier ones, and two of them will *destroy user data*
 if done out of order (marked ⛔).

@@ -136,7 +136,40 @@ public final class ExternalAiClient {
 
     // ---------------- HTTP + helpers ----------------
 
+    private static final int MAX_ATTEMPTS = 3;
+
+    /** A transient failure (429 / 5xx / network) worth retrying, carrying any server-asked delay. */
+    private static final class Transient extends Exception {
+        final long retryAfterMs;
+        Transient(String message, long retryAfterMs) { super(message); this.retryAfterMs = retryAfterMs; }
+    }
+
+    /**
+     * POSTs with automatic retry: transient errors (rate limits, 5xx, dropped connections) are retried
+     * up to {@link #MAX_ATTEMPTS} times with exponential backoff, honouring a {@code Retry-After} header
+     * when the server sends one. Permanent errors (bad key, bad model) fail immediately — retrying them
+     * would only waste the user's time.
+     */
     private static String post(String url, String[][] headers, String jsonBody) throws Exception {
+        long backoff = 900;
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return postOnce(url, headers, jsonBody);
+            } catch (Transient t) {
+                if (attempt >= MAX_ATTEMPTS) throw new Exception(t.getMessage());
+                long wait = t.retryAfterMs > 0 ? t.retryAfterMs : backoff;
+                try {
+                    Thread.sleep(wait);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new Exception("Request interrupted");
+                }
+                backoff = Math.min(backoff * 2, 8000);
+            }
+        }
+    }
+
+    private static String postOnce(String url, String[][] headers, String jsonBody) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         try {
             c.setConnectTimeout(20000);
@@ -153,11 +186,30 @@ public final class ExternalAiClient {
             int code = c.getResponseCode();
             InputStream is = (code >= 400) ? c.getErrorStream() : c.getInputStream();
             String resp = readAll(is);
-            if (code >= 400) throw new Exception(friendlyError(code, resp));
+            if (code >= 400) {
+                if (isTransient(code)) throw new Transient(friendlyError(code, resp), retryAfterMs(c));
+                throw new Exception(friendlyError(code, resp));
+            }
             return resp;
+        } catch (java.io.IOException io) {
+            // Reset connection / timeout / DNS blip — worth another attempt.
+            throw new Transient("Network error: " + io.getMessage(), 0);
         } finally {
             c.disconnect();
         }
+    }
+
+    private static boolean isTransient(int code) {
+        return code == 429 || code == 500 || code == 502 || code == 503 || code == 504;
+    }
+
+    /** Reads a numeric {@code Retry-After} (seconds) header, capped so a rogue value can't hang us. */
+    private static long retryAfterMs(HttpURLConnection c) {
+        try {
+            String h = c.getHeaderField("Retry-After");
+            if (h != null) return Math.min(Long.parseLong(h.trim()) * 1000L, 15000L);
+        } catch (Exception ignored) {}
+        return 0;
     }
 
     private static String readAll(InputStream is) throws Exception {
